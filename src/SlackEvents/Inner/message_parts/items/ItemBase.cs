@@ -12,7 +12,7 @@ namespace Slack.Events.Inner.message_parts.items
     /// <remarks>
     /// https://api.slack.com/events/reaction_added on 2018-08-26
     /// </remarks>
-    public abstract class ItemBase
+    public class ItemBase
     {
         /// <summary>
         /// The type of item.

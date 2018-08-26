@@ -10,7 +10,7 @@ namespace Slack.Events.Inner
     /// <remarks>
     /// https://api.slack.com/types/event on 2018-08-26
     /// </remarks>
-    public abstract class EventBase : IEvent
+    public class EventBase : IEvent
     {
         /// <summary>
         /// The specific name of the event

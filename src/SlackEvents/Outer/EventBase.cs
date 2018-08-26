@@ -1,6 +1,4 @@
-﻿using System.Reflection;
-
-namespace Slack.Events.Outer
+﻿namespace Slack.Events.Outer
 {
     /// <summary>
     /// The outer event for the Events API. This was manually made.
@@ -8,7 +6,7 @@ namespace Slack.Events.Outer
     /// <remarks>
     /// Documentation pulled from https://api.slack.com/types/event on 2018-08-06
     /// </remarks>
-    public abstract class EventBase : IEvent
+    public class EventBase : IEvent
     {
         /// <summary>
         /// Indicates which kind of event dispatch this is, usually <c>event_callback</c>
