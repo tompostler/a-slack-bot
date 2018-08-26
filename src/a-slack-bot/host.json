@@ -1,0 +1,13 @@
+{
+  "http": {
+    "routePrefix": ""
+  },
+  "applicationInsights": {
+    "sampling": {
+      "isEnabled": false
+    }
+  },
+  "serviceBus": {
+    "maxConcurrentCalls": 1
+  }
+}
