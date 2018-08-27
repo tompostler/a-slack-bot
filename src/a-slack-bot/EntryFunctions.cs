@@ -48,6 +48,7 @@ namespace a_slack_bot
             return req.CreateResponse(HttpStatusCode.OK);
         }
 
+        private static HttpClient httpClient = new HttpClient();
         [FunctionName(nameof(ReceiveSlash))]
         public static async Task<HttpResponseMessage> ReceiveSlash(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = "receive/slash")]HttpRequestMessage req,
@@ -64,6 +65,17 @@ namespace a_slack_bot
             // Get stuff from the message
             var slashData = await req.Content.ReadAsFormDataAsync<Slack.Slash>();
 
+            // In order to not echo the slash command back into the channel, we need to respond right away
+            //DEBUG HACK TEST THING
+            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Settings.SlackOauthToken);
+            httpClient.DefaultRequestHeaders.TryAddWithoutValidation("X-Slack-User", "U1DPNJM0F");
+            var response = await httpClient.PostAsJsonAsync(slashData.response_url, new
+            {
+                channel = slashData.channel_id,
+                text = "SPACES SPACES SPACES"
+            });
+            logger.LogInformation("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
+
             // Send it off to be processed
             logger.LogInformation("Sending slash command into the queue.");
             await messageCollector.AddAsync(new ServiceBusInputSlash
@@ -72,7 +84,7 @@ namespace a_slack_bot
             });
 
             // Return all is well
-            return req.CreateResponse(HttpStatusCode.OK, new { response_type = "ephemeral" });
+            return req.CreateResponse(HttpStatusCode.OK, new { response_type = "ephemeral", text = "HERE GOES NOTHIN" });
         }
 
         [FunctionName(nameof(Ping))]
