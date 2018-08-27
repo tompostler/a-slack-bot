@@ -56,7 +56,8 @@ namespace a_slack_bot
             ILogger logger)
         {
             if (Settings.Debug)
-                logger.LogInformation("Body: {0}", await req.Content.ReadAsStringAsync());
+                // Trim off the beginning because of AI trying to "help"
+                logger.LogInformation("Body: {0}", (await req.Content.ReadAsStringAsync()).Substring(10));
 
             // Make sure it's a legit request
             if (!await req.IsAuthed(logger))
@@ -67,11 +68,17 @@ namespace a_slack_bot
 
             // In order to not echo the slash command back into the channel, we need to respond right away
             //DEBUG HACK TEST THING
-            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Settings.SlackOauthBotToken);
             var response = await httpClient.PostAsJsonAsync(slashData.response_url, new
             {
-                channel = slashData.channel_id,
-                text = $"<@{slashData.user_id}> says: SPACES SPACES SPACES"
+                response_type = "in_channel",
+                attachments = new[]
+                {
+                    new
+                    {
+                        text = "I'M DOING SOMETHING",
+                        footer = $"<@{slashData.user_id}>, {slashData.command}"
+                    }
+                }
             });
             logger.LogInformation("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
 
@@ -83,7 +90,7 @@ namespace a_slack_bot
             });
 
             // Return all is well
-            return req.CreateResponse(HttpStatusCode.OK, new { response_type = "ephemeral", text = "HERE GOES NOTHIN" });
+            return req.CreateResponse(HttpStatusCode.OK, new { response_type = "ephemeral", text = $"{slashData.command} {slashData.text}" });
         }
 
         [FunctionName(nameof(Ping))]
