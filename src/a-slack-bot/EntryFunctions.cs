@@ -67,12 +67,11 @@ namespace a_slack_bot
 
             // In order to not echo the slash command back into the channel, we need to respond right away
             //DEBUG HACK TEST THING
-            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Settings.SlackOauthToken);
-            httpClient.DefaultRequestHeaders.TryAddWithoutValidation("X-Slack-User", "U1DPNJM0F");
+            httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Settings.SlackOauthBotToken);
             var response = await httpClient.PostAsJsonAsync(slashData.response_url, new
             {
                 channel = slashData.channel_id,
-                text = "SPACES SPACES SPACES"
+                text = $"<@{slashData.user_id}> says: SPACES SPACES SPACES"
             });
             logger.LogInformation("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
 
