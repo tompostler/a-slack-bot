@@ -14,6 +14,12 @@
         "description": "Slack OAuth Token inserted by the release."
       }
     },
+    "pSlackOauthBotToken": {
+      "type": "string",
+      "metadata": {
+        "description": "Slack OAuth Bot Token inserted by the release."
+      }
+    },
     "pSlackSigningSecret": {
       "type": "string",
       "metadata": {
@@ -151,6 +157,10 @@
             {
               "name": "SlackOauthToken",
               "value": "[parameters('pSlackOauthToken')]"
+            },
+            {
+              "name": "SlackOauthBotToken",
+              "value": "[parameters('pSlackOauthBotToken')]"
             },
             {
               "name": "SlackSigningSecret",
