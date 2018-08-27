@@ -23,7 +23,7 @@ namespace a_slack_bot.Functions
             // SB is faster than returning the ephemeral response, so just chill for a bit
             await Task.Delay(TimeSpan.FromSeconds(0.5));
 
-            Slack.Slash slashData = null;
+            Messages.ServiceBusInputSlash slash = null;
             var stream = slashMessage.GetBody<Stream>();
             using (var sr = new StreamReader(stream))
             using (var jsonTextReader = new JsonTextReader(sr))
@@ -32,13 +32,14 @@ namespace a_slack_bot.Functions
                 {
                     var body = await sr.ReadToEndAsync();
                     logger.LogInformation("Body: {0}", body);
-                    slashData = JsonConvert.DeserializeObject<Slack.Slash>(body);
+                    slash = JsonConvert.DeserializeObject<Messages.ServiceBusInputSlash>(body);
                 }
                 else
                 {
-                    slashData = jsonSerializer.Deserialize<Slack.Slash>(jsonTextReader);
+                    slash = jsonSerializer.Deserialize<Messages.ServiceBusInputSlash>(jsonTextReader);
                 }
             }
+            var slashData = slash.slashData;
 
             switch (slashData.command)
             {

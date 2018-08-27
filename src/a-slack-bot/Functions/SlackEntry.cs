@@ -69,7 +69,7 @@ namespace a_slack_bot.Functions
             logger.LogInformation("Sending slash command into the queue.");
             await messageCollector.AddAsync(new ServiceBusInputSlash
             {
-                slash = slashData
+                slashData = slashData
             });
 
             // Return all is well

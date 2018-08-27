@@ -2,6 +2,6 @@
 {
     public sealed class ServiceBusInputSlash
     {
-        public Slack.Slash slash { get; set; }
+        public Slack.Slash slashData { get; set; }
     }
 }

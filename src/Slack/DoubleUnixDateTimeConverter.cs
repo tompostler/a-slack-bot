@@ -88,7 +88,9 @@ namespace Newtonsoft.Json.Converters
             {
                 if (!nullable)
                 {
-                    throw new JsonSerializationException(string.Format("Cannot convert null value to {0}.", objectType));
+                    // Instead of throwing here (which will happen when the value is not supplied on occasion), just don't deserialize the value
+                    //throw new JsonSerializationException(string.Format("Cannot convert null value to {0}.", objectType));
+                    return default(DateTimeOffset);
                 }
 
                 return null;
