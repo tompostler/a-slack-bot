@@ -59,6 +59,7 @@ namespace a_slack_bot.Functions
 
         private static async Task SendResponse(ILogger logger, Slack.Slash slashData, string text, bool in_channel = true)
         {
+            logger.LogInformation("{0}: {1} {2} {3}", slashData.response_url, text, slashData.user_id, slashData.command);
             var response = await httpClient.PostAsJsonAsync(slashData.response_url, new
             {
                 response_type = in_channel ? "in_channel" : "ephemeral",
