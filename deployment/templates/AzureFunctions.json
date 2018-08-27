@@ -53,7 +53,7 @@
     "serviceBusName": "[parameters('appName')]",
     "serviceBusRootAccessKey": "[resourceId(resourceGroup().name, 'Microsoft.ServiceBus/namespaces/authorizationRules', variables('serviceBusName'), 'RootManageSharedAccessKey')]",
     "storageAcctName": "[replace(parameters('appName'), '-', '')]",
-    "storageAccountId": "[concat(resourceGroup().id,'/providers/','Microsoft.Storage/storageAccounts/', variables('storageAcctName'))]",
+    "storageAccountId": "[concat(resourceGroup().id,'/providers/','Microsoft.Storage/storageAccounts/', variables('storageAcctName'))]"
   },
   "resources": [
     {
