@@ -7,7 +7,8 @@
         /// </summary>
         public static class SBQ
         {
-            public const string Input = "input";
+            public const string InputEvent = "input-event";
+            public const string InputSlash = "input-slash";
         }
 
         public static class Headers

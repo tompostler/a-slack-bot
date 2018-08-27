@@ -32,7 +32,8 @@
     "serviceBusQueueNames": {
       "type": "array",
       "defaultValue": [
-        "input",
+        "input-event",
+        "input-slash",
         "output"
       ],
       "metadata": {

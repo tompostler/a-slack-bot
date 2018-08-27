@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SlackEvents\Slack.Events.csproj" />
+    <ProjectReference Include="..\Slack\Slack.csproj" />
   </ItemGroup>
 
   <ItemGroup>

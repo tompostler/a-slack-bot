@@ -5,7 +5,21 @@ VisualStudioVersion = 15.0.27703.2000
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "a-slack-bot", "a-slack-bot\a-slack-bot.csproj", "{BCF37CB1-192B-4CE4-B1BD-6F0278B134B4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Slack.Events", "SlackEvents\Slack.Events.csproj", "{CD5D7121-CBAF-4577-86E5-A6B5D0483BB7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Slack", "Slack\Slack.csproj", "{CD5D7121-CBAF-4577-86E5-A6B5D0483BB7}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "deployment", "deployment", "{ABA2E896-30D9-42D3-A539-B703534733CD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "parameters", "parameters", "{E84A78B1-5CF6-4E58-96D7-26154F4C5469}"
+	ProjectSection(SolutionItems) = preProject
+		..\deployment\parameters\Parameters.json = ..\deployment\parameters\Parameters.json
+		..\deployment\parameters\ReleaseStorage.Parameters.json = ..\deployment\parameters\ReleaseStorage.Parameters.json
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "templates", "templates", "{70AF3DFE-943E-4AD8-B29B-D3D77F34FE68}"
+	ProjectSection(SolutionItems) = preProject
+		..\deployment\templates\AzureFunctions.json = ..\deployment\templates\AzureFunctions.json
+		..\deployment\templates\SimpleStorageAccount.json = ..\deployment\templates\SimpleStorageAccount.json
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,6 +38,10 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{E84A78B1-5CF6-4E58-96D7-26154F4C5469} = {ABA2E896-30D9-42D3-A539-B703534733CD}
+		{70AF3DFE-943E-4AD8-B29B-D3D77F34FE68} = {ABA2E896-30D9-42D3-A539-B703534733CD}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CDE8B079-D710-4B24-9973-D1120082C26F}
