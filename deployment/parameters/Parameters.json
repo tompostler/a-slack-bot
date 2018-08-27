@@ -10,6 +10,14 @@
     "appName": {
       "value": "aslackbot"
     },
+    "serviceBusQueueNames": {
+      "value": [
+        "input-event",
+        "input-slash",
+        "send-message",
+        "output"
+      ]
+    },
     "packageLink": {
       "value": "build\\ApiFunctionsApp.zip"
     }

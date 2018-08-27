@@ -17,5 +17,13 @@ namespace a_slack_bot
         public static string SlackOauthBotToken => ConfigurationManager.AppSettings.Get(nameof(SlackOauthBotToken));
         public static string SlackSigningSecret => ConfigurationManager.AppSettings.Get(nameof(SlackSigningSecret));
         public static byte[] SlackSigningSecretBytes => Encoding.ASCII.GetBytes(SlackSigningSecret);
+
+        /// <summary>
+        /// Harcoded settings for the one server. Figure out what to do with this in the future.
+        /// </summary>
+        public static class Runtime
+        {
+            public static string NotifyChannelId => "C3TUM94BX";
+        }
     }
 }

@@ -31,11 +31,6 @@
     },
     "serviceBusQueueNames": {
       "type": "array",
-      "defaultValue": [
-        "input-event",
-        "input-slash",
-        "output"
-      ],
       "metadata": {
         "description": "Names of all the Service Bus Queues."
       }

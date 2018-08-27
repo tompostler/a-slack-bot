@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace a_slack_bot.Functions
 {
-    public static class Slash
+    public static class SBSlash
     {
         private static readonly HttpClient httpClient = new HttpClient();
         private static readonly JsonSerializer jsonSerializer = new JsonSerializer();
@@ -30,10 +30,14 @@ namespace a_slack_bot.Functions
             {
                 if (Settings.Debug)
                 {
-                    logger.LogInformation("Body: {0}", await sr.ReadToEndAsync());
-                    sr.BaseStream.Position = 0;
+                    var body = await sr.ReadToEndAsync();
+                    logger.LogInformation("Body: {0}", body);
+                    slashData = JsonConvert.DeserializeObject<Slack.Slash>(body);
                 }
-                slashData = jsonSerializer.Deserialize<Slack.Slash>(jsonTextReader);
+                else
+                {
+                    slashData = jsonSerializer.Deserialize<Slack.Slash>(jsonTextReader);
+                }
             }
 
             switch (slashData.command)
