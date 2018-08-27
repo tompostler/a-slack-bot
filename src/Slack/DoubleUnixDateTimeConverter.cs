@@ -64,7 +64,10 @@ namespace Newtonsoft.Json.Converters
 
             if (seconds < 0)
             {
-                throw new JsonSerializationException("Cannot convert date value that is before Unix epoch of 00:00:00 UTC on 1 January 1970.");
+                // Instead of throwing here (which will happen when the value is not supplied on occasion), just don't serialize the value
+                //throw new JsonSerializationException("Cannot convert date value that is before Unix epoch of 00:00:00 UTC on 1 January 1970.");
+                writer.WriteNull();
+                return;
             }
 
             writer.WriteValue(seconds);
