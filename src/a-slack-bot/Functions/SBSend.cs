@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace a_slack_bot.Functions
@@ -47,7 +48,7 @@ namespace a_slack_bot.Functions
 
         private static async Task SendResponse(ILogger logger, Slack.Events.Inner.message messageData)
         {
-            var response = await httpClient.PostAsJsonAsync("https://slack.com/api/chat.postMessage", messageData);
+            var response = await httpClient.PostAsync("https://slack.com/api/chat.postMessage", new StringContent(JsonConvert.SerializeObject(messageData), Encoding.UTF8, "application/json"));
             logger.LogInformation("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
         }
     }
