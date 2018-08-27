@@ -7,9 +7,9 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-namespace a_slack_bot
+namespace a_slack_bot.Functions
 {
-    public static class EntryFunctions
+    public static class Entry
     {
         [FunctionName(nameof(ReceiveEvent))]
         public static async Task<HttpResponseMessage> ReceiveEvent(
@@ -90,7 +90,7 @@ namespace a_slack_bot
                 return req.CreateErrorResponse(HttpStatusCode.Unauthorized, "Did not match hash.");
 
             // Return the version
-            return req.CreateResponse(HttpStatusCode.OK, new { response_type = "in_channel", text = $"```{typeof(EntryFunctions).Assembly.ManifestModule.Name} v{GitVersionInformation.SemVer}```" });
+            return req.CreateResponse(HttpStatusCode.OK, new { response_type = "in_channel", text = $"```{typeof(Entry).Assembly.ManifestModule.Name} v{GitVersionInformation.SemVer}```" });
         }
 
         [FunctionName(nameof(Ping))]

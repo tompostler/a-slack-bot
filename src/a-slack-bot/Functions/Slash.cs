@@ -7,9 +7,9 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace a_slack_bot
+namespace a_slack_bot.Functions
 {
-    public static class SlashFunctions
+    public static class Slash
     {
         private static readonly HttpClient httpClient = new HttpClient();
 
