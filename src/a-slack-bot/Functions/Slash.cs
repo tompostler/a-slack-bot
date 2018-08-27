@@ -1,9 +1,9 @@
 ﻿using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Microsoft.ServiceBus.Messaging;
+using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.IO;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,6 +13,7 @@ namespace a_slack_bot.Functions
     public static class Slash
     {
         private static readonly HttpClient httpClient = new HttpClient();
+        private static readonly JsonSerializer jsonSerializer = new JsonSerializer();
 
         [FunctionName(nameof(ReceiveSlashFromServiceBus))]
         public static async Task ReceiveSlashFromServiceBus(
@@ -22,7 +23,18 @@ namespace a_slack_bot.Functions
             // SB is faster than returning the ephemeral response, so just chill for a bit
             await Task.Delay(TimeSpan.FromSeconds(0.5));
 
-            var slashData = slashMessage.GetBody<Slack.Slash>();
+            Slack.Slash slashData = null;
+            var stream = slashMessage.GetBody<Stream>();
+            using (var sr = new StreamReader(stream))
+            using (var jsonTextReader = new JsonTextReader(sr))
+            {
+                if (Settings.Debug)
+                {
+                    logger.LogInformation("Body: {0}", await sr.ReadToEndAsync());
+                    sr.BaseStream.Position = 0;
+                }
+                slashData = jsonSerializer.Deserialize<Slack.Slash>(jsonTextReader);
+            }
 
             switch (slashData.command)
             {
