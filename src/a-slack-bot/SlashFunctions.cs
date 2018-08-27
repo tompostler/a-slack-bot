@@ -18,6 +18,9 @@ namespace a_slack_bot
             [ServiceBusTrigger(Constants.SBQ.InputSlash)]Messages.ServiceBusInputSlash slashMessage,
             ILogger logger)
         {
+            // SB is faster than returning the ephemeral response, so just chill for a bit
+            await Task.Delay(TimeSpan.FromSeconds(0.5));
+
             switch (slashMessage.slash.command)
             {
                 case "/spaces":
