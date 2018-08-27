@@ -9,9 +9,9 @@ namespace a_slack_bot.Functions
 {
     public static class HttpEntry
     {
-        [FunctionName(nameof(ReceiveReleaseVersion))]
-        public static async Task<HttpResponseMessage> ReceiveReleaseVersion(
-            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "internal/receive/releaseversion")]HttpRequestMessage req,
+        [FunctionName(nameof(NotifyReleaseVersion))]
+        public static async Task<HttpResponseMessage> NotifyReleaseVersion(
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "internal/notify/releaseversion")]HttpRequestMessage req,
             [ServiceBus(Constants.SBQ.SendMessage)]IAsyncCollector<Slack.Events.Inner.message> messageCollector,
             ILogger logger)
         {
