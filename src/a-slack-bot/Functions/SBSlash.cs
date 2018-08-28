@@ -1,6 +1,5 @@
 ﻿using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using System;
 using System.Globalization;
 using System.Net.Http;
@@ -16,6 +15,7 @@ namespace a_slack_bot.Functions
         [FunctionName(nameof(SBReceiveSlash))]
         public static async Task SBReceiveSlash(
             [ServiceBusTrigger(C.SBQ.InputSlash)]Messages.ServiceBusInputSlash slashMessage,
+            [DocumentDB(C.CDB.DN, C.CDB.CN, ConnectionStringSetting = C.CDB.CSS, PartitionKey = C.CDB.P, CreateIfNotExists = true)]IAsyncCollector<Documents.Event> documentCollector,
             ILogger logger)
         {
             // SB is faster than returning the ephemeral response, so just chill for a bit

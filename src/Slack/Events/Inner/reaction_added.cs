@@ -10,6 +10,11 @@ namespace Slack.Events.Inner
     /// </remarks>
     public class reaction_added : EventBase
     {
+        public reaction_added()
+        {
+            this.type = nameof(reaction_added);
+        }
+
         /// <summary>
         /// This field indicates the ID of the user who performed this event.
         /// </summary>

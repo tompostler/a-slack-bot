@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Slack
+﻿namespace Slack
 {
     /// <summary>
     /// When a slash command is invoked, Slack sends an HTTP POST to the Request URL you specified above. This request

@@ -27,6 +27,19 @@ namespace a_slack_bot.Functions
                 logger.LogInformation("Doc: {0}", JsonConvert.SerializeObject(document));
 
             // Then, do something with it
+            switch (eventMessage.@event)
+            {
+                case Slack.Events.Inner.app_mention app_mention:
+                    await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = app_mention.channel, text = $"ACK @<{app_mention.user}>" });
+                    break;
+
+                case Slack.Events.Inner.message message:
+                    break;
+
+                default:
+                    logger.LogInformation("Event type '{0}' is not yet supported.", eventMessage.@event.type);
+                    break;
+            }
         }
     }
 }
