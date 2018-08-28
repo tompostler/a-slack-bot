@@ -1,8 +1,4 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using System;
-
-namespace Slack.Events.Inner.message_parts
+﻿namespace Slack.Events.Inner.message_parts
 {
     /// <summary>
     /// If the message has been edited after posting it will include an edited property, including the user ID of the
@@ -21,7 +17,6 @@ namespace Slack.Events.Inner.message_parts
         /// <summary>
         /// The timestamp the edit happened
         /// </summary>
-        [JsonConverter(typeof(DoubleUnixDateTimeConverter))]
-        public DateTimeOffset ts { get; set; }
+        public string ts { get; set; }
     }
 }

@@ -1,8 +1,4 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using System;
-
-namespace Slack.Events.Inner
+﻿namespace Slack.Events.Inner
 {
     /// <summary>
     /// The actual event, an object, that happened. You'll find the most variance in properties beneath this node.
@@ -20,7 +16,6 @@ namespace Slack.Events.Inner
         /// <summary>
         /// When the event was dispatched
         /// </summary>
-        [JsonConverter(typeof(DoubleUnixDateTimeConverter))]
-        public DateTimeOffset event_ts { get; set; }
+        public string event_ts { get; set; }
     }
 }

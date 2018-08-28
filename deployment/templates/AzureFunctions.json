@@ -92,7 +92,8 @@
         "lockDuration": "PT5M",
         "defaultMessageTimeToLive": "PT4H",
         "deadLetteringOnMessageExpiration": true,
-        "duplicateDetectionHistoryTimeWindow": "PT1M"
+        "duplicateDetectionHistoryTimeWindow": "PT1M",
+        "maxDeliveryCount": 3
       },
       "copy": {
         "name": "serviceBusQueueNameCopy",

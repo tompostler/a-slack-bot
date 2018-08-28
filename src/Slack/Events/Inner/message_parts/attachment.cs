@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace Slack.Events.Inner.message_parts
@@ -120,7 +118,6 @@ namespace Slack.Events.Inner.message_parts
         /// depending on how far in the past or future it is, relative to the present. Form factors, like mobile versus
         /// desktop may also transform its rendered appearance.
         /// </summary>
-        [JsonConverter(typeof(DoubleUnixDateTimeConverter))]
-        public DateTimeOffset ts { get; set; }
+        public long ts { get; set; }
     }
 }

@@ -24,8 +24,7 @@ namespace Slack.Events.Inner
         /// <summary>
         /// When the event was dispatched
         /// </summary>
-        [JsonConverter(typeof(DoubleUnixDateTimeConverter))]
-        DateTimeOffset event_ts { get; set; }
+        string event_ts { get; set; }
     }
 
     public class IEventConverter : JsonConverter

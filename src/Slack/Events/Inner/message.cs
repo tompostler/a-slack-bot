@@ -1,7 +1,4 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace Slack.Events.Inner
 {
@@ -13,6 +10,8 @@ namespace Slack.Events.Inner
     /// </remarks>
     public class message : EventBase
     {
+        public new string type => "message";
+
         /// <summary>
         /// The ID of the channel, private group or DM channel this message is posted in
         /// </summary>
@@ -31,8 +30,7 @@ namespace Slack.Events.Inner
         /// <summary>
         /// The unique (per-channel) timestamp
         /// </summary>
-        [JsonConverter(typeof(DoubleUnixDateTimeConverter))]
-        public DateTimeOffset ts { get; set; }
+        public string ts { get; set; }
 
         /// <summary>
         /// Attachments let you add more context to a message, making them more useful and effective.
