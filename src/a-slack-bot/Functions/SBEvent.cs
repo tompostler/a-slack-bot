@@ -1,5 +1,4 @@
-﻿using a_slack_bot.Documents;
-using Microsoft.Azure.WebJobs;
+﻿using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Net.Http;
@@ -22,7 +21,7 @@ namespace a_slack_bot.Functions
                 logger.LogInformation("Msg: {0}", JsonConvert.SerializeObject(eventMessage));
 
             // First, send it to cosmos for the records
-            var document = eventMessage.@event.ToDoc();
+            var document = new Documents.Event { Content = eventMessage.@event };
             await documentCollector.AddAsync(document);
             if (Settings.Debug)
                 logger.LogInformation("Doc: {0}", JsonConvert.SerializeObject(document));

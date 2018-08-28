@@ -10,7 +10,10 @@ namespace Slack.Events.Inner
     /// </remarks>
     public class message : EventBase
     {
-        public new string type => "message";
+        public message()
+        {
+            this.type = nameof(message);
+        }
 
         /// <summary>
         /// The ID of the channel, private group or DM channel this message is posted in

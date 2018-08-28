@@ -2,9 +2,16 @@
 
 namespace a_slack_bot.Documents
 {
-    public abstract class BaseDocument : Document
+    public abstract class BaseDocument : Resource
     {
-        public string DocType { get; set; }
-        public string DocSubtype { get; set; }
+        public abstract string Type { get; }
+        public abstract string Subtype { get; }
+
+        public string TypeSubtype => this.Type + '|' + this.Subtype;
+    }
+
+    public abstract class BaseDocument<TContent> : BaseDocument
+    {
+        public TContent Content { get; set; }
     }
 }
