@@ -3,6 +3,16 @@
     public static class Constants
     {
         /// <summary>
+        /// Cosmos DB
+        /// </summary>
+        public static class CDB
+        {
+            public const string DN = "aslackbot";
+            public const string CN = "aslackbot";
+            public const string CSS = nameof(Settings.CosmosDBConnection);
+        }
+
+        /// <summary>
         /// Service Bus Queues
         /// </summary>
         public static class SBQ

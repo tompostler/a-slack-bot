@@ -13,6 +13,7 @@ namespace Slack.Events.Inner
     /// <remarks>
     /// https://api.slack.com/types/event on 2018-08-26
     /// </remarks>
+    [JsonConverter(typeof(IEventConverter))]
     public interface IEvent
     {
         /// <summary>

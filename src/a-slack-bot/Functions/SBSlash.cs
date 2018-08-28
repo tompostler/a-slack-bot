@@ -12,10 +12,9 @@ namespace a_slack_bot.Functions
     public static class SBSlash
     {
         private static readonly HttpClient httpClient = new HttpClient();
-        private static readonly JsonSerializer jsonSerializer = new JsonSerializer();
 
-        [FunctionName(nameof(ReceiveSlashFromServiceBus))]
-        public static async Task ReceiveSlashFromServiceBus(
+        [FunctionName(nameof(SBReceiveSlash))]
+        public static async Task SBReceiveSlash(
             [ServiceBusTrigger(Constants.SBQ.InputSlash)]Messages.ServiceBusInputSlash slashMessage,
             ILogger logger)
         {
