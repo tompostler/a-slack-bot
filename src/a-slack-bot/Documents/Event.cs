@@ -1,12 +1,19 @@
-﻿using Microsoft.Azure.Documents;
-
-namespace a_slack_bot.Documents
+﻿namespace a_slack_bot.Documents
 {
-    public class Event : Document, IDocument<Slack.Events.Inner.IEvent>
+    public class Event : BaseDocument
     {
-        public string DocType => nameof(Event);
-        public string DocSubtype => Content.type;
-
         public Slack.Events.Inner.IEvent Content { get; set; }
+    }
+
+    public static class EventExtensions
+    {
+        public static Event ToDoc(this Slack.Events.Inner.IEvent @this)
+        {
+            var doc = new Event();
+            doc.DocType = nameof(Event);
+            doc.DocSubtype = @this.type;
+            doc.Content = @this;
+            return doc;
+        }
     }
 }
