@@ -1,10 +1,12 @@
-﻿namespace a_slack_bot.Documents
-{
-    public class Event : IDocument<Slack.Events.Inner.IEvent>
-    {
-        public override string DocumentType => nameof(Event);
-        public override string DocumentClass => Content.type;
+﻿using Microsoft.Azure.Documents;
 
-        public override Slack.Events.Inner.IEvent Content { get; set; }
+namespace a_slack_bot.Documents
+{
+    public class Event : Document, IDocument<Slack.Events.Inner.IEvent>
+    {
+        public string DocType => nameof(Event);
+        public string DocSubtype => Content.type;
+
+        public Slack.Events.Inner.IEvent Content { get; set; }
     }
 }

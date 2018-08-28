@@ -9,6 +9,7 @@
         {
             public const string DN = "aslackbot";
             public const string CN = "aslackbot";
+            public const string P = "/" + nameof(Documents.IDocument.DocType);
             public const string CSS = nameof(Settings.CosmosDBConnection);
         }
 

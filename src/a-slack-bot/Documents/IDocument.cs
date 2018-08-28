@@ -1,13 +1,13 @@
-﻿using Microsoft.Azure.Documents;
-
-namespace a_slack_bot.Documents
+﻿namespace a_slack_bot.Documents
 {
-    public abstract class IDocument<TContent> : Document
+    interface IDocument<TContent> : IDocument
     {
-        public abstract string DocumentType { get; }
-        public abstract string DocumentClass { get; }
-        public string Partition => DocumentType + '_' + DocumentClass;
+        TContent Content { get; set; }
+    }
 
-        public abstract TContent Content { get; set; }
+    interface IDocument
+    {
+        string DocType { get; }
+        string DocSubtype { get; }
     }
 }
