@@ -1,5 +1,6 @@
 ﻿using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -17,7 +18,10 @@ namespace a_slack_bot.Functions
             ILogger logger)
         {
             // First, send it to cosmos for the records
-            await documentCollector.AddAsync(new Documents.Event { Content = eventMessage.@event });
+            var document = new Documents.Event { Content = eventMessage.@event };
+            await documentCollector.AddAsync(document);
+            if (Settings.Debug)
+                logger.LogInformation("Doc: {0}", JsonConvert.SerializeObject(document));
 
             // Then, do something with it
         }
