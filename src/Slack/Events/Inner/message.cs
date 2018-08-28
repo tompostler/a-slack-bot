@@ -89,5 +89,15 @@ namespace Slack.Events.Inner
         /// list of users who have added that reaction to the message. 
         /// </summary>
         public List<message_parts.reaction> reactions { get; set; }
+
+        // The following are optional properties set when using a specific message subtype
+
+        /// <summary>
+        /// This tells you which bot sent this message.
+        /// </summary>
+        /// <remarks>
+        /// https://api.slack.com/events/message/bot_message on 2018-08-27
+        /// </remarks>
+        public string bot_id { get; set; }
     }
 }
