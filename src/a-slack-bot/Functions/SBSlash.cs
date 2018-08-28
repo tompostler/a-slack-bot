@@ -15,7 +15,7 @@ namespace a_slack_bot.Functions
 
         [FunctionName(nameof(SBReceiveSlash))]
         public static async Task SBReceiveSlash(
-            [ServiceBusTrigger(Constants.SBQ.InputSlash)]Messages.ServiceBusInputSlash slashMessage,
+            [ServiceBusTrigger(C.SBQ.InputSlash)]Messages.ServiceBusInputSlash slashMessage,
             ILogger logger)
         {
             // SB is faster than returning the ephemeral response, so just chill for a bit

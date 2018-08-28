@@ -18,7 +18,7 @@ namespace a_slack_bot.Functions
 
         [FunctionName(nameof(SBSendMessage))]
         public static async Task SBSendMessage(
-            [ServiceBusTrigger(Constants.SBQ.SendMessage)]Slack.Events.Inner.message messageData,
+            [ServiceBusTrigger(C.SBQ.SendMessage)]Slack.Events.Inner.message messageData,
             ILogger logger)
         {
             var response = await httpClient.PostAsJsonAsync("https://slack.com/api/chat.postMessage", messageData);

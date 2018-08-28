@@ -12,11 +12,14 @@ namespace a_slack_bot.Functions
 
         [FunctionName(nameof(SBReceiveEvent))]
         public static async Task SBReceiveEvent(
-            [ServiceBusTrigger(Constants.SBQ.InputEvent)]Messages.ServiceBusInputEvent eventMessage,
-            [DocumentDB(Constants.CDB.DN, Constants.CDB.CN, ConnectionStringSetting = Constants.CDB.CSS, PartitionKey = Constants.CDB.P, CreateIfNotExists = true)]IAsyncCollector<Documents.Event> documentCollector,
-            [ServiceBus(Constants.SBQ.SendMessage)]IAsyncCollector<Slack.Events.Inner.message> messageCollector,
+            [ServiceBusTrigger(C.SBQ.InputEvent)]Messages.ServiceBusInputEvent eventMessage,
+            [DocumentDB(C.CDB.DN, C.CDB.CN, ConnectionStringSetting = C.CDB.CSS, PartitionKey = C.CDB.P, CreateIfNotExists = true)]IAsyncCollector<Documents.Event> documentCollector,
+            [ServiceBus(C.SBQ.SendMessage)]IAsyncCollector<Slack.Events.Inner.message> messageCollector,
             ILogger logger)
         {
+            if (Settings.Debug)
+                logger.LogInformation("Msg: {0}", JsonConvert.SerializeObject(eventMessage));
+
             // First, send it to cosmos for the records
             var document = new Documents.Event { Content = eventMessage.@event };
             await documentCollector.AddAsync(document);

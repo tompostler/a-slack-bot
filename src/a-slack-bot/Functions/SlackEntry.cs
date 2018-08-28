@@ -14,7 +14,7 @@ namespace a_slack_bot.Functions
         [FunctionName(nameof(ReceiveEvent))]
         public static async Task<HttpResponseMessage> ReceiveEvent(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = "receive/event")]HttpRequestMessage req,
-            [ServiceBus(Constants.SBQ.InputEvent, AccessRights.Manage)]IAsyncCollector<ServiceBusInputEvent> messageCollector,
+            [ServiceBus(C.SBQ.InputEvent, AccessRights.Manage)]IAsyncCollector<ServiceBusInputEvent> messageCollector,
             ILogger logger)
         {
             if (Settings.Debug)
@@ -51,7 +51,7 @@ namespace a_slack_bot.Functions
         [FunctionName(nameof(ReceiveSlash))]
         public static async Task<HttpResponseMessage> ReceiveSlash(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = "receive/slash")]HttpRequestMessage req,
-            [ServiceBus(Constants.SBQ.InputSlash, AccessRights.Manage)]IAsyncCollector<ServiceBusInputSlash> messageCollector,
+            [ServiceBus(C.SBQ.InputSlash, AccessRights.Manage)]IAsyncCollector<ServiceBusInputSlash> messageCollector,
             ILogger logger)
         {
             if (Settings.Debug)

@@ -19,8 +19,8 @@ namespace a_slack_bot
         public static async Task<bool> IsAuthed(this HttpRequestMessage @this, ILogger logger)
         {
             var hasher = new HMACSHA256(Settings.SlackSigningSecretBytes);
-            var hashComputed = "v0=" + hasher.ComputeHash(Encoding.UTF8.GetBytes($"v0:{@this.Headers.GetValues(Constants.Headers.Slack.RequestTimestamp).First()}:{await @this.Content.ReadAsStringAsync()}")).ToHexString();
-            var hashExpected = @this.Headers.GetValues(Constants.Headers.Slack.Signature).First();
+            var hashComputed = "v0=" + hasher.ComputeHash(Encoding.UTF8.GetBytes($"v0:{@this.Headers.GetValues(C.Headers.Slack.RequestTimestamp).First()}:{await @this.Content.ReadAsStringAsync()}")).ToHexString();
+            var hashExpected = @this.Headers.GetValues(C.Headers.Slack.Signature).First();
             logger.LogInformation("Sig check; Computed:{0} Expected:{1}", hashComputed, hashExpected);
             return hashComputed == hashExpected;
         }

@@ -12,7 +12,7 @@ namespace a_slack_bot.Functions
         [FunctionName(nameof(NotifyReleaseVersion))]
         public static async Task<HttpResponseMessage> NotifyReleaseVersion(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = "internal/notify/releaseversion")]HttpRequestMessage req,
-            [ServiceBus(Constants.SBQ.SendMessage)]IAsyncCollector<Slack.Events.Inner.message> messageCollector,
+            [ServiceBus(C.SBQ.SendMessage)]IAsyncCollector<Slack.Events.Inner.message> messageCollector,
             ILogger logger)
         {
             if (Settings.Debug)

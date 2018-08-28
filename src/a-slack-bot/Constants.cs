@@ -1,6 +1,6 @@
 ﻿namespace a_slack_bot
 {
-    public static class Constants
+    public static class C
     {
         /// <summary>
         /// Cosmos DB
