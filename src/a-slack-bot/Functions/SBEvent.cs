@@ -30,7 +30,7 @@ namespace a_slack_bot.Functions
             switch (eventMessage.@event)
             {
                 case Slack.Events.Inner.app_mention app_mention:
-                    await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = app_mention.channel, text = $"ACK @<{app_mention.user}>" });
+                    await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = app_mention.channel, text = $"ACK <@{app_mention.user}>" });
                     break;
 
                 case Slack.Events.Inner.message message:
