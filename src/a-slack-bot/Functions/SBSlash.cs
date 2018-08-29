@@ -34,6 +34,14 @@ namespace a_slack_bot.Functions
                     await SendResponse(logger, slashData, sb.ToString());
                     break;
 
+                case "/flip":
+                    await SendResponse(logger, slashData, slashData.text + " (╯°□°)╯︵ ┻━┻");
+                    break;
+
+                case "/disapprove":
+                    await SendResponse(logger, slashData, "ಠ_ಠ");
+                    break;
+
                 default:
                     await SendResponse(logger, slashData, "NOT SUPPORTED");
                     break;
@@ -46,11 +54,12 @@ namespace a_slack_bot.Functions
             var response = await httpClient.PostAsJsonAsync(slashData.response_url, new
             {
                 response_type = in_channel ? "in_channel" : "ephemeral",
+                text,
                 attachments = new[]
                 {
                     new
                     {
-                        text,
+                        text = string.Empty,
                         footer = $"<@{slashData.user_id}>, {slashData.command}"
                     }
                 }
