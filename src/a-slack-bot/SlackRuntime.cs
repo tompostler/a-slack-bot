@@ -17,8 +17,8 @@ namespace a_slack_bot
         private static HttpClient httpClient = new HttpClient();
         static SR()
         {
-            if (!string.IsNullOrWhiteSpace(Settings.SlackOauthBotToken))
-                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Settings.SlackOauthBotToken);
+            if (!string.IsNullOrWhiteSpace(Settings.SlackOauthToken))
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Settings.SlackOauthToken);
         }
 
         private static SemaphoreSlim Lock = new SemaphoreSlim(1);

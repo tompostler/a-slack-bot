@@ -12,8 +12,8 @@ namespace a_slack_bot.Functions
         private static readonly HttpClient httpClient = new HttpClient();
         static SBSend()
         {
-            if (!string.IsNullOrWhiteSpace(Settings.SlackOauthBotToken))
-                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Settings.SlackOauthBotToken);
+            if (!string.IsNullOrWhiteSpace(Settings.SlackOauthToken))
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Settings.SlackOauthToken);
         }
 
         [FunctionName(nameof(SBSendMessage))]
