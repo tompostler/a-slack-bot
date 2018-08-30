@@ -25,14 +25,14 @@ namespace a_slack_bot.Functions
             }
 
             // Get stuff from the message
-            var version = await req.Content.ReadAsStringAsync();
+            var desc = await req.Content.ReadAsStringAsync();
 
             // Send it off to be processed
             logger.LogInformation("Sending inner event into the queue.");
             await messageCollector.AddAsync(new Slack.Events.Inner.message
             {
                 channel = Settings.Runtime.NotifyChannelId,
-                text = $"Released:\n```{typeof(SlackEntry).Assembly.ManifestModule.Name} v{GitVersionInformation.SemVer}```"
+                text = $"Released:\n```{typeof(SlackEntry).Assembly.ManifestModule.Name} v{GitVersionInformation.SemVer} ({desc})```"
             });
 
             // Return all is well
