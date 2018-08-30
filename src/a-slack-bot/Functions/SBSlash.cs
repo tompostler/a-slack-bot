@@ -66,19 +66,30 @@ namespace a_slack_bot.Functions
         private static async Task SendResponse(ILogger logger, Slack.Slash slashData, string text, bool in_channel = true)
         {
             logger.LogInformation("{0}: {1} {2} {3}", slashData.response_url, text, slashData.user_id, slashData.command);
-            var response = await httpClient.PostAsJsonAsync(slashData.response_url, new
-            {
-                response_type = in_channel ? "in_channel" : "ephemeral",
-                text,
-                attachments = new[]
+
+            object payload = null;
+            if (in_channel)
+                payload = new
                 {
-                    new
+                    response_type = "in_channel",
+                    text,
+                    attachments = new[]
                     {
-                        text = string.Empty,
-                        footer = $"<@{slashData.user_id}>, {slashData.command}"
+                        new
+                        {
+                            text = string.Empty,
+                            footer = $"<@{slashData.user_id}>, {slashData.command}"
+                        }
                     }
-                }
-            });
+                };
+            else
+                payload = new
+                {
+                    response_type = "ephemeral",
+                    text
+                };
+
+            var response = await httpClient.PostAsJsonAsync(slashData.response_url, payload);
             logger.LogInformation("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
         }
     }
