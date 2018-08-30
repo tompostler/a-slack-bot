@@ -37,9 +37,18 @@ namespace a_slack_bot.Functions
             switch (slashData.command)
             {
                 case "/asb-send-as-me":
-                    // TODO: https://api.slack.com/docs/oauth
-                    //await documentCollector.AddAsync(new Documents.OAuthToken { token_type = "chat:write:user", Id = slashData.user_id });
-                    await SendResponse(logger, slashData, ":construction: under construction :construction:", userToken, in_channel: false);
+                    if (slashData.text == "help")
+                        await SendResponse(logger, slashData, "Visit https://api.slack.com/custom-integrations/legacy-tokens to generate a token, or send `clear` to remove your existing token.", userToken, in_channel: false);
+                    else if (slashData.text == "clear")
+                    {
+                        await documentCollector.AddAsync(new Documents.OAuthToken { token_type = "user", Id = slashData.user_id, Content = string.Empty });
+                        await SendResponse(logger, slashData, ":thumbsup:", userToken, in_channel: false);
+                    }
+                    else
+                    {
+                        await documentCollector.AddAsync(new Documents.OAuthToken { token_type = "user", Id = slashData.user_id, Content = slashData.text });
+                        await SendResponse(logger, slashData, ":thumbsup:", userToken, in_channel: false);
+                    }
                     break;
 
                 case "/disapprove":
@@ -91,7 +100,7 @@ namespace a_slack_bot.Functions
                     text
                 };
 
-            if (string.IsNullOrWhiteSpace(userToken))
+            if (string.IsNullOrWhiteSpace(userToken) || !in_channel)
             {
                 var response = await httpClient.PostAsJsonAsync(slashData.response_url, payload);
                 logger.LogInformation("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
