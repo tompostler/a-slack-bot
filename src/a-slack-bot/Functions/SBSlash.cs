@@ -122,7 +122,7 @@ namespace a_slack_bot.Functions
                 var responseObj = await response.Content.ReadAsAsync<Slack.WebAPIResponse>();
                 if (!responseObj.ok)
                 {
-                    if (responseObj.error == "invalid_auth")
+                    if (responseObj.error == "invalid_auth" || responseObj.error == "token_revoked")
                     {
                         response = await httpClient.PostAsJsonAsync(slashData.response_url, new { response_type = "ephemeral", text = "Your user token is invalid." });
                         logger.LogWarning("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
