@@ -99,5 +99,15 @@ namespace Slack.Events.Inner
         /// https://api.slack.com/events/message/bot_message on 2018-08-27
         /// </remarks>
         public string bot_id { get; set; }
+
+        // The following are optional properties set when using this to post messages
+
+        /// <summary>
+        /// Pass true to post the message as the authed user, instead of as a bot. 
+        /// </summary>
+        /// <remarks>
+        /// https://api.slack.com/methods/chat.postMessage
+        /// </remarks>
+        public bool as_user { get; set; }
     }
 }

@@ -69,7 +69,7 @@ namespace a_slack_bot.Functions
         {
             logger.LogInformation("{0}: {1} {2} {3}", slashData.response_url, text, slashData.user_id, slashData.command);
 
-            dynamic payload = null;
+            object payload = null;
             if (in_channel)
                 payload = new
                 {
@@ -93,17 +93,20 @@ namespace a_slack_bot.Functions
 
             if (string.IsNullOrWhiteSpace(userToken))
             {
-                var response = await httpClient.PostAsJsonAsync(slashData.response_url, (object)payload);
+                var response = await httpClient.PostAsJsonAsync(slashData.response_url, payload);
                 logger.LogInformation("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
             }
             else
             {
                 // Post as the user
-                payload.as_user = true;
-                payload.channel = slashData.channel_id;
                 var msg = new HttpRequestMessage(HttpMethod.Post, "https://slack.com/api/chat.postMessage")
                 {
-                    Content = new StringContent(JsonConvert.SerializeObject((object)payload), Encoding.UTF8, "application/json")
+                    Content = new StringContent(JsonConvert.SerializeObject(new Slack.Events.Inner.message
+                    {
+                        as_user = true,
+                        channel = slashData.channel_id,
+                        text = text
+                    }), Encoding.UTF8, "application/json")
                 };
                 msg.Headers.Authorization = new AuthenticationHeaderValue("Bearer", userToken);
                 var response = await httpClient.SendAsync(msg);
@@ -113,12 +116,12 @@ namespace a_slack_bot.Functions
                     if (responseObj.error == "invalid_auth")
                     {
                         response = await httpClient.PostAsJsonAsync(slashData.response_url, new { response_type = "ephemeral", text = "Your user token is invalid." });
-                        logger.LogInformation("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
+                        logger.LogWarning("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
                     }
                     else
                     {
                         response = await httpClient.PostAsJsonAsync(slashData.response_url, new { response_type = "ephemeral", text = $"Something went wrong: `{responseObj.error}`" });
-                        logger.LogInformation("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
+                        logger.LogError("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
                     }
                 }
             }
