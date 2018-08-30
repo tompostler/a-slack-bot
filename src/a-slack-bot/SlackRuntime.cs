@@ -99,7 +99,7 @@ namespace a_slack_bot
                         C.CDB.CN),
                     new FeedOptions
                     {
-                        PartitionKey = new PartitionKey(nameof(Documents.OAuthToken) + "|chat:write:user")
+                        PartitionKey = new PartitionKey(nameof(Documents.OAuthToken) + "|user")
                     })
                     .AsDocumentQuery();
 

@@ -8,18 +8,6 @@
         "description": "The name of the function app to create."
       }
     },
-    "pSlackClientID": {
-      "type": "string",
-      "metadata": {
-        "description": "Slack client id inserted by the release."
-      }
-    },
-    "pSlackClientSecret": {
-      "type": "string",
-      "metadata": {
-        "description": "Slack client secret inserted by the release."
-      }
-    },
     "pSlackOauthToken": {
       "type": "string",
       "metadata": {
@@ -163,14 +151,6 @@
         "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
         "siteConfig": {
           "appSettings": [
-            {
-              "name": "SlackClientID",
-              "value": "[parameters('pSlackClientID')]"
-            },
-            {
-              "name": "SlackClientSecret",
-              "value": "[parameters('pSlackClientSecret')]"
-            },
             {
               "name": "SlackOauthToken",
               "value": "[parameters('pSlackOauthToken')]"

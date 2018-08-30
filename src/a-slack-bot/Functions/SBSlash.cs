@@ -1,8 +1,10 @@
 ﻿using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Globalization;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -37,15 +39,15 @@ namespace a_slack_bot.Functions
                 case "/asb-send-as-me":
                     // TODO: https://api.slack.com/docs/oauth
                     //await documentCollector.AddAsync(new Documents.OAuthToken { token_type = "chat:write:user", Id = slashData.user_id });
-                    await SendResponse(logger, slashData, ":construction: under construction :construction:", in_channel: false);
+                    await SendResponse(logger, slashData, ":construction: under construction :construction:", userToken, in_channel: false);
                     break;
 
                 case "/disapprove":
-                    await SendResponse(logger, slashData, "ಠ_ಠ");
+                    await SendResponse(logger, slashData, "ಠ_ಠ", userToken);
                     break;
 
                 case "/flip":
-                    await SendResponse(logger, slashData, slashData.text + " (╯°□°)╯︵ ┻━┻");
+                    await SendResponse(logger, slashData, slashData.text + " (╯°□°)╯︵ ┻━┻", userToken);
                     break;
 
                 case "/spaces":
@@ -54,20 +56,20 @@ namespace a_slack_bot.Functions
                     var enumerator = StringInfo.GetTextElementEnumerator(text);
                     while (enumerator.MoveNext())
                         sb.Append(enumerator.GetTextElement()).Append(' ');
-                    await SendResponse(logger, slashData, sb.ToString());
+                    await SendResponse(logger, slashData, sb.ToString(), userToken);
                     break;
 
                 default:
-                    await SendResponse(logger, slashData, "*NOT SUPPORTED*", in_channel: false);
+                    await SendResponse(logger, slashData, "*NOT SUPPORTED*", userToken, in_channel: false);
                     break;
             }
         }
 
-        private static async Task SendResponse(ILogger logger, Slack.Slash slashData, string text, bool in_channel = true)
+        private static async Task SendResponse(ILogger logger, Slack.Slash slashData, string text, string userToken, bool in_channel = true)
         {
             logger.LogInformation("{0}: {1} {2} {3}", slashData.response_url, text, slashData.user_id, slashData.command);
 
-            object payload = null;
+            dynamic payload = null;
             if (in_channel)
                 payload = new
                 {
@@ -89,8 +91,37 @@ namespace a_slack_bot.Functions
                     text
                 };
 
-            var response = await httpClient.PostAsJsonAsync(slashData.response_url, payload);
-            logger.LogInformation("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
+            if (string.IsNullOrWhiteSpace(userToken))
+            {
+                var response = await httpClient.PostAsJsonAsync(slashData.response_url, (object)payload);
+                logger.LogInformation("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
+            }
+            else
+            {
+                // Post as the user
+                payload.as_user = true;
+                payload.channel = slashData.channel_id;
+                var msg = new HttpRequestMessage(HttpMethod.Post, "https://slack.com/api/chat.postMessage")
+                {
+                    Content = new StringContent(JsonConvert.SerializeObject((object)payload), Encoding.UTF8, "application/json")
+                };
+                msg.Headers.Authorization = new AuthenticationHeaderValue("Bearer", userToken);
+                var response = await httpClient.SendAsync(msg);
+                var responseObj = await response.Content.ReadAsAsync<Slack.WebAPIResponse>();
+                if (!responseObj.ok)
+                {
+                    if (responseObj.error == "invalid_auth")
+                    {
+                        response = await httpClient.PostAsJsonAsync(slashData.response_url, new { response_type = "ephemeral", text = "Your user token is invalid." });
+                        logger.LogInformation("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
+                    }
+                    else
+                    {
+                        response = await httpClient.PostAsJsonAsync(slashData.response_url, new { response_type = "ephemeral", text = $"Something went wrong: `{responseObj.error}`" });
+                        logger.LogInformation("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
+                    }
+                }
+            }
         }
     }
 }
