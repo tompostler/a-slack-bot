@@ -13,6 +13,7 @@ namespace a_slack_bot
         public static string CosmosDBKey => ConfigurationManager.AppSettings.Get(nameof(CosmosDBKey));
 
         public static bool Debug => bool.TryParse(ConfigurationManager.AppSettings.Get(nameof(Debug)), out bool t) && t;
+        public static string SlackClientID => ConfigurationManager.AppSettings.Get(nameof(SlackClientID));
         public static string SlackOauthToken => ConfigurationManager.AppSettings.Get(nameof(SlackOauthToken));
         public static string SlackOauthBotToken => ConfigurationManager.AppSettings.Get(nameof(SlackOauthBotToken));
         public static string SlackSigningSecret => ConfigurationManager.AppSettings.Get(nameof(SlackSigningSecret));
