@@ -42,13 +42,13 @@ namespace a_slack_bot.Functions
                     else if (slashData.text == "clear")
                     {
                         await documentCollector.AddAsync(new Documents.OAuthToken { token_type = "user", Id = slashData.user_id, Content = string.Empty });
-                        await SendResponse(logger, slashData, ":thumbsup:", userToken, in_channel: false);
+                        await SendResponse(logger, slashData, "token cleared :thumbsup:", userToken, in_channel: false);
                         SR.Initialized = false;
                     }
                     else
                     {
                         await documentCollector.AddAsync(new Documents.OAuthToken { token_type = "user", Id = slashData.user_id, Content = slashData.text });
-                        await SendResponse(logger, slashData, ":thumbsup:", userToken, in_channel: false);
+                        await SendResponse(logger, slashData, "token added :thumbsup:", userToken, in_channel: false);
                     }
                     break;
 
