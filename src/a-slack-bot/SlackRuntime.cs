@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Azure.Documents;
+using Microsoft.Azure.Documents.Client;
+using Microsoft.Azure.Documents.Linq;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +13,7 @@ using System.Threading.Tasks;
 namespace a_slack_bot
 {
     /// <summary>
-    /// Configuration pulled from Slack APIs at runtime. Horribly static object that requires an await Init before using.
+    /// Configuration pulled from Slack APIs or Cosmos DB at runtime. Horribly static object that requires an await Init before using.
     /// </summary>
     public static class SR
     {
@@ -36,7 +39,11 @@ namespace a_slack_bot
         private static async Task InnerInit(ILogger logger)
         {
             U = new SlackUsers();
-            await U.Init(logger);
+            T = new SlackTokens();
+            await Task.WhenAll(new[] {
+                U.Init(logger),
+                T.Init(logger),
+            });
 
             Initialized = true;
         }
@@ -46,6 +53,11 @@ namespace a_slack_bot
         /// Users
         /// </summary>
         public static SlackUsers U { get; private set; }
+
+        /// <summary>
+        /// Tokens
+        /// </summary>
+        public static SlackTokens T { get; private set; }
 
         public class SlackUsers
         {
@@ -71,6 +83,29 @@ namespace a_slack_bot
                     logger.LogInformation("Display names: '{0}'", string.Join("','", users.Values.Select(u => u.profile.display_name)));
 
                 IdToName = users.Values.ToDictionary(u => u.id, u => u.profile.display_name);
+            }
+        }
+
+        public class SlackTokens
+        {
+            public IReadOnlyDictionary<string, string> ChatWriteUser { get; private set; }
+
+            public async Task Init(ILogger logger)
+            {
+                var docClient = new DocumentClient(Settings.CosmosDBEndpoint, Settings.CosmosDBKey);
+                var docQuery = docClient.CreateDocumentQuery<Documents.OAuthToken>(
+                    UriFactory.CreateDocumentCollectionUri(
+                        C.CDB.DN,
+                        C.CDB.CN),
+                    new FeedOptions
+                    {
+                        PartitionKey = new PartitionKey(nameof(Documents.OAuthToken) + "|chat:write:user")
+                    })
+                    .AsDocumentQuery();
+
+                var tokens = await docQuery.GetAllResults(logger);
+
+                ChatWriteUser = tokens.ToDictionary(t => t.Id, t => t.Content);
             }
         }
     }

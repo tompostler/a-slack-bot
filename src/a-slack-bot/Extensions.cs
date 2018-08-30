@@ -1,5 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Azure.Documents.Linq;
+using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
@@ -54,6 +56,23 @@ namespace a_slack_bot
             }
 
             return t;
+        }
+
+        public static async Task<IEnumerable<T>> GetAllResults<T>(this IDocumentQuery<T> documentQuery, ILogger logger)
+        {
+            logger.LogInformation("Executing document query...");
+            var i = 0;
+            var results = new List<T>();
+            while (documentQuery.HasMoreResults)
+            {
+                logger.LogInformation("Getting page {0}", ++i);
+                foreach (T result in await documentQuery.ExecuteNextAsync<T>())
+                {
+                    results.Add(result);
+                }
+            }
+            logger.LogInformation("Executed document query. {0} results found.", results.Count);
+            return results;
         }
     }
 }

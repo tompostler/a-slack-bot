@@ -15,24 +15,28 @@ namespace a_slack_bot.Functions
         [FunctionName(nameof(SBReceiveSlash))]
         public static async Task SBReceiveSlash(
             [ServiceBusTrigger(C.SBQ.InputSlash)]Messages.ServiceBusInputSlash slashMessage,
-            [DocumentDB(C.CDB.DN, C.CDB.CN, ConnectionStringSetting = C.CDB.CSS, Id = "{slashMessage.slashData.user_id}")]Documents.OAuthToken userOauthToken,
             [DocumentDB(C.CDB.DN, C.CDB.CN, ConnectionStringSetting = C.CDB.CSS, PartitionKey = C.CDB.P, CreateIfNotExists = true)]IAsyncCollector<Documents.OAuthToken> documentCollector,
             ILogger logger)
         {
-            // SB is faster than returning the ephemeral response, so just chill for a bit
-            await Task.Delay(TimeSpan.FromSeconds(0.5));
-
-            // We need to decide if we should post as the user or as ourselves
-            if (userOauthToken == null)
-                await documentCollector.AddAsync(new Documents.OAuthToken { token_type = "user", Id = slashMessage.slashData.user_id });
-            var userToken = userOauthToken?.Content;
+            await Task.WhenAll(new[]
+            {
+                SR.Init(logger),
+                // SB is faster than returning the ephemeral response, so just chill for a bit
+                Task.Delay(TimeSpan.FromSeconds(0.5))
+            });
 
             var slashData = slashMessage.slashData;
+
+            // We need to decide if we should post as the user or as ourselves
+            string userToken = null;
+            if (SR.T.ChatWriteUser.ContainsKey(slashData.user_id))
+                userToken = SR.T.ChatWriteUser[slashData.user_id];
 
             switch (slashData.command)
             {
                 case "/asb-send-as-me":
                     // TODO: https://api.slack.com/docs/oauth
+                    //await documentCollector.AddAsync(new Documents.OAuthToken { token_type = "chat:write:user", Id = slashData.user_id });
                     await SendResponse(logger, slashData, ":construction: under construction :construction:", in_channel: false);
                     break;
 
