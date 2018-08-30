@@ -21,6 +21,8 @@
             public const string InputEvent = "input-event";
             public const string InputSlash = "input-slash";
 
+            public const string OAuth = "oauth";
+
             public const string SendMessage = "send-message";
         }
 

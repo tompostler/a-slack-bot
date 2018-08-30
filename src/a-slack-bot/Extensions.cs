@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace a_slack_bot
 {
@@ -56,6 +57,20 @@ namespace a_slack_bot
             }
 
             return t;
+        }
+
+        public static Task<HttpResponseMessage> PostAsFormDataAsync(this HttpClient @this, string requestUri, Dictionary<string, string> formDatas)
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (var formData in formDatas)
+            {
+                sb.Append(HttpUtility.UrlEncode(formData.Key));
+                sb.Append('=');
+                sb.Append(HttpUtility.UrlEncode(formData.Value));
+                sb.Append('&');
+            }
+            sb.Remove(sb.Length - 1, 1);
+            return @this.PostAsync(requestUri, new StringContent(sb.ToString(), Encoding.UTF8, "application/x-www-form-urlencoded"));
         }
 
         public static async Task<IEnumerable<T>> GetAllResults<T>(this IDocumentQuery<T> documentQuery, ILogger logger)

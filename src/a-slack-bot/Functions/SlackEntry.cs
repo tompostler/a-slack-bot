@@ -3,6 +3,7 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.ServiceBus.Messaging;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -78,8 +79,8 @@ namespace a_slack_bot.Functions
 
         [FunctionName(nameof(ReceiveSlashVersion))]
         public static async Task<HttpResponseMessage> ReceiveSlashVersion(
-           [HttpTrigger(AuthorizationLevel.Function, "post", Route = "receive/slash/version")]HttpRequestMessage req,
-           ILogger logger)
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "receive/slash/version")]HttpRequestMessage req,
+            ILogger logger)
         {
             if (Settings.Debug)
                 // Trim off the beginning because of AI trying to "help"
@@ -91,6 +92,38 @@ namespace a_slack_bot.Functions
 
             // Return the version
             return req.CreateResponse(HttpStatusCode.OK, new { response_type = "in_channel", text = $"```{typeof(SlackEntry).Assembly.ManifestModule.Name} v{GitVersionInformation.SemVer}```" });
+        }
+
+        [FunctionName(nameof(ReceiveOauth))]
+        public static async Task<HttpResponseMessage> ReceiveOauth(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "oauth")]HttpRequestMessage req,
+            [ServiceBus(C.SBQ.OAuth, AccessRights.Manage)]IAsyncCollector<ServiceBusOAuth> messageCollector,
+            ILogger logger)
+        {
+            if (Settings.Debug)
+                logger.LogInformation("URI: {0}", req.RequestUri.AbsoluteUri);
+
+            // Not sure if this is valid for oauth
+            // Make sure it's a legit request
+            if (!await req.IsAuthed(logger))
+                return req.CreateErrorResponse(HttpStatusCode.Unauthorized, "Did not match hash.");
+
+            // Grab the code
+            var code = req.GetQueryNameValuePairs().FirstOrDefault(q => q.Key == "code").Value;
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                logger.LogError("Could not find oauth code.");
+                return req.CreateErrorResponse(HttpStatusCode.BadRequest, "No code");
+            }
+
+            // Send off to process the oauth request
+            await messageCollector.AddAsync(new ServiceBusOAuth
+            {
+                code = code
+            });
+
+            // Return ok
+            return req.CreateResponse(HttpStatusCode.OK);
         }
 
         [FunctionName(nameof(Ping))]

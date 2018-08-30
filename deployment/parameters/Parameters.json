@@ -15,7 +15,7 @@
         "input-event",
         "input-slash",
         "send-message",
-        "output"
+        "oauth"
       ]
     },
     "packageLink": {
