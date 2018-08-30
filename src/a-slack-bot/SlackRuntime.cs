@@ -25,7 +25,7 @@ namespace a_slack_bot
         }
 
         private static SemaphoreSlim Lock = new SemaphoreSlim(1);
-        private static bool Initialized = false;
+        public static bool Initialized = false;
         public static async Task Init(ILogger logger)
         {
             if (!Initialized)
