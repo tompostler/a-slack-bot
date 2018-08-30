@@ -37,7 +37,7 @@ namespace a_slack_bot.Functions
             switch (slashData.command)
             {
                 case "/asb-send-as-me":
-                    if (slashData.text == "help")
+                    if (slashData.text == "help" || string.IsNullOrWhiteSpace(slashData.text))
                         await SendResponse(logger, slashData, "Visit https://api.slack.com/custom-integrations/legacy-tokens to generate a token, or send `clear` to remove your existing token.", userToken, in_channel: false);
                     else if (slashData.text == "clear")
                     {
