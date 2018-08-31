@@ -28,36 +28,33 @@ namespace a_slack_bot.Functions
             return req.CreateResponse(HttpStatusCode.OK, new { response_type = "ephemeral", text = SlackEntry.HelpText });
         }
 
-////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
         public static string HelpText => $@"```
 {typeof(SlackEntry).Assembly.ManifestModule.Name} v{GitVersionInformation.SemVer}+{GitVersionInformation.Sha.Substring(0, 10)}
 
-A bot constructed for the express purpose of relieving boredom and maybe even
-providing some useful functionality. Interaction with the bot is mostly random
-with numerous easter eggs and various nuggets of goodness thrown in.
+A bot constructed for the express purpose of relieving boredom and maybe even providing some useful
+functionality. Interaction with the bot is mostly random with numerous easter eggs and various
+nuggets of goodness thrown in.
 
-The following are slash-commands with longer descriptions than what fits in the
-Slack API configutation:
+The following slash commands have longer descriptions than what fits in the Slack API configutation:
 
     /asb-help           This helptext
-    /asb-send-as-me [t] Store a user token to be used for replying to slash
-                        commands as you instead of as the bot. This uses Slack's
-                        legacy token feature because I don't want to deal with
-                        the proper OAuth 2.0 Slack flow. If you wish to remove
-                        token, pass 'clear' for the token value. Visit
-                        https://api.slack.com/custom-integrations/legacy-tokens
-                        to generate a token.
+    /asb-send-as-me [t] Store a user token to be used for replying to slash commands as you instead
+                        of as the bot. This uses Slack's legacy token feature because I don't want
+                        to deal with the proper OAuth 2.0 Slack flow. If you wish to remove token,
+                        pass 'clear' for the token value. Visit
+                        https://api.slack.com/custom-integrations/legacy-tokens to generate a token
     /disapprove         Sends ಠ_ಠ to the channel
     /flip [text]        Echoes your message, followed by (╯°□°)╯︵ ┻━┻
     /spaces [text]      Echoes your message, with spaces inserted betwix letters
 " +
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 $@"
 Other things that you can access or just kind of happen sometimes:
 
-    @{SR.U.BotUser.profile.real_name}{new string(' ',18- SR.U.BotUser.profile.real_name.Length)} Will have the bot respond to you with an ACK message
+    @{SR.U.BotUser.profile.real_name}{new string(' ', 18 - SR.U.BotUser.profile.real_name.Length)} Will have the bot respond to you with an ACK message
 " +
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 "```";
     }
 }
