@@ -49,6 +49,7 @@ namespace a_slack_bot.Functions
                     {
                         await documentCollector.AddAsync(new Documents.OAuthToken { token_type = "user", Id = slashData.user_id, Content = slashData.text });
                         await SendResponse(logger, slashData, "token added :thumbsup:", userToken, in_channel: false);
+                        SR.Initialized = false;
                     }
                     break;
 
