@@ -5,8 +5,9 @@ namespace a_slack_bot.Documents
     public abstract class BaseDocument : Resource
     {
         public abstract string Type { get; }
-        public abstract string Subtype { get; }
+        public abstract string Subtype { get; set; }
 
+        // CDB Partition Key
         public string TypeSubtype => this.Type + '|' + this.Subtype;
     }
 

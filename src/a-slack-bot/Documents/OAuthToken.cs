@@ -1,10 +1,10 @@
 ﻿namespace a_slack_bot.Documents
 {
-    public class OAuthToken : BaseDocument<string>
+    public class OAuthToken : BaseDocument
     {
         public override string Type => nameof(OAuthToken);
-        public override string Subtype => this.token_type;
+        public override string Subtype { get; set; }
 
-        public string token_type { get; set; }
+        public string token { get; set; }
     }
 }

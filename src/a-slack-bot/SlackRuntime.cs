@@ -25,7 +25,7 @@ namespace a_slack_bot
         }
 
         private static SemaphoreSlim Lock = new SemaphoreSlim(1);
-        public static bool Initialized = false;
+        private static bool Initialized = false;
         public static async Task Init(ILogger logger)
         {
             if (!Initialized)
@@ -108,7 +108,7 @@ namespace a_slack_bot
 
                 var tokens = await docQuery.GetAllResults(logger);
 
-                ChatWriteUser = tokens.ToDictionary(t => t.Id, t => t.Content);
+                ChatWriteUser = tokens.ToDictionary(t => t.Id, t => t.token);
             }
         }
     }

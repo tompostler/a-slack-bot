@@ -41,15 +41,15 @@ namespace a_slack_bot.Functions
                         await SendResponse(logger, slashData, "Visit https://api.slack.com/custom-integrations/legacy-tokens to generate a token, or send `clear` to remove your existing token.", userToken, in_channel: false);
                     else if (slashData.text == "clear")
                     {
-                        await documentCollector.AddAsync(new Documents.OAuthToken { token_type = "user", Id = slashData.user_id, Content = string.Empty });
+                        await documentCollector.AddAsync(new Documents.OAuthToken { Subtype = "user", Id = slashData.user_id, token = string.Empty });
                         await SendResponse(logger, slashData, "token cleared :thumbsup:", userToken, in_channel: false);
-                        SR.Initialized = false;
+                        SR.Deit();
                     }
                     else
                     {
-                        await documentCollector.AddAsync(new Documents.OAuthToken { token_type = "user", Id = slashData.user_id, Content = slashData.text });
+                        await documentCollector.AddAsync(new Documents.OAuthToken { Subtype = "user", Id = slashData.user_id, token = slashData.text });
                         await SendResponse(logger, slashData, "token added :thumbsup:", userToken, in_channel: false);
-                        SR.Initialized = false;
+                        SR.Deit();
                     }
                     break;
 
