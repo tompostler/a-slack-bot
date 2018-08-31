@@ -103,5 +103,8 @@ namespace Slack.Types.user_parts
         /// traditional presence rules.
         /// </summary>
         public bool always_active { get; set; }
+
+        public string bot_id { get; set; }
+        public string api_app_id { get; set; }
     }
 }

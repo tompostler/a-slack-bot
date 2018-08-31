@@ -3,14 +3,13 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.ServiceBus.Messaging;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace a_slack_bot.Functions
 {
-    public static class SlackEntry
+    public static partial class SlackEntry
     {
         [FunctionName(nameof(ReceiveEvent))]
         public static async Task<HttpResponseMessage> ReceiveEvent(

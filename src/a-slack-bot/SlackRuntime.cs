@@ -62,6 +62,7 @@ namespace a_slack_bot
         public class SlackUsers
         {
             public IReadOnlyCollection<Slack.Types.user> All => users.Values;
+            public Slack.Types.user BotUser { get; private set; }
             public IReadOnlyDictionary<string, string> IdToName { get; private set; }
             public IReadOnlyDictionary<string, Slack.Types.user> IdToUser => users;
 
@@ -81,6 +82,8 @@ namespace a_slack_bot
                 logger.LogInformation("Populated {0} users.", users.Count);
                 if (Settings.Debug)
                     logger.LogInformation("Display names: '{0}'", string.Join("','", users.Values.Select(u => u.profile.display_name)));
+
+                BotUser = users.Values.Single(u => u.profile.api_app_id == Settings.SlackAppID);
 
                 IdToName = users.Values.ToDictionary(u => u.id, u => u.profile.display_name);
             }
