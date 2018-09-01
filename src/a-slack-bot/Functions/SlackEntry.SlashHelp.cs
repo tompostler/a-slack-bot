@@ -36,6 +36,8 @@ A bot constructed for the express purpose of relieving boredom and maybe even pr
 functionality. Interaction with the bot is mostly random with numerous easter eggs and various
 nuggets of goodness thrown in.
 
+Code, build, and release: https://tompostler.visualstudio.com/public/_git/a-slack-bot
+
 The following slash commands have longer descriptions than what fits in the Slack API configutation:
 
     /asb-help           This helptext
