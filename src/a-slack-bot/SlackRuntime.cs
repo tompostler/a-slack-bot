@@ -38,11 +38,14 @@ namespace a_slack_bot
         }
         private static async Task InnerInit(ILogger logger)
         {
-            U = new SlackUsers();
             T = new SlackTokens();
+            U = new SlackUsers();
+            W = new SlackWhitelist();
+            var docClient = new DocumentClient(Settings.CosmosDBEndpoint, Settings.CosmosDBKey);
             await Task.WhenAll(new[] {
+                T.Init(logger, docClient),
                 U.Init(logger),
-                T.Init(logger),
+                W.Init(logger, docClient),
             });
 
             Initialized = true;
@@ -50,14 +53,19 @@ namespace a_slack_bot
         public static void Deit() => Initialized = false;
 
         /// <summary>
+        /// Tokens
+        /// </summary>
+        public static SlackTokens T { get; private set; }
+
+        /// <summary>
         /// Users
         /// </summary>
         public static SlackUsers U { get; private set; }
 
         /// <summary>
-        /// Tokens
+        /// Whitelist
         /// </summary>
-        public static SlackTokens T { get; private set; }
+        public static SlackWhitelist W { get; private set; }
 
         public class SlackUsers
         {
@@ -93,9 +101,8 @@ namespace a_slack_bot
         {
             public IReadOnlyDictionary<string, string> ChatWriteUser { get; private set; }
 
-            public async Task Init(ILogger logger)
+            public async Task Init(ILogger logger, DocumentClient docClient)
             {
-                var docClient = new DocumentClient(Settings.CosmosDBEndpoint, Settings.CosmosDBKey);
                 var docQuery = docClient.CreateDocumentQuery<Documents.OAuthToken>(
                     UriFactory.CreateDocumentCollectionUri(
                         C.CDB.DN,
@@ -109,6 +116,28 @@ namespace a_slack_bot
                 var tokens = await docQuery.GetAllResults(logger);
 
                 ChatWriteUser = tokens.ToDictionary(t => t.Id, t => t.token);
+            }
+        }
+
+        public class SlackWhitelist
+        {
+            public IReadOnlyDictionary<string, IReadOnlyCollection<string>> CommandsChannels { get; private set; }
+
+            public async Task Init(ILogger logger, DocumentClient docClient)
+            {
+                var docQuery = docClient.CreateDocumentQuery<Documents.Whitelist>(
+                    UriFactory.CreateDocumentCollectionUri(
+                        C.CDB.DN,
+                        C.CDB.CN),
+                    new FeedOptions
+                    {
+                        PartitionKey = new PartitionKey(nameof(Documents.Whitelist) + "|command")
+                    })
+                    .AsDocumentQuery();
+
+                var tokens = await docQuery.GetAllResults(logger);
+
+                CommandsChannels = tokens.ToDictionary(t => t.Id, t => (IReadOnlyCollection<string>)t.values);
             }
         }
     }

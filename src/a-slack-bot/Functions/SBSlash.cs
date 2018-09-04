@@ -1,8 +1,12 @@
-﻿using Microsoft.Azure.WebJobs;
+﻿using Microsoft.Azure.Documents;
+using Microsoft.Azure.Documents.Client;
+using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -13,11 +17,16 @@ namespace a_slack_bot.Functions
     public static class SBSlash
     {
         private static readonly HttpClient httpClient = new HttpClient();
+        private static readonly HashSet<string> WhitelistableCommands = new HashSet<string>
+        {
+            "/blackjack"
+        };
 
         [FunctionName(nameof(SBReceiveSlash))]
         public static async Task SBReceiveSlash(
             [ServiceBusTrigger(C.SBQ.InputSlash)]Messages.ServiceBusInputSlash slashMessage,
-            [DocumentDB(C.CDB.DN, C.CDB.CN, ConnectionStringSetting = C.CDB.CSS, PartitionKey = C.CDB.P, CreateIfNotExists = true)]IAsyncCollector<Documents.OAuthToken> documentCollector,
+            [DocumentDB(C.CDB.DN, C.CDB.CN, ConnectionStringSetting = C.CDB.CSS, PartitionKey = C.CDB.P, CreateIfNotExists = true)]IAsyncCollector<Resource> documentCollector,
+            [DocumentDB(ConnectionStringSetting = C.CDB.CSS)]DocumentClient docClient,
             ILogger logger)
         {
             await Task.WhenAll(new[]
@@ -41,7 +50,7 @@ namespace a_slack_bot.Functions
                         await SendResponse(logger, slashData, "Visit https://api.slack.com/custom-integrations/legacy-tokens to generate a token, or send `clear` to remove your existing token.", userToken, in_channel: false);
                     else if (slashData.text == "clear")
                     {
-                        await documentCollector.AddAsync(new Documents.OAuthToken { Subtype = "user", Id = slashData.user_id, token = string.Empty });
+                        await docClient.DeleteDocumentAsync(UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, slashData.user_id), new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.OAuthToken) + "|user") });
                         await SendResponse(logger, slashData, "token cleared :thumbsup:", userToken, in_channel: false);
                         SR.Deit();
                     }
@@ -51,6 +60,10 @@ namespace a_slack_bot.Functions
                         await SendResponse(logger, slashData, "token added :thumbsup:", userToken, in_channel: false);
                         SR.Deit();
                     }
+                    break;
+
+                case "/asb-whitelist":
+                    await HandleAsbWhitelistCommand(slashData, documentCollector, docClient, userToken, logger);
                     break;
 
                 case "/disapprove":
@@ -134,6 +147,51 @@ namespace a_slack_bot.Functions
                         response = await httpClient.PostAsJsonAsync(slashData.response_url, new { response_type = "ephemeral", text = $"Something went wrong: `{responseObj.error}`" });
                         logger.LogError("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
                     }
+                }
+            }
+        }
+
+        private static async Task HandleAsbWhitelistCommand(Slack.Slash slashData, IAsyncCollector<Resource> documentCollector, DocumentClient docClient, string userToken, ILogger logger)
+        {
+            if (slashData.text.Split(' ').Length != 2)
+            {
+                await SendResponse(logger, slashData, "That is not a valid usage of that command.", userToken, in_channel: false);
+                return;
+            }
+            else if (!WhitelistableCommands.Contains(slashData.text.Split(' ')[1]))
+            {
+                await SendResponse(logger, slashData, $"`{slashData.text.Split(' ')[1]}` is not a valid slash command to whitelist.", userToken, in_channel: false);
+                return;
+            }
+
+            Documents.Whitelist doc = null;
+            try
+            {
+                doc = await docClient.ReadDocumentAsync<Documents.Whitelist>(UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, slashData.text.Split(' ')[1]), new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Whitelist) + "|command") });
+            }
+            catch (DocumentClientException dce) when (dce.StatusCode == HttpStatusCode.NotFound)
+            { }
+
+            if (slashData.text == "add")
+            {
+                if (doc == null)
+                    doc = new Documents.Whitelist { Subtype = "channel", Id = slashData.text.Split(' ')[1], values = new HashSet<string> { slashData.channel_id } };
+                else
+                    doc.values.Add(slashData.channel_id);
+                await documentCollector.AddAsync(doc);
+                await SendResponse(logger, slashData, "Added to whitelist :thumbsup:", userToken, in_channel: false);
+                SR.Deit();
+            }
+            else if (slashData.text == "remove")
+            {
+                if (doc == null || !doc.values.Contains(slashData.channel_id))
+                    await SendResponse(logger, slashData, "That wasn't on the whitelist :facepalm:", userToken, in_channel: false);
+                else
+                {
+                    doc.values.Remove(slashData.channel_id);
+                    await documentCollector.AddAsync(doc);
+                    await SendResponse(logger, slashData, "Removed from whitelist :thumbsup:", userToken, in_channel: false);
+                    SR.Deit();
                 }
             }
         }
