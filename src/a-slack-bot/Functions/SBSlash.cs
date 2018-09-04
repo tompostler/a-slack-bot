@@ -29,12 +29,7 @@ namespace a_slack_bot.Functions
             [DocumentDB(ConnectionStringSetting = C.CDB.CSS)]DocumentClient docClient,
             ILogger logger)
         {
-            await Task.WhenAll(new[]
-            {
-                SR.Init(logger),
-                // SB is faster than returning the ephemeral response, so just chill for a bit
-                Task.Delay(TimeSpan.FromSeconds(0.5))
-            });
+            await SR.Init(logger);
 
             var slashData = slashMessage.slashData;
 
