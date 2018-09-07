@@ -137,7 +137,7 @@ namespace a_slack_bot
 
                 var tokens = await docQuery.GetAllResults(logger);
 
-                CommandsChannels = tokens.ToDictionary(t => t.Id, t => (IReadOnlyCollection<string>)t.values);
+                CommandsChannels = tokens.ToDictionary(t => '/' + t.Id, t => (IReadOnlyCollection<string>)t.values);
             }
         }
     }

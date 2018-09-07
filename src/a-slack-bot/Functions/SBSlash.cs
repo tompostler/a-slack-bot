@@ -167,7 +167,7 @@ namespace a_slack_bot.Functions
             Documents.Whitelist doc = null;
             try
             {
-                doc = await docClient.ReadDocumentAsync<Documents.Whitelist>(UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, slashData.text.Split(' ')[1]), new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Whitelist) + "|command") });
+                doc = await docClient.ReadDocumentAsync<Documents.Whitelist>(UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, slashData.text.Split(' ')[1].Substring(1)), new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Whitelist) + "|command") });
             }
             catch (DocumentClientException dce) when (dce.StatusCode == HttpStatusCode.NotFound)
             { }
@@ -175,7 +175,7 @@ namespace a_slack_bot.Functions
             if (slashData.text == "add")
             {
                 if (doc == null)
-                    doc = new Documents.Whitelist { Subtype = "channel", Id = slashData.text.Split(' ')[1], values = new HashSet<string> { slashData.channel_id } };
+                    doc = new Documents.Whitelist { Subtype = "channel", Id = slashData.text.Split(' ')[1].Substring(1), values = new HashSet<string> { slashData.channel_id } };
                 else
                     doc.values.Add(slashData.channel_id);
                 await documentCollector.AddAsync(doc);
