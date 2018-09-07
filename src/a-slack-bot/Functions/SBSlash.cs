@@ -62,7 +62,7 @@ namespace a_slack_bot.Functions
                     break;
 
                 case "/blackjack":
-                    if (!SR.W.CommandsChannels["blackjack"].Contains(slashData.channel_id))
+                    if (SR.W.CommandsChannels.ContainsKey("blackjack") && !SR.W.CommandsChannels["blackjack"].Contains(slashData.channel_id))
                         await SendResponse(logger, slashData, $"`{slashData.command}` is not whitelisted for this channel. See `/asb-whitelist` to add it.", in_channel: false);
                     else
                         await SendResponse(logger, slashData, "*NOT YET SUPPORTED*");
