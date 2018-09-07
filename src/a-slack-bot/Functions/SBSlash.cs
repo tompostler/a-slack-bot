@@ -168,21 +168,21 @@ namespace a_slack_bot.Functions
                 logger.LogInformation("Existing record found.");
             }
             catch (DocumentClientException dce) when (dce.StatusCode == HttpStatusCode.NotFound)
-            { }
+            {
+                logger.LogInformation("Existing record not found.");
+                doc = new Documents.Whitelist { Subtype = "channel", Id = slashData.text.Split(' ')[1].Substring(1), values = new HashSet<string>() };
+            }
 
             if (slashData.text == "add")
             {
-                if (doc == null)
-                    doc = new Documents.Whitelist { Subtype = "channel", Id = slashData.text.Split(' ')[1].Substring(1), values = new HashSet<string> { slashData.channel_id } };
-                else
-                    doc.values.Add(slashData.channel_id);
+                doc.values.Add(slashData.channel_id);
                 await documentCollector.AddAsync(doc);
                 await SendResponse(logger, slashData, "Added to whitelist :thumbsup:", userToken, in_channel: false);
                 SR.Deit();
             }
             else if (slashData.text == "remove")
             {
-                if (doc == null || !doc.values.Contains(slashData.channel_id))
+                if (!doc.values.Contains(slashData.channel_id))
                     await SendResponse(logger, slashData, "That wasn't on the whitelist :facepalm:", userToken, in_channel: false);
                 else
                 {

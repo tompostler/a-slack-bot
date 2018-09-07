@@ -30,7 +30,7 @@ namespace a_slack_bot.Functions
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
         public static string HelpText => $@"```
-{typeof(SlackEntry).Assembly.ManifestModule.Name} v{GitVersionInformation.SemVer}+{GitVersionInformation.Sha.Substring(0, 10)}
+{C.VersionStr}
 
 A bot constructed for the express purpose of relieving boredom and maybe even providing some useful
 functionality. Interaction with the bot is mostly random with numerous easter eggs and various

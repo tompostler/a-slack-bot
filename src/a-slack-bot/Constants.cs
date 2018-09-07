@@ -34,5 +34,7 @@
                 public const string Signature = "X-Slack-Signature";
             }
         }
+
+        public static string VersionStr => $"{typeof(C).Assembly.ManifestModule.Name} v{GitVersionInformation.SemVer}+{GitVersionInformation.Sha.Substring(0, 6)}";
     }
 }

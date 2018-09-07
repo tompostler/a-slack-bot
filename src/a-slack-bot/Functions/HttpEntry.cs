@@ -32,7 +32,7 @@ namespace a_slack_bot.Functions
             await messageCollector.AddAsync(new Slack.Events.Inner.message
             {
                 channel = Settings.Runtime.NotifyChannelId,
-                text = $"Released:\n```{typeof(SlackEntry).Assembly.ManifestModule.Name} v{GitVersionInformation.SemVer} ({desc})```"
+                text = $"Released:\n```{C.VersionStr} ({desc})```"
             });
 
             // Return all is well
