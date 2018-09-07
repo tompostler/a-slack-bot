@@ -173,14 +173,14 @@ namespace a_slack_bot.Functions
                 doc = new Documents.Whitelist { Subtype = "channel", Id = slashData.text.Split(' ')[1].Substring(1), values = new HashSet<string>() };
             }
 
-            if (slashData.text == "add")
+            if (slashData.text.StartsWith("add"))
             {
                 doc.values.Add(slashData.channel_id);
                 await documentCollector.AddAsync(doc);
                 await SendResponse(logger, slashData, "Added to whitelist :thumbsup:", userToken, in_channel: false);
                 SR.Deit();
             }
-            else if (slashData.text == "remove")
+            else if (slashData.text.StartsWith("remove"))
             {
                 if (!doc.values.Contains(slashData.channel_id))
                     await SendResponse(logger, slashData, "That wasn't on the whitelist :facepalm:", userToken, in_channel: false);
@@ -191,6 +191,10 @@ namespace a_slack_bot.Functions
                     await SendResponse(logger, slashData, "Removed from whitelist :thumbsup:", userToken, in_channel: false);
                     SR.Deit();
                 }
+            }
+            else
+            {
+                await SendResponse(logger, slashData, $"I don't know how to interpret `{slashData.text}`", userToken, in_channel: false);
             }
         }
     }
