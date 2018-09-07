@@ -46,19 +46,26 @@ namespace a_slack_bot.Functions
                     else if (slashData.text == "clear")
                     {
                         await docClient.DeleteDocumentAsync(UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, slashData.user_id), new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.OAuthToken) + "|user") });
-                        await SendResponse(logger, slashData, "token cleared :thumbsup:", userToken, in_channel: false);
+                        await SendResponse(logger, slashData, "token cleared :thumbsup:", in_channel: false);
                         SR.Deit();
                     }
                     else
                     {
                         await documentCollector.AddAsync(new Documents.OAuthToken { Subtype = "user", Id = slashData.user_id, token = slashData.text });
-                        await SendResponse(logger, slashData, "token added :thumbsup:", userToken, in_channel: false);
+                        await SendResponse(logger, slashData, "token added :thumbsup:", in_channel: false);
                         SR.Deit();
                     }
                     break;
 
                 case "/asb-whitelist":
-                    await HandleAsbWhitelistCommand(slashData, documentCollector, docClient, userToken, logger);
+                    await HandleAsbWhitelistCommand(slashData, documentCollector, docClient, logger);
+                    break;
+
+                case "/blackjack":
+                    if (!SR.W.CommandsChannels["blackjack"].Contains(slashData.channel_id))
+                        await SendResponse(logger, slashData, $"`{slashData.command}` is not whitelisted for this channel. See `/asb-whitelist` to add it.", in_channel: false);
+                    else
+                        await SendResponse(logger, slashData, "*NOT YET SUPPORTED*");
                     break;
 
                 case "/disapprove":
@@ -79,12 +86,12 @@ namespace a_slack_bot.Functions
                     break;
 
                 default:
-                    await SendResponse(logger, slashData, "*NOT SUPPORTED*", userToken, in_channel: false);
+                    await SendResponse(logger, slashData, "*NOT SUPPORTED*", in_channel: false);
                     break;
             }
         }
 
-        private static async Task SendResponse(ILogger logger, Slack.Slash slashData, string text, string userToken, bool in_channel = true)
+        private static async Task SendResponse(ILogger logger, Slack.Slash slashData, string text, string userToken = null, bool in_channel = true)
         {
             logger.LogInformation("{0}: {1} {2} {3}", slashData.response_url, text, slashData.user_id, slashData.command);
 
@@ -146,55 +153,56 @@ namespace a_slack_bot.Functions
             }
         }
 
-        private static async Task HandleAsbWhitelistCommand(Slack.Slash slashData, IAsyncCollector<Resource> documentCollector, DocumentClient docClient, string userToken, ILogger logger)
+        private static async Task HandleAsbWhitelistCommand(Slack.Slash slashData, IAsyncCollector<Resource> documentCollector, DocumentClient docClient, ILogger logger)
         {
             logger.LogInformation(nameof(HandleAsbWhitelistCommand));
             if (slashData.text.Split(' ').Length != 2)
             {
-                await SendResponse(logger, slashData, "That is not a valid usage of that command.", userToken, in_channel: false);
+                await SendResponse(logger, slashData, "That is not a valid usage of that command.", in_channel: false);
                 return;
             }
             else if (!WhitelistableCommands.Contains(slashData.text.Split(' ')[1]))
             {
-                await SendResponse(logger, slashData, $"`{slashData.text.Split(' ')[1]}` is not a valid slash command to whitelist.", userToken, in_channel: false);
+                await SendResponse(logger, slashData, $"`{slashData.text.Split(' ')[1]}` is not a valid slash command to whitelist.", in_channel: false);
                 return;
             }
 
+            var whitelistBits = slashData.text.Split(' ')[1];
             Documents.Whitelist doc = null;
             try
             {
                 logger.LogInformation("Attempting to get existing record...");
-                doc = await docClient.ReadDocumentAsync<Documents.Whitelist>(UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, slashData.text.Split(' ')[1].Substring(1)), new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Whitelist) + "|command") });
+                doc = await docClient.ReadDocumentAsync<Documents.Whitelist>(UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, whitelistBits.Substring(1)), new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Whitelist) + "|command") });
                 logger.LogInformation("Existing record found.");
             }
             catch (DocumentClientException dce) when (dce.StatusCode == HttpStatusCode.NotFound)
             {
                 logger.LogInformation("Existing record not found.");
-                doc = new Documents.Whitelist { Subtype = "channel", Id = slashData.text.Split(' ')[1].Substring(1), values = new HashSet<string>() };
+                doc = new Documents.Whitelist { Subtype = "command", Id = whitelistBits.Substring(1), values = new HashSet<string>() };
             }
 
             if (slashData.text.StartsWith("add"))
             {
                 doc.values.Add(slashData.channel_id);
                 await documentCollector.AddAsync(doc);
-                await SendResponse(logger, slashData, "Added to whitelist :thumbsup:", userToken, in_channel: false);
+                await SendResponse(logger, slashData, $"Added to `{whitelistBits}` whitelist for this channel :thumbsup:");
                 SR.Deit();
             }
             else if (slashData.text.StartsWith("remove"))
             {
                 if (!doc.values.Contains(slashData.channel_id))
-                    await SendResponse(logger, slashData, "That wasn't on the whitelist :facepalm:", userToken, in_channel: false);
+                    await SendResponse(logger, slashData, $"`{whitelistBits}` wasn't on the whitelist for this channel :facepalm:", in_channel: false);
                 else
                 {
                     doc.values.Remove(slashData.channel_id);
                     await documentCollector.AddAsync(doc);
-                    await SendResponse(logger, slashData, "Removed from whitelist :thumbsup:", userToken, in_channel: false);
+                    await SendResponse(logger, slashData, $"Removed `{whitelistBits}` from whitelist for this channel :thumbsup:");
                     SR.Deit();
                 }
             }
             else
             {
-                await SendResponse(logger, slashData, $"I don't know how to interpret `{slashData.text}`", userToken, in_channel: false);
+                await SendResponse(logger, slashData, $"I don't know how to interpret `{slashData.text}`", in_channel: false);
             }
         }
     }

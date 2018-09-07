@@ -3,6 +3,7 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.ServiceBus.Messaging;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -48,6 +49,12 @@ namespace a_slack_bot.Functions
             return req.CreateResponse(HttpStatusCode.OK);
         }
 
+
+        private static readonly HashSet<string> EchoableCommands = new HashSet<string>
+        {
+            "/asb-whitelist",
+            "/blackjack"
+        };
         [FunctionName(nameof(ReceiveSlash))]
         public static async Task<HttpResponseMessage> ReceiveSlash(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = "receive/slash")]HttpRequestMessage req,
@@ -73,7 +80,10 @@ namespace a_slack_bot.Functions
             });
 
             // Return all is well
-            return req.CreateResponse(HttpStatusCode.OK);
+            if (EchoableCommands.Contains(slashData.command))
+                return req.CreateResponse(HttpStatusCode.OK, new { response_type = "in_channel" });
+            else
+                return req.CreateResponse(HttpStatusCode.OK);
         }
 
         [FunctionName(nameof(Ping))]

@@ -121,7 +121,7 @@ namespace a_slack_bot
 
         public class SlackWhitelist
         {
-            public IReadOnlyDictionary<string, IReadOnlyCollection<string>> CommandsChannels { get; private set; }
+            public IReadOnlyDictionary<string, HashSet<string>> CommandsChannels { get; private set; }
 
             public async Task Init(ILogger logger, DocumentClient docClient)
             {
@@ -137,7 +137,7 @@ namespace a_slack_bot
 
                 var tokens = await docQuery.GetAllResults(logger);
 
-                CommandsChannels = tokens.ToDictionary(t => '/' + t.Id, t => (IReadOnlyCollection<string>)t.values);
+                CommandsChannels = tokens.ToDictionary(t => t.Id, t => t.values);
             }
         }
     }
