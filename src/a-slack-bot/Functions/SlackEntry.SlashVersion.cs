@@ -23,7 +23,7 @@ namespace a_slack_bot.Functions
                 return req.CreateErrorResponse(HttpStatusCode.Unauthorized, "Did not match hash.");
 
             // Return the version
-            return req.CreateResponse(HttpStatusCode.OK, new { response_type = "in_channel", text = $"```{typeof(SlackEntry).Assembly.ManifestModule.Name} v{GitVersionInformation.SemVer}```" });
+            return req.CreateResponse(HttpStatusCode.OK, new { response_type = "in_channel", text = $"```{typeof(SlackEntry).Assembly.ManifestModule.Name} v{GitVersionInformation.SemVer}+{GitVersionInformation.Sha.Substring(0, 10)}```" });
         }
     }
 }

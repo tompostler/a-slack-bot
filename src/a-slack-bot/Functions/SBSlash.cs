@@ -148,6 +148,7 @@ namespace a_slack_bot.Functions
 
         private static async Task HandleAsbWhitelistCommand(Slack.Slash slashData, IAsyncCollector<Resource> documentCollector, DocumentClient docClient, string userToken, ILogger logger)
         {
+            logger.LogInformation(nameof(HandleAsbWhitelistCommand));
             if (slashData.text.Split(' ').Length != 2)
             {
                 await SendResponse(logger, slashData, "That is not a valid usage of that command.", userToken, in_channel: false);
@@ -162,7 +163,9 @@ namespace a_slack_bot.Functions
             Documents.Whitelist doc = null;
             try
             {
+                logger.LogInformation("Attempting to get existing record...");
                 doc = await docClient.ReadDocumentAsync<Documents.Whitelist>(UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, slashData.text.Split(' ')[1].Substring(1)), new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Whitelist) + "|command") });
+                logger.LogInformation("Existing record found.");
             }
             catch (DocumentClientException dce) when (dce.StatusCode == HttpStatusCode.NotFound)
             { }
