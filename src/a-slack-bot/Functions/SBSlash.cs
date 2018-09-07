@@ -26,6 +26,7 @@ namespace a_slack_bot.Functions
         public static async Task SBReceiveSlash(
             [ServiceBusTrigger(C.SBQ.InputSlash)]Messages.ServiceBusInputSlash slashMessage,
             [DocumentDB(C.CDB.DN, C.CDB.CN, ConnectionStringSetting = C.CDB.CSS, PartitionKey = C.CDB.P, CreateIfNotExists = true)]IAsyncCollector<Resource> documentCollector,
+            [DocumentDB(ConnectionStringSetting = C.CDB.CSS)]DocumentClient docClient,
             ILogger logger)
         {
             await SR.Init(logger);
@@ -36,12 +37,6 @@ namespace a_slack_bot.Functions
             string userToken = null;
             if (SR.T.ChatWriteUser.ContainsKey(slashData.user_id))
                 userToken = SR.T.ChatWriteUser[slashData.user_id];
-
-            // Only create this if we're actually going to use it
-            DocumentClient docClient = null;
-            if (slashData.command.StartsWith("/asb-"))
-                docClient = new DocumentClient(Settings.CosmosDBEndpoint, Settings.CosmosDBKey);
-
 
             switch (slashData.command)
             {
