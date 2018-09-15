@@ -36,6 +36,22 @@ namespace Slack.Events.Inner
         public string ts { get; set; }
 
         /// <summary>
+        /// The <see cref="ts"/> that started the thread. If a message has a <see cref="thread_ts"/> value, then it is
+        /// part of a threaded conversation.
+        /// </summary>
+        public string thread_ts { get; set; }
+
+        /// <summary>
+        /// Set the <see cref="thread_broadcast"/> boolean parameter to true to indicate your reply is germane to all
+        /// members of a channel. By default, <see cref="thread_broadcast"/> is set to false. Your message will still
+        /// be considered part of the thread represented by thread_ts.
+        ///
+        /// When your reply is broadcast to the channel, it'll actually be a reference to your reply, not the reply
+        /// itself. So, when appearing in the channel, it won't contain any attachments or message buttons.
+        /// </summary>
+        public bool thread_broadcast { get; set; }
+
+        /// <summary>
         /// Attachments let you add more context to a message, making them more useful and effective.
         /// 
         /// Please limit your messages to contain no more than 20 attachments to provide the best user experience.
