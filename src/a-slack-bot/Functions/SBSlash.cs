@@ -1,11 +1,13 @@
 ﻿using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
+using Microsoft.Azure.Documents.Linq;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -40,6 +42,11 @@ namespace a_slack_bot.Functions
 
             switch (slashData.command)
             {
+                case "/asb-response":
+                    if (slashData.text == "help" || string.IsNullOrWhiteSpace(slashData.text))
+                        await SendResponse(logger, slashData, "Add, list, or remove custom message responses. Syntax:\n`/asb-response add `key_text` response text\n/asb-response list\n/asb-response list `key_text`\n/asb-response remove `key_text` response_id", in_channel: false);
+                    break;
+
                 case "/asb-send-as-me":
                     if (slashData.text == "help" || string.IsNullOrWhiteSpace(slashData.text))
                         await SendResponse(logger, slashData, "Visit https://api.slack.com/custom-integrations/legacy-tokens to generate a token, or send `clear` to remove your existing token.", userToken, in_channel: false);
@@ -51,7 +58,7 @@ namespace a_slack_bot.Functions
                     }
                     else
                     {
-                        await documentCollector.AddAsync(new Documents.OAuthToken { Subtype = "user", Id = slashData.user_id, token = slashData.text });
+                        await documentCollector.AddAsync(new Documents.OAuthToken { Subtype = "user", user_id = slashData.user_id, token = slashData.text });
                         await SendResponse(logger, slashData, "token added :thumbsup:", in_channel: false);
                         SR.Deit();
                     }
@@ -154,6 +161,80 @@ namespace a_slack_bot.Functions
                         logger.LogError("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
                     }
                 }
+            }
+        }
+
+        private static async Task HandleAsbResponseCommand(Slack.Slash slashData, DocumentClient docClient, ILogger logger)
+        {
+            logger.LogInformation(nameof(HandleAsbResponseCommand));
+            if (slashData.text == "list")
+            {
+                logger.LogInformation("Retrieving list of all custom response keys...");
+                var query = docClient.CreateDocumentQuery<string>(
+                    UriFactory.CreateDocumentCollectionUri(C.CDB.DN, C.CDB.CN),
+                    $"SELECT DISTINCT VALUE r.{nameof(Documents.Response.key)} FROM r WHERE r.{nameof(Documents.BaseDocument.Type)} = '{nameof(Documents.Response)}'",
+                    new FeedOptions { EnableCrossPartitionQuery = true })
+                    .AsDocumentQuery();
+                var results = await query.GetAllResults(logger);
+
+                await SendResponse(logger, slashData, $"Keys in use: `{string.Join("`|`", results)}`", in_channel: false);
+            }
+
+            // Now proceed to more "normal" commands that at least look the same
+            if (!(slashData.text.StartsWith("add `") || slashData.text.StartsWith("list `") || slashData.text.StartsWith("remove `")))
+            {
+                await SendResponse(logger, slashData, "Did not detect a valid start for that command.", in_channel: false);
+                return;
+            }
+            else if (slashData.text.Count(c => c == '`') < 2)
+            {
+                await SendResponse(logger, slashData, "Did not detect enough backtick characters for that command.", in_channel: false);
+                return;
+            }
+
+            var instruction = slashData.text.Split(' ')[0];
+            var key = slashData.text.Split('`')[1];
+            var value = slashData.text.Substring(slashData.text.IndexOf('`', slashData.text.IndexOf('`') + 1) + 1).Trim();
+
+            switch (instruction)
+            {
+                case "add":
+                    logger.LogInformation("Attempting to add new custom response...");
+                    var doc = await docClient.CreateDocumentAsync(
+                        UriFactory.CreateDocumentCollectionUri(C.CDB.DN, C.CDB.CN),
+                        new Documents.Response
+                        {
+                            key = key,
+                            value = value
+                        },
+                        new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + key) });
+                    await SendResponse(logger, slashData, $"Added: `{key}`: {doc.Resource.Id}");
+                    SR.Deit();
+                    break;
+
+                case "list":
+                    logger.LogInformation("Retrieving list of all custom responses for specified key...");
+                    var query = docClient.CreateDocumentQuery<Documents.Response>(
+                        UriFactory.CreateDocumentCollectionUri(C.CDB.DN, C.CDB.CN),
+                        new FeedOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + key) })
+                        .AsDocumentQuery();
+                    var results = await query.GetAllResults(logger);
+                    await SendResponse(logger, slashData, $"Key: `{key}` Values:\n{string.Join("\n\n", results.Select(r => $"`{r.Id}` {r.value}"))}", in_channel: false);
+                    break;
+
+                case "delete":
+                    try
+                    {
+                        logger.LogInformation("Attempting to delete existing record...");
+                        await docClient.DeleteDocumentAsync(UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, value), new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + key) });
+                        await SendResponse(logger, slashData, $"Deleted `{key}`: {value}");
+                        SR.Deit();
+                    }
+                    catch (DocumentClientException dce) when (dce.StatusCode == HttpStatusCode.NotFound)
+                    {
+                        await SendResponse(logger, slashData, $"Error! `{key}`: {value} not found!");
+                    }
+                    break;
             }
         }
 
