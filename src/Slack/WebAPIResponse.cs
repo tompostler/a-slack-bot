@@ -39,5 +39,15 @@ namespace Slack
         /// users.list
         /// </summary>
         public List<Types.user> members { get; set; }
+
+        /// <summary>
+        /// chat.postMessage
+        /// </summary>
+        public string channel { get; set; }
+
+        /// <summary>
+        /// chat.postMessage
+        /// </summary>
+        public Events.Inner.message message { get; set; }
     }
 }
