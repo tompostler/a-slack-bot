@@ -65,11 +65,7 @@ namespace a_slack_bot.Functions
                     if (SR.W.CommandsChannels.ContainsKey("blackjack") && !SR.W.CommandsChannels["blackjack"].Contains(slashData.channel_id))
                         await SendResponse(logger, slashData, $"`{slashData.command}` is not whitelisted for this channel. See `/asb-whitelist` to add it.", in_channel: false);
                     else
-                    {
-                        var threadStart = await SBSend.SendMessage(new Slack.Events.Inner.message { channel = slashData.channel_id, text = $"@<{slashData.user_id}> wants to start a game of blackjack! Open this thread for details." }, logger);
-                        //TODO: Create the blackjack document.
-                        await SBSend.SendMessage(new Slack.Events.Inner.message { channel = threadStart.message.channel, text = "*NOT YET SUPPORTED*", thread_ts = threadStart.message.ts }, logger);
-                    }
+                        await SendResponse(logger, slashData, "*NOT YET SUPPORTED*");
                     break;
 
                 case "/disapprove":
