@@ -180,6 +180,7 @@ namespace a_slack_bot.Functions
                 var results = await query.GetAllResults(logger);
 
                 await SendResponse(logger, slashData, $"Keys in use: `{string.Join("`|`", results)}`", in_channel: false);
+                return;
             }
 
             // Now proceed to more "normal" commands that at least look the same
@@ -210,7 +211,7 @@ namespace a_slack_bot.Functions
                             value = value
                         },
                         new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + key) });
-                    await SendResponse(logger, slashData, $"Added: `{key}`: {doc.Resource.Id}");
+                    await SendResponse(logger, slashData, $"Added: `{key}` (`{doc.Resource.Id}`) {value}", in_channel: false);
                     SR.Deit();
                     break;
 
@@ -229,12 +230,12 @@ namespace a_slack_bot.Functions
                     {
                         logger.LogInformation("Attempting to delete existing record...");
                         await docClient.DeleteDocumentAsync(UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, value), new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + key) });
-                        await SendResponse(logger, slashData, $"Deleted `{key}`: {value}");
+                        await SendResponse(logger, slashData, $"Deleted `{key}`: {value}", in_channel: false);
                         SR.Deit();
                     }
                     catch (DocumentClientException dce) when (dce.StatusCode == HttpStatusCode.NotFound)
                     {
-                        await SendResponse(logger, slashData, $"Error! `{key}`: {value} not found!");
+                        await SendResponse(logger, slashData, $"Error! `{key}` ({value}) not found!", in_channel: false);
                     }
                     break;
             }
