@@ -44,7 +44,7 @@ namespace a_slack_bot.Functions
             {
                 case "/asb-response":
                     if (slashData.text == "help" || string.IsNullOrWhiteSpace(slashData.text))
-                        await SendResponse(logger, slashData, "Add, list, or remove custom message responses. Syntax:\n`/asb-response add `key_text` response text\n/asb-response list\n/asb-response list `key_text`\n/asb-response remove `key_text` response_id", in_channel: false);
+                        await SendResponse(logger, slashData, "Add, list, or remove custom message responses. Syntax:\n```/asb-response add `key_text` response text\n/asb-response list\n/asb-response list `key_text`\n/asb-response remove `key_text` response_id```", in_channel: false);
                     break;
 
                 case "/asb-send-as-me":
@@ -73,7 +73,7 @@ namespace a_slack_bot.Functions
                         await SendResponse(logger, slashData, $"`{slashData.command}` is not whitelisted for this channel. See `/asb-whitelist` to add it.", in_channel: false);
                     else
                     {
-                        var threadStart = await SBSend.SendMessage(new Slack.Events.Inner.message { channel = slashData.channel_id, text = $"<@{slashData.user_id}> wants to start a game of blackjack! Open this thread for details." }, logger);
+                        var threadStart = await SBSend.SendMessage(new Slack.Events.Inner.message { channel = slashData.channel_id, text = $"<@{slashData.user_id}> wants to start a game of blackjack! Open this thread to play." }, logger);
                         //TODO: Create the blackjack document.
                         await SBSend.SendMessage(new Slack.Events.Inner.message { channel = threadStart.channel, text = "*NOT YET SUPPORTED*", thread_ts = threadStart.message.ts }, logger);
                     }
