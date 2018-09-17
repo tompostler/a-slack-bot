@@ -82,8 +82,8 @@ namespace a_slack_bot
 
         public class SlackResponses
         {
-            public IReadOnlyCollection<string> Keys { get; private set; }
-            public IReadOnlyDictionary<string, IReadOnlyCollection<string>> esponses { get; private set; }
+            public HashSet<string> Keys { get; private set; }
+            public Dictionary<string, HashSet<string>> esponses { get; private set; }
 
             public async Task Init(ILogger logger, DocumentClient docClient)
             {
@@ -95,15 +95,14 @@ namespace a_slack_bot
 
                 var responses = await docQuery.GetAllResults(logger);
 
-                var _esponses = new Dictionary<string, HashSet<string>>();
+                esponses = new Dictionary<string, HashSet<string>>();
                 foreach (var response in responses)
                 {
-                    if (!_esponses.ContainsKey(response.key))
-                        _esponses.Add(response.key, new HashSet<string>());
-                    _esponses[response.key].Add(response.value);
+                    if (!esponses.ContainsKey(response.key))
+                        esponses.Add(response.key, new HashSet<string>());
+                    esponses[response.key].Add(response.value);
                 }
-                esponses = (IReadOnlyDictionary<string, IReadOnlyCollection<string>>)_esponses;
-                Keys = (IReadOnlyCollection<string>)esponses.Keys;
+                Keys = new HashSet<string>(this.esponses.Keys);
             }
         }
 
