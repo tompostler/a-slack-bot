@@ -45,6 +45,8 @@ namespace a_slack_bot.Functions
                 case "/asb-response":
                     if (slashData.text == "help" || string.IsNullOrWhiteSpace(slashData.text))
                         await SendResponse(logger, slashData, "Add, list, or remove custom message responses. Syntax:\n```/asb-response add `key_text` response text\n/asb-response list\n/asb-response list `key_text`\n/asb-response remove `key_text` response_id```", in_channel: false);
+                    else
+                        await HandleAsbResponseCommand(slashData, docClient, logger);
                     break;
 
                 case "/asb-send-as-me":
