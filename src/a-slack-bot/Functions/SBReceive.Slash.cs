@@ -4,6 +4,7 @@ using Microsoft.Azure.Documents.Linq;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -205,10 +206,13 @@ namespace a_slack_bot.Functions
                         UriFactory.CreateDocumentCollectionUri(C.CDB.DN, C.CDB.CN),
                         new Documents.Response
                         {
+                            Id = Guid.NewGuid().ToString().Split('-')[0],
                             key = key,
-                            value = value
+                            value = value,
+                            user_id = slashData.user_id
                         },
-                        new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + key) });
+                        new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + key) },
+                        disableAutomaticIdGeneration: true);
                     await SendResponse(logger, slashData, $"Added: `{key}` (`{doc.Resource.Id}`) {value}", in_channel: false);
                     SR.Deit();
                     break;
