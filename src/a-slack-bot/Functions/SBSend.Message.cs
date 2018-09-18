@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace a_slack_bot.Functions
 {
-    public static class SBSend
+    public static partial class SBSend
     {
         private static readonly HttpClient httpClient = new HttpClient();
         static SBSend()

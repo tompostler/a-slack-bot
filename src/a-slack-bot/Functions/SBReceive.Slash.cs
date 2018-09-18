@@ -4,7 +4,6 @@ using Microsoft.Azure.Documents.Linq;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -16,9 +15,8 @@ using System.Threading.Tasks;
 
 namespace a_slack_bot.Functions
 {
-    public static class SBSlash
+    public static partial class SBReceive
     {
-        private static readonly HttpClient httpClient = new HttpClient();
         private static readonly HashSet<string> WhitelistableCommands = new HashSet<string>
         {
             "/blackjack"

@@ -6,15 +6,14 @@ using System.Threading.Tasks;
 
 namespace a_slack_bot.Functions
 {
-    public static class SBEvent
+    public static partial class SBReceive
     {
-        private static readonly HttpClient httpClient = new HttpClient();
-
         [FunctionName(nameof(SBReceiveEvent))]
         public static async Task SBReceiveEvent(
             [ServiceBusTrigger(C.SBQ.InputEvent)]Messages.ServiceBusInputEvent eventMessage,
             [DocumentDB(C.CDB.DN, C.CDB.CN, ConnectionStringSetting = C.CDB.CSS, PartitionKey = C.CDB.P, CreateIfNotExists = true)]IAsyncCollector<Documents.Event> documentCollector,
             [ServiceBus(C.SBQ.SendMessage)]IAsyncCollector<Slack.Events.Inner.message> messageCollector,
+            [ServiceBus(C.SBQ.InputThread)]IAsyncCollector<Slack.Events.Inner.message> messageThreadCollector,
             ILogger logger)
         {
             if (Settings.Debug)
@@ -34,6 +33,8 @@ namespace a_slack_bot.Functions
                     break;
 
                 case Slack.Events.Inner.message message:
+                    if (string.IsNullOrWhiteSpace(message.thread_ts))
+                        await messageThreadCollector.AddAsync(message);
                     break;
 
                 default:
