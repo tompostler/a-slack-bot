@@ -1,7 +1,6 @@
 ﻿using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace a_slack_bot.Functions

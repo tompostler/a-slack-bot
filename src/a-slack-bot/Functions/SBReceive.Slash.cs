@@ -3,6 +3,7 @@ using Microsoft.Azure.Documents.Client;
 using Microsoft.Azure.Documents.Linq;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
+using Microsoft.ServiceBus.Messaging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -28,6 +29,7 @@ namespace a_slack_bot.Functions
             [ServiceBusTrigger(C.SBQ.InputSlash)]Messages.ServiceBusInputSlash slashMessage,
             [DocumentDB(C.CDB.DN, C.CDB.CN, ConnectionStringSetting = C.CDB.CSS, PartitionKey = C.CDB.P, CreateIfNotExists = true)]IAsyncCollector<Resource> documentCollector,
             [DocumentDB(ConnectionStringSetting = C.CDB.CSS)]DocumentClient docClient,
+            [ServiceBus(C.SBQ.Blackjack)]IAsyncCollector<BrokeredMessage> blackjackMessageCollector,
             ILogger logger)
         {
             await SR.Init(logger);
@@ -75,8 +77,11 @@ namespace a_slack_bot.Functions
                     else
                     {
                         var threadStart = await SBSend.SendMessage(new Slack.Events.Inner.message { channel = slashData.channel_id, text = $"<@{slashData.user_id}> wants to start a game of blackjack! Open this thread to play." }, logger);
-                        //TODO: Create the blackjack document.
+                        await documentCollector.AddAsync(new Documents.Blackjack { user_start = slashData.user_id, channel_id = slashData.channel_id, thread_ts = threadStart.message.ts });
                         await SBSend.SendMessage(new Slack.Events.Inner.message { channel = threadStart.channel, text = "*NOT YET SUPPORTED*", thread_ts = threadStart.message.ts }, logger);
+                        var msg = new BrokeredMessage(new Messages.ServiceBusBlackjack { channel_id = slashData.channel_id, thread_ts = threadStart.message.ts, type = Messages.BlackjackMessageType.Timer_StartGame });
+                        msg.ScheduledEnqueueTimeUtc = DateTime.UtcNow.AddMinutes(1);
+                        await blackjackMessageCollector.AddAsync(msg);
                     }
                     break;
 

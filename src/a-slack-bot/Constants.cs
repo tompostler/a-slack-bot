@@ -18,6 +18,8 @@
         /// </summary>
         public static class SBQ
         {
+            public const string Blackjack = "blackjack";
+
             public const string InputEvent = "input-event";
             public const string InputSlash = "input-slash";
             public const string InputThread = "input-thread";

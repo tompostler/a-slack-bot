@@ -12,6 +12,7 @@
     },
     "serviceBusQueueNames": {
       "value": [
+        "blackjack",
         "input-event",
         "input-slash",
         "input-thread",
