@@ -44,7 +44,7 @@ namespace a_slack_bot.Functions
                         sb.AppendLine("Balances for those that have played:");
                         sb.AppendLine("```");
                         var maxNamLength = Math.Max(SR.U.MaxNameLength, 4);
-                        var maxBalLength = Math.Max($"{gameBalancesDoc.Document.Content.Values.Max():#,#}".Length, 7);
+                        var maxBalLength = Math.Max($"{(gameBalancesDoc.Document.Content.Values.Count == 0 ? 0 : gameBalancesDoc.Document.Content.Values.Max()):#,#}".Length, 7);
                         sb.AppendLine($"{"USER".PadRight(SR.U.MaxNameLength)}  BALANCE");
                         foreach (var user in gameBalancesDoc.Document.Content)
                         {
@@ -58,7 +58,7 @@ namespace a_slack_bot.Functions
                         sb.AppendLine("```");
                         sb.AppendLine("Balances for those that have not played: ¤1,000,000");
                     }
-
+                    return;
                 }
                 catch (DocumentClientException dce) when (dce.StatusCode == HttpStatusCode.NotFound)
                 {
