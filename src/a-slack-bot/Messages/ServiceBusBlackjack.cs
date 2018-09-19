@@ -6,12 +6,21 @@
         public string channel_id { get; set; }
         public string thread_ts { get; set; }
         public string user_id { get; set; }
+        public long amount { get; set; }
     }
 
     public enum BlackjackMessageType
     {
-        Timer_StartGame,
         GetBalance,
-        GetBalances
+        GetBalances,
+        UpdateBalance,
+
+        Timer_Joining,
+        Timer_CollectingBets,
+
+        JoinGame,
+        ToCollectingBets,
+        PlaceBet,
+        ToGame
     }
 }

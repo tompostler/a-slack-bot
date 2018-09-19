@@ -90,9 +90,9 @@ Syntax:
                     else
                     {
                         var threadStart = await SBSend.SendMessage(new Slack.Events.Inner.message { channel = slashData.channel_id, text = $"<@{slashData.user_id}> wants to start a game of blackjack! Open this thread to play." }, logger);
-                        await documentCollector.AddAsync(new Documents.Blackjack { user_start = slashData.user_id, channel_id = slashData.channel_id, thread_ts = threadStart.message.ts });
-                        await SBSend.SendMessage(new Slack.Events.Inner.message { channel = threadStart.channel, text = "*NOT YET SUPPORTED*", thread_ts = threadStart.message.ts }, logger);
-                        var msg = new BrokeredMessage(new Messages.ServiceBusBlackjack { channel_id = slashData.channel_id, thread_ts = threadStart.message.ts, type = Messages.BlackjackMessageType.Timer_StartGame });
+                        await documentCollector.AddAsync(new Documents.Blackjack { user_start = slashData.user_id, channel_id = slashData.channel_id, thread_ts = threadStart.message.ts, hands = new Dictionary<string, List<string>> { [slashData.user_id] = new List<string>() } });
+                        await SBSend.SendMessage(new Slack.Events.Inner.message { channel = threadStart.channel, text = "Type `join` to join or `start` when ready to play. Starting in 1 minute.", thread_ts = threadStart.message.ts }, logger);
+                        var msg = new BrokeredMessage(new Messages.ServiceBusBlackjack { channel_id = slashData.channel_id, thread_ts = threadStart.message.ts, type = Messages.BlackjackMessageType.Timer_Joining });
                         msg.ScheduledEnqueueTimeUtc = DateTime.UtcNow.AddMinutes(1);
                         await blackjackMessageCollector.AddAsync(msg);
                     }

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.ServiceBus.Messaging;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -25,12 +26,14 @@ namespace a_slack_bot.Functions
             if (Settings.Debug)
                 logger.LogInformation("Msg: {0}", JsonConvert.SerializeObject(inMessage));
 
+            var gameDocUri = UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, $"{inMessage.channel_id}|{inMessage.thread_ts}");
+
             // Handle a balance request
             if (inMessage.type == Messages.BlackjackMessageType.GetBalance || inMessage.type == Messages.BlackjackMessageType.GetBalances)
             {
                 try
                 {
-                    var gameBalancesDoc = await docClient.ReadDocumentAsync<Documents.BlackjackStandings>(UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, nameof(Documents.BlackjackStandings)), new RequestOptions { PartitionKey = new PartitionKey("Game|" + nameof(Documents.Blackjack)) });
+                    var gameBalancesDoc = await docClient.ReadDocumentAsync<Documents.BlackjackStandings>(Documents.BlackjackStandings.DocUri, new RequestOptions { PartitionKey = Documents.Blackjack.PartitionKey });
 
                     if (inMessage.type == Messages.BlackjackMessageType.GetBalance)
                         if (gameBalancesDoc.Document.Content.ContainsKey(inMessage.user_id))
@@ -68,9 +71,9 @@ namespace a_slack_bot.Functions
                 catch (DocumentClientException dce) when (dce.StatusCode == HttpStatusCode.NotFound)
                 {
                     await docClient.CreateDocumentAsync(
-                        UriFactory.CreateDocumentCollectionUri(C.CDB.DN, C.CDB.CN),
-                        new Documents.BlackjackStandings { Content = new System.Collections.Generic.Dictionary<string, ulong>() },
-                        new RequestOptions { PartitionKey = new PartitionKey("Game|" + nameof(Documents.Blackjack)) });
+                        Documents.Blackjack.DocColUri,
+                        new Documents.BlackjackStandings { Content = new Dictionary<string, long>() },
+                        new RequestOptions { PartitionKey = Documents.Blackjack.PartitionKey });
 
                     // Let SB retry us. Should only ever hit this once.
                     throw;
@@ -78,17 +81,143 @@ namespace a_slack_bot.Functions
             }
 
             // Get the game doc
-            var gameDoc = await docClient.ReadDocumentAsync<Documents.Blackjack>(
-                UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, $"{inMessage.channel_id}|{inMessage.thread_ts}"),
-                new RequestOptions { PartitionKey = new PartitionKey("Game|" + nameof(Documents.Blackjack)) });
+            var gameDoc = await docClient.ReadDocumentAsync<Documents.Blackjack>(gameDocUri, new RequestOptions { PartitionKey = Documents.Blackjack.PartitionKey });
             logger.LogInformation("Got game doc");
 
-            await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = inMessage.channel_id, thread_ts = inMessage.thread_ts, text = $"another not supported spot yet: {inMessage.channel_id}|{inMessage.thread_ts}" });
             switch (inMessage.type)
             {
-                case Messages.BlackjackMessageType.Timer_StartGame:
+                case Messages.BlackjackMessageType.UpdateBalance:
+                    var gameBalancesDoc = await docClient.ReadDocumentAsync<Documents.BlackjackStandings>(
+                        Documents.BlackjackStandings.DocUri,
+                        new RequestOptions { PartitionKey = Documents.Blackjack.PartitionKey });
+                    var bals = gameBalancesDoc.Document.Content;
+                    if (!bals.ContainsKey(inMessage.user_id))
+                    {
+                        bals[inMessage.user_id] = 1_000_000;
+                        logger.LogInformation("{0} didn't have money. Initial balance set.", inMessage.user_id);
+                    }
+                    bals[inMessage.user_id] += inMessage.amount;
+                    if (bals[inMessage.user_id] <= 0)
+                    {
+                        bals[inMessage.user_id] = 1;
+                        await messageCollector.SendMessageAsync(inMessage, $"<@{inMessage.user_id}> is so poor their balance was forced to ¤1.");
+                    }
+                    await docClient.UpsertDocumentAsync(
+                        Documents.Blackjack.DocColUri,
+                        gameBalancesDoc,
+                        new RequestOptions
+                        {
+                            AccessCondition = new AccessCondition
+                            {
+                                Condition = gameBalancesDoc.Document.ETag,
+                                Type = AccessConditionType.IfMatch
+                            },
+                            PartitionKey = Documents.Blackjack.PartitionKey
+                        },
+                        disableAutomaticIdGeneration: true);
+                    break;
+
+
+                case Messages.BlackjackMessageType.Timer_Joining:
+                    if (gameDoc.Document.state == Documents.BlackjackGameState.Joining)
+                    {
+                        await messageCollector.SendMessageAsync(inMessage, "Joining timed out.");
+                        var msg = new BrokeredMessage(new Messages.ServiceBusBlackjack { channel_id = inMessage.channel_id, thread_ts = inMessage.thread_ts, type = Messages.BlackjackMessageType.Timer_Joining })
+                        {
+                            ScheduledEnqueueTimeUtc = DateTime.UtcNow.AddMinutes(1)
+                        };
+                        await messageStateCollector.AddAsync(msg);
+                        logger.LogInformation("New timer message for 1 minute.");
+                        goto case Messages.BlackjackMessageType.ToCollectingBets;
+                    }
+                    logger.LogInformation("Game state no longer joining. Timer ignored.");
+                    break;
+
+
+                case Messages.BlackjackMessageType.Timer_CollectingBets:
+                    if (gameDoc.Document.state == Documents.BlackjackGameState.CollectingBets)
+                    {
+                        // users are only added to bets if they bet
+                        if (gameDoc.Document.bets.Count != gameDoc.Document.hands.Count)
+                        {
+                            var chuckleHeads = gameDoc.Document.hands.Keys.Except(gameDoc.Document.bets.Keys).ToList();
+
+                            for (int i = 0; i < chuckleHeads.Count; i++)
+                            {
+                                var chuckleHead = chuckleHeads[i];
+                                await messageCollector.SendMessageAsync(inMessage, $"Betting timed out. Dropping <@{chuckleHead}> who loses ¤1 as a penalty for not betting.");
+                                var chuckleMessage = new BrokeredMessage(new Messages.ServiceBusBlackjack { type = Messages.BlackjackMessageType.UpdateBalance, channel_id = inMessage.channel_id, thread_ts = inMessage.thread_ts, user_id = chuckleHead, amount = -1 })
+                                {
+                                    ScheduledEnqueueTimeUtc = DateTime.UtcNow.AddSeconds(2 * i)
+                                };
+                                await messageStateCollector.AddAsync(chuckleMessage);
+                            }
+                        }
+                        goto case Messages.BlackjackMessageType.ToGame;
+                    }
+                    logger.LogInformation("Game state no longer collecting bets. Timer ignored.");
+                    break;
+
+
+                case Messages.BlackjackMessageType.JoinGame:
+                    gameDoc.Document.moves.Add(new Documents.BlackjackMove { action = Documents.BlackjackAction.Join, user_id = inMessage.user_id });
+                    gameDoc.Document.hands.Add(inMessage.user_id, new List<string>());
+                    await messageCollector.SendMessageAsync(inMessage, $"Thanks for joining {SR.U.IdToName[inMessage.user_id]}");
+                    await UpsertGameDocument(docClient, gameDoc);
+                    break;
+
+
+                case Messages.BlackjackMessageType.ToCollectingBets:
+                    gameDoc.Document.moves.Add(new Documents.BlackjackMove { action = Documents.BlackjackAction.StateChange, user_id = inMessage.user_id, to_state = Documents.BlackjackGameState.CollectingBets });
+                    gameDoc.Document.state = Documents.BlackjackGameState.CollectingBets;
+                    await UpsertGameDocument(docClient, gameDoc);
+                    await messageCollector.SendMessageAsync(inMessage, "Collecting bets!");
+                    logger.LogInformation("Updated game state to collecting bets.");
+                    break;
+
+
+                case Messages.BlackjackMessageType.PlaceBet:
+                    gameDoc.Document.moves.Add(new Documents.BlackjackMove { action = Documents.BlackjackAction.Bet, user_id = inMessage.user_id, bet = inMessage.amount });
+                    gameDoc.Document.bets.Add(inMessage.user_id, inMessage.amount);
+                    await UpsertGameDocument(docClient, gameDoc);
+                    await messageCollector.SendMessageAsync(inMessage, $"{SR.U.IdToName[inMessage.user_id]} bets ¤{inMessage.amount}");
+                    logger.LogInformation("Updated game with bet.");
+
+                    if (gameDoc.Document.bets.Count == gameDoc.Document.hands.Count)
+                        goto case Messages.BlackjackMessageType.ToGame;
+                    break;
+
+
+                case Messages.BlackjackMessageType.ToGame:
+                    gameDoc.Document.moves.Add(new Documents.BlackjackMove { action = Documents.BlackjackAction.StateChange, to_state = Documents.BlackjackGameState.Running });
+                    gameDoc.Document.state = Documents.BlackjackGameState.Running;
+                    await UpsertGameDocument(docClient, gameDoc);
+                    await messageCollector.SendMessageAsync(inMessage, $"Running a game not yet supported. All bets cancelled.: {inMessage.channel_id}|{inMessage.thread_ts}");
+                    logger.LogInformation("Updated game state to running.");
+                    break;
+
+
+                default:
+                    await messageCollector.SendMessageAsync(inMessage, $"NOT SUPPORTED YET: {inMessage.channel_id}|{inMessage.thread_ts}");
                     break;
             }
+        }
+
+        private static Task UpsertGameDocument(DocumentClient docClient, Documents.Blackjack gameDoc)
+        {
+            return docClient.UpsertDocumentAsync(
+                Documents.Blackjack.DocColUri,
+                gameDoc,
+                new RequestOptions
+                {
+                    AccessCondition = new AccessCondition
+                    {
+                        Condition = gameDoc.ETag,
+                        Type = AccessConditionType.IfMatch
+                    },
+                    PartitionKey = Documents.Blackjack.PartitionKey
+                },
+                disableAutomaticIdGeneration: true);
         }
     }
 }
