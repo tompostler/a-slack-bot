@@ -57,6 +57,7 @@ namespace a_slack_bot.Functions
                         }
                         sb.AppendLine("```");
                         sb.AppendLine("Balances for those that have not played: ¤1,000,000");
+                        await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = inMessage.channel_id, text = sb.ToString() });
                     }
                     return;
                 }
