@@ -128,6 +128,7 @@ namespace a_slack_bot
             public IReadOnlyCollection<Slack.Types.user> All => users.Values;
             public Slack.Types.user BotUser { get; private set; }
             public IReadOnlyDictionary<string, string> IdToName { get; private set; }
+            public int MaxNameLength { get; private set; }
             public IReadOnlyDictionary<string, Slack.Types.user> IdToUser => users;
 
             private Dictionary<string, Slack.Types.user> users { get; set; }
@@ -150,6 +151,7 @@ namespace a_slack_bot
                 BotUser = users.Values.Single(u => u.profile.api_app_id == Settings.SlackAppID);
 
                 IdToName = users.Values.ToDictionary(u => u.id, u => u.profile.display_name);
+                MaxNameLength = IdToName.Values.Max(un => un.Length);
             }
         }
 

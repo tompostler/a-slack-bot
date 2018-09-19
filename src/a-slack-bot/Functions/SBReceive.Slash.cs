@@ -74,6 +74,19 @@ namespace a_slack_bot.Functions
                 case "/blackjack":
                     if (SR.W.CommandsChannels.ContainsKey("blackjack") && !SR.W.CommandsChannels["blackjack"].Contains(slashData.channel_id))
                         await SendResponse(logger, slashData, $"`{slashData.command}` is not whitelisted for this channel. See `/asb-whitelist` to add it.", in_channel: false);
+                    else if (slashData.text == "help")
+                        await SendResponse(logger, slashData, @"Start a game of blackjack with some overrides available.
+Syntax:
+```
+/blackjack          Start a game of blackjack.
+/blackjack balance  Get your money balance.
+/blackjack balances Show all balances for all players.
+```",
+                        in_channel: false);
+                    else if (slashData.text == "balance")
+                        await blackjackMessageCollector.AddAsync(new BrokeredMessage(new Messages.ServiceBusBlackjack { channel_id = slashData.channel_id, user_id = slashData.user_id, type = Messages.BlackjackMessageType.GetBalance }));
+                    else if (slashData.text == "balances")
+                        await blackjackMessageCollector.AddAsync(new BrokeredMessage(new Messages.ServiceBusBlackjack { channel_id = slashData.channel_id, type = Messages.BlackjackMessageType.GetBalances }));
                     else
                     {
                         var threadStart = await SBSend.SendMessage(new Slack.Events.Inner.message { channel = slashData.channel_id, text = $"<@{slashData.user_id}> wants to start a game of blackjack! Open this thread to play." }, logger);
