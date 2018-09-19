@@ -150,7 +150,7 @@ namespace a_slack_bot
 
                 BotUser = users.Values.Single(u => u.profile.api_app_id == Settings.SlackAppID);
 
-                IdToName = users.Values.ToDictionary(u => u.id, u => u.profile.display_name);
+                IdToName = users.Values.ToDictionary(u => u.id, u => string.IsNullOrEmpty(u.profile.display_name) ? u.profile.real_name : u.profile.display_name);
                 MaxNameLength = IdToName.Values.Max(un => un.Length);
             }
         }
