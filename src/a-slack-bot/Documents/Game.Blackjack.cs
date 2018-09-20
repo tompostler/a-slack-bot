@@ -30,6 +30,25 @@ namespace a_slack_bot.Documents
         public string channel_id { get; set; }
         public string thread_ts { get; set; }
 
+        public string friendly_name
+        {
+            get
+            {
+                var ts = this.thread_ts.Split('.')[0];
+                var friendly = string.Empty;
+                do
+                {
+                    var chunk = ts.Substring(Math.Max(ts.Length - 4, 0));
+                    friendly += '.' + int.Parse(chunk).ToBase33String();
+                    Console.WriteLine(chunk);
+                    ts = ts.Substring(0, ts.Length - chunk.Length);
+                }
+                while (ts.Length > 0);
+                return friendly.Substring(1);
+            }
+            set { }
+        }
+
         // key=user_id,value=cards. quick state that can be reconstructed from moves
         public Dictionary<string, List<string>> hands { get; set; } = new Dictionary<string, List<string>>();
         // key=user_id,value=bet. quick state that can be reconstructed from moves

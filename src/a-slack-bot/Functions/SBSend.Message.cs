@@ -27,7 +27,15 @@ namespace a_slack_bot.Functions
         // This is pulled into a separate message to ease message threading scenarios.
         public static async Task<Slack.WebAPIResponse> SendMessage(Slack.Events.Inner.message message, ILogger logger)
         {
-            var response = await httpClient.PostAsJsonAsync("https://slack.com/api/chat.postMessage", message);
+            HttpResponseMessage response = null;
+            if (string.IsNullOrWhiteSpace(message.ts))
+                response = await httpClient.PostAsJsonAsync("https://slack.com/api/chat.postMessage", message);
+            else
+            {
+                logger.LogInformation("Updating message {0}", message.ts);
+                message.as_user = true;
+                response = await httpClient.PostAsJsonAsync("https://slack.com/api/chat.update", message);
+            }
             logger.LogInformation("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
 
             var responseContent = await response.Content.ReadAsAsync<Slack.WebAPIResponse>();
