@@ -26,6 +26,8 @@ namespace a_slack_bot.Functions
             if (Settings.Debug)
                 logger.LogInformation("Msg: {0}", JsonConvert.SerializeObject(inMessage));
 
+            await SR.Init(logger);
+
             var gameDocUri = UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, $"{inMessage.channel_id}|{inMessage.thread_ts}");
 
             // Handle a balance request
@@ -192,7 +194,7 @@ namespace a_slack_bot.Functions
                     gameDoc.Document.moves.Add(new Documents.BlackjackMove { action = Documents.BlackjackAction.StateChange, to_state = Documents.BlackjackGameState.Running });
                     gameDoc.Document.state = Documents.BlackjackGameState.Running;
                     await UpsertGameDocument(docClient, gameDoc);
-                    await messageCollector.SendMessageAsync(inMessage, $"Running a game not yet supported. All bets cancelled.: {inMessage.channel_id}|{inMessage.thread_ts}");
+                    await messageCollector.SendMessageAsync(inMessage, $"Running a game not yet supported. All bets cancelled. {inMessage.channel_id}|{inMessage.thread_ts}");
                     logger.LogInformation("Updated game state to running.");
                     break;
 
