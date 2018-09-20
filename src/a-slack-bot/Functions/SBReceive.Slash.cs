@@ -87,6 +87,8 @@ Syntax:
                         await blackjackMessageCollector.AddAsync(new BrokeredMessage(new Messages.ServiceBusBlackjack { channel_id = slashData.channel_id, user_id = slashData.user_id, type = Messages.BlackjackMessageType.GetBalance }));
                     else if (slashData.text == "balances")
                         await blackjackMessageCollector.AddAsync(new BrokeredMessage(new Messages.ServiceBusBlackjack { channel_id = slashData.channel_id, type = Messages.BlackjackMessageType.GetBalances }));
+                    else if (!string.IsNullOrWhiteSpace(slashData.text))
+                        await SendResponse(logger, slashData, $"I don't know about '{slashData.text}'");
                     else
                     {
                         var threadStart = await SBSend.SendMessage(new Slack.Events.Inner.message { channel = slashData.channel_id, text = $"<@{slashData.user_id}> wants to start a game of blackjack! Open this thread to play." }, logger);
