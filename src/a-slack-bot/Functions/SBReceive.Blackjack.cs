@@ -143,6 +143,7 @@ namespace a_slack_bot.Functions
                         if (gameDoc.bets.Count != gameDoc.hands.Count)
                         {
                             var chuckleHeads = gameDoc.hands.Keys.Except(gameDoc.bets.Keys).ToList();
+
                             for (int i = 0; i < chuckleHeads.Count; i++)
                             {
                                 var chuckleHead = chuckleHeads[i];
@@ -185,7 +186,7 @@ namespace a_slack_bot.Functions
                     {
                         gameDoc.moves.Add(new Documents.BlackjackMove { action = Documents.BlackjackAction.Bet, user_id = inMessage.user_id, bet = inMessage.amount });
                         gameDoc.bets.Add(inMessage.user_id, inMessage.amount);
-                        gameDoc = await UpsertAndGetGameDocument(docClient, gameDoc);
+                        gameDoc = await UpsertGameDocument(docClient, gameDoc);
                         await messageCollector.SendMessageAsync(inMessage, $"{SR.U.IdToName[inMessage.user_id]} bets ¤{inMessage.amount}");
                         logger.LogInformation("Updated game with bet.");
 
@@ -210,9 +211,9 @@ namespace a_slack_bot.Functions
             }
         }
 
-        private static Task UpsertGameDocument(DocumentClient docClient, Documents.Blackjack gameDoc)
+        private static async Task<Documents.Blackjack> UpsertGameDocument(DocumentClient docClient, Documents.Blackjack gameDoc)
         {
-            return docClient.UpsertDocumentAsync(
+            return (Documents.Blackjack)(dynamic)(await docClient.UpsertDocumentAsync(
                 Documents.Blackjack.DocColUri,
                 gameDoc,
                 new RequestOptions
@@ -224,14 +225,7 @@ namespace a_slack_bot.Functions
                     },
                     PartitionKey = Documents.Blackjack.PartitionKey
                 },
-                disableAutomaticIdGeneration: true);
-        }
-
-        private static async Task<Documents.Blackjack> UpsertAndGetGameDocument(DocumentClient docClient, Documents.Blackjack gameDoc)
-        {
-            await UpsertGameDocument(docClient, gameDoc);
-            var gameDocUri = UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, gameDoc.Id);
-            return await docClient.ReadDocumentAsync<Documents.Blackjack>(gameDocUri, new RequestOptions { PartitionKey = Documents.Blackjack.PartitionKey });
+                disableAutomaticIdGeneration: true)).Resource;
         }
     }
 }
