@@ -32,7 +32,7 @@ namespace a_slack_bot.Functions
                     break;
 
                 case Slack.Events.Inner.message message:
-                    if (string.IsNullOrWhiteSpace(message.thread_ts))
+                    if (!string.IsNullOrWhiteSpace(message.thread_ts))
                         await messageThreadCollector.AddAsync(message);
                     break;
 

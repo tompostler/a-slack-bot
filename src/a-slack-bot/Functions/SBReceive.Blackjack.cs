@@ -122,7 +122,7 @@ namespace a_slack_bot.Functions
                     if (gameDoc.Document.state == Documents.BlackjackGameState.Joining)
                     {
                         await messageCollector.SendMessageAsync(inMessage, "Joining timed out.");
-                        var msg = new BrokeredMessage(new Messages.ServiceBusBlackjack { channel_id = inMessage.channel_id, thread_ts = inMessage.thread_ts, type = Messages.BlackjackMessageType.Timer_Joining })
+                        var msg = new BrokeredMessage(new Messages.ServiceBusBlackjack { channel_id = inMessage.channel_id, thread_ts = inMessage.thread_ts, type = Messages.BlackjackMessageType.Timer_CollectingBets })
                         {
                             ScheduledEnqueueTimeUtc = DateTime.UtcNow.AddMinutes(1)
                         };
