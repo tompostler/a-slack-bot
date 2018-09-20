@@ -20,6 +20,13 @@ namespace a_slack_bot.Functions
             if (Settings.Debug)
                 logger.LogInformation("Msg: {0}", JsonConvert.SerializeObject(eventMessage));
 
+            // If it's not a user message, then ignore it
+            if (string.IsNullOrEmpty(eventMessage.user))
+            {
+                logger.LogInformation("Ignoring non-user message.");
+                return;
+            }
+
             // First, see if there's any matching documents
             Documents.Blackjack gameDoc = null;
             try
