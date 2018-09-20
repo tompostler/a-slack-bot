@@ -83,7 +83,7 @@ namespace a_slack_bot.Functions
             }
 
             // Get the game doc
-            var gameDoc = await docClient.ReadDocumentAsync<Documents.Blackjack>(gameDocUri, new RequestOptions { PartitionKey = Documents.Blackjack.PartitionKey });
+            Documents.Blackjack gameDoc = await docClient.ReadDocumentAsync<Documents.Blackjack>(gameDocUri, new RequestOptions { PartitionKey = Documents.Blackjack.PartitionKey });
             logger.LogInformation("Got game doc");
 
             switch (inMessage.type)
@@ -121,7 +121,7 @@ namespace a_slack_bot.Functions
 
 
                 case Messages.BlackjackMessageType.Timer_Joining:
-                    if (gameDoc.Document.state == Documents.BlackjackGameState.Joining)
+                    if (gameDoc.state == Documents.BlackjackGameState.Joining)
                     {
                         await messageCollector.SendMessageAsync(inMessage, "Joining timed out.");
                         var msg = new BrokeredMessage(new Messages.ServiceBusBlackjack { channel_id = inMessage.channel_id, thread_ts = inMessage.thread_ts, type = Messages.BlackjackMessageType.Timer_CollectingBets })
@@ -137,12 +137,12 @@ namespace a_slack_bot.Functions
 
 
                 case Messages.BlackjackMessageType.Timer_CollectingBets:
-                    if (gameDoc.Document.state == Documents.BlackjackGameState.CollectingBets)
+                    if (gameDoc.state == Documents.BlackjackGameState.CollectingBets)
                     {
                         // users are only added to bets if they bet
-                        if (gameDoc.Document.bets.Count != gameDoc.Document.hands.Count)
+                        if (gameDoc.bets.Count != gameDoc.hands.Count)
                         {
-                            var chuckleHeads = gameDoc.Document.hands.Keys.Except(gameDoc.Document.bets.Keys).ToList();
+                            var chuckleHeads = gameDoc.hands.Keys.Except(gameDoc.bets.Keys).ToList();
 
                             for (int i = 0; i < chuckleHeads.Count; i++)
                             {
@@ -162,16 +162,19 @@ namespace a_slack_bot.Functions
 
 
                 case Messages.BlackjackMessageType.JoinGame:
-                    gameDoc.Document.moves.Add(new Documents.BlackjackMove { action = Documents.BlackjackAction.Join, user_id = inMessage.user_id });
-                    gameDoc.Document.hands.Add(inMessage.user_id, new List<string>());
-                    await messageCollector.SendMessageAsync(inMessage, $"Thanks for joining {SR.U.IdToName[inMessage.user_id]}");
-                    await UpsertGameDocument(docClient, gameDoc);
+                    if (!gameDoc.hands.ContainsKey(inMessage.user_id) && gameDoc.state == Documents.BlackjackGameState.Joining)
+                    {
+                        gameDoc.moves.Add(new Documents.BlackjackMove { action = Documents.BlackjackAction.Join, user_id = inMessage.user_id });
+                        gameDoc.hands.Add(inMessage.user_id, new List<string>());
+                        await messageCollector.SendMessageAsync(inMessage, $"Thanks for joining, {SR.U.IdToName[inMessage.user_id]}.");
+                        await UpsertGameDocument(docClient, gameDoc);
+                    }
                     break;
 
 
                 case Messages.BlackjackMessageType.ToCollectingBets:
-                    gameDoc.Document.moves.Add(new Documents.BlackjackMove { action = Documents.BlackjackAction.StateChange, user_id = inMessage.user_id, to_state = Documents.BlackjackGameState.CollectingBets });
-                    gameDoc.Document.state = Documents.BlackjackGameState.CollectingBets;
+                    gameDoc.moves.Add(new Documents.BlackjackMove { action = Documents.BlackjackAction.StateChange, user_id = inMessage.user_id, to_state = Documents.BlackjackGameState.CollectingBets });
+                    gameDoc.state = Documents.BlackjackGameState.CollectingBets;
                     await UpsertGameDocument(docClient, gameDoc);
                     await messageCollector.SendMessageAsync(inMessage, "Collecting bets!");
                     logger.LogInformation("Updated game state to collecting bets.");
@@ -179,20 +182,23 @@ namespace a_slack_bot.Functions
 
 
                 case Messages.BlackjackMessageType.PlaceBet:
-                    gameDoc.Document.moves.Add(new Documents.BlackjackMove { action = Documents.BlackjackAction.Bet, user_id = inMessage.user_id, bet = inMessage.amount });
-                    gameDoc.Document.bets.Add(inMessage.user_id, inMessage.amount);
-                    await UpsertGameDocument(docClient, gameDoc);
-                    await messageCollector.SendMessageAsync(inMessage, $"{SR.U.IdToName[inMessage.user_id]} bets ¤{inMessage.amount}");
-                    logger.LogInformation("Updated game with bet.");
+                    if (!gameDoc.bets.ContainsKey(inMessage.user_id) && gameDoc.state == Documents.BlackjackGameState.CollectingBets)
+                    {
+                        gameDoc.moves.Add(new Documents.BlackjackMove { action = Documents.BlackjackAction.Bet, user_id = inMessage.user_id, bet = inMessage.amount });
+                        gameDoc.bets.Add(inMessage.user_id, inMessage.amount);
+                        gameDoc = await UpsertGameDocument(docClient, gameDoc);
+                        await messageCollector.SendMessageAsync(inMessage, $"{SR.U.IdToName[inMessage.user_id]} bets ¤{inMessage.amount}");
+                        logger.LogInformation("Updated game with bet.");
 
-                    if (gameDoc.Document.bets.Count == gameDoc.Document.hands.Count)
-                        goto case Messages.BlackjackMessageType.ToGame;
+                        if (gameDoc.bets.Count == gameDoc.hands.Count)
+                            goto case Messages.BlackjackMessageType.ToGame;
+                    }
                     break;
 
 
                 case Messages.BlackjackMessageType.ToGame:
-                    gameDoc.Document.moves.Add(new Documents.BlackjackMove { action = Documents.BlackjackAction.StateChange, to_state = Documents.BlackjackGameState.Running });
-                    gameDoc.Document.state = Documents.BlackjackGameState.Running;
+                    gameDoc.moves.Add(new Documents.BlackjackMove { action = Documents.BlackjackAction.StateChange, to_state = Documents.BlackjackGameState.Running });
+                    gameDoc.state = Documents.BlackjackGameState.Running;
                     await UpsertGameDocument(docClient, gameDoc);
                     await messageCollector.SendMessageAsync(inMessage, $"Running a game not yet supported. All bets cancelled. {inMessage.channel_id}|{inMessage.thread_ts}");
                     logger.LogInformation("Updated game state to running.");
@@ -205,9 +211,9 @@ namespace a_slack_bot.Functions
             }
         }
 
-        private static Task UpsertGameDocument(DocumentClient docClient, Documents.Blackjack gameDoc)
+        private static async Task<Documents.Blackjack> UpsertGameDocument(DocumentClient docClient, Documents.Blackjack gameDoc)
         {
-            return docClient.UpsertDocumentAsync(
+            return (Documents.Blackjack)(dynamic)(await docClient.UpsertDocumentAsync(
                 Documents.Blackjack.DocColUri,
                 gameDoc,
                 new RequestOptions
@@ -219,7 +225,7 @@ namespace a_slack_bot.Functions
                     },
                     PartitionKey = Documents.Blackjack.PartitionKey
                 },
-                disableAutomaticIdGeneration: true);
+                disableAutomaticIdGeneration: true)).Resource;
         }
     }
 }
