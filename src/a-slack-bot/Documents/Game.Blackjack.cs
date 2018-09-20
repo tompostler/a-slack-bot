@@ -30,23 +30,31 @@ namespace a_slack_bot.Documents
         public string channel_id { get; set; }
         public string thread_ts { get; set; }
 
+        private string _friendly_name { get; set; }
         public string friendly_name
         {
             get
             {
-                var ts = this.thread_ts.Split('.')[0];
-                var friendly = string.Empty;
-                do
+                if (this._friendly_name == null)
                 {
-                    var chunk = ts.Substring(Math.Max(ts.Length - 4, 0));
-                    friendly += '.' + int.Parse(chunk).ToBase33String();
-                    Console.WriteLine(chunk);
-                    ts = ts.Substring(0, ts.Length - chunk.Length);
+                    var ts = this.thread_ts.Split('.')[0];
+                    var friendly = string.Empty;
+                    do
+                    {
+                        var chunk = ts.Substring(Math.Max(ts.Length - 4, 0));
+                        friendly += '.' + int.Parse(chunk).ToBase33String();
+                        Console.WriteLine(chunk);
+                        ts = ts.Substring(0, ts.Length - chunk.Length);
+                    }
+                    while (ts.Length > 0);
+                    this._friendly_name = friendly.Substring(1);
                 }
-                while (ts.Length > 0);
-                return friendly.Substring(1);
+                return this._friendly_name;
             }
-            set { }
+            set
+            {
+                this._friendly_name = value;
+            }
         }
 
         // key=user_id,value=cards. quick state that can be reconstructed from moves
