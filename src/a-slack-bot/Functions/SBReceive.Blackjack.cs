@@ -35,11 +35,11 @@ namespace a_slack_bot.Functions
             {
                 try
                 {
-                    var gameBalancesDoc = await docClient.ReadDocumentAsync<Documents.BlackjackStandings>(Documents.BlackjackStandings.DocUri, new RequestOptions { PartitionKey = Documents.Blackjack.PartitionKey });
+                    Documents.BlackjackStandings gameBalancesDoc = await docClient.ReadDocumentAsync<Documents.BlackjackStandings>(Documents.BlackjackStandings.DocUri, new RequestOptions { PartitionKey = Documents.Blackjack.PartitionKey });
 
                     if (inMessage.type == Messages.BlackjackMessageType.GetBalance)
-                        if (gameBalancesDoc.Document.Content.ContainsKey(inMessage.user_id))
-                            await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = inMessage.channel_id, text = $"<@{inMessage.user_id}>: ¤{gameBalancesDoc.Document.Content[inMessage.user_id]}" });
+                        if (gameBalancesDoc.Content.ContainsKey(inMessage.user_id))
+                            await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = inMessage.channel_id, text = $"<@{inMessage.user_id}>: ¤{gameBalancesDoc.Content[inMessage.user_id]}" });
                         else
                             await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = inMessage.channel_id, text = $"<@{inMessage.user_id}>: ¤1,000,000" });
                     else
@@ -49,12 +49,12 @@ namespace a_slack_bot.Functions
                         sb.AppendLine("Balances for those that have played:");
                         sb.AppendLine("```");
                         var maxNamLength = Math.Max(SR.U.MaxNameLength, 4);
-                        var maxBalLength = Math.Max($"{(gameBalancesDoc.Document.Content.Values.Count == 0 ? 0 : gameBalancesDoc.Document.Content.Values.Max()):#,#}".Length, 7);
+                        var maxBalLength = Math.Max($"{(gameBalancesDoc.Content.Values.Count == 0 ? 0 : gameBalancesDoc.Content.Values.Max()):#,#}".Length, 7);
                         sb.Append("USER".PadRight(SR.U.MaxNameLength));
                         sb.Append("  ");
                         sb.Append("BALANCE".PadLeft(maxBalLength));
                         sb.AppendLine();
-                        foreach (var user in gameBalancesDoc.Document.Content)
+                        foreach (var user in gameBalancesDoc.Content)
                         {
                             if (SR.U.IdToName.ContainsKey(user.Key))
                                 sb.Append($"{SR.U.IdToName[user.Key].PadRight(maxNamLength)}  ");
@@ -89,10 +89,10 @@ namespace a_slack_bot.Functions
             switch (inMessage.type)
             {
                 case Messages.BlackjackMessageType.UpdateBalance:
-                    var gameBalancesDoc = await docClient.ReadDocumentAsync<Documents.BlackjackStandings>(
+                    Documents.BlackjackStandings gameBalancesDoc = await docClient.ReadDocumentAsync<Documents.BlackjackStandings>(
                         Documents.BlackjackStandings.DocUri,
                         new RequestOptions { PartitionKey = Documents.Blackjack.PartitionKey });
-                    var bals = gameBalancesDoc.Document.Content;
+                    var bals = gameBalancesDoc.Content;
                     if (!bals.ContainsKey(inMessage.user_id))
                     {
                         bals[inMessage.user_id] = 1_000_000;
@@ -111,7 +111,7 @@ namespace a_slack_bot.Functions
                         {
                             AccessCondition = new AccessCondition
                             {
-                                Condition = gameBalancesDoc.Document.ETag,
+                                Condition = gameBalancesDoc.ETag,
                                 Type = AccessConditionType.IfMatch
                             },
                             PartitionKey = Documents.Blackjack.PartitionKey
