@@ -47,7 +47,7 @@ namespace a_slack_bot.Documents
                         ts = ts / Max3DigitBase33;
                     }
                     while (ts > 0);
-                    this._friendly_name = friendly.Substring(1);
+                    this._friendly_name = friendly.TrimStart('.', '0');
                 }
                 return this._friendly_name;
             }
