@@ -48,7 +48,7 @@ namespace a_slack_bot.Functions
                         var sb = new StringBuilder();
                         sb.AppendLine("Balances for those that have played:");
                         sb.AppendLine("```");
-                        var maxNamLength = Math.Max(SR.U.MaxNameLength, 4);
+                        var maxNamLength = Math.Max(SR.U.MaxNameLength, 8);
                         var maxBalLength = Math.Max($"{(gameBalancesDoc.Content.Values.Count == 0 ? 0 : gameBalancesDoc.Content.Values.Max()):#,#}".Length, 7);
                         sb.Append("USER".PadRight(SR.U.MaxNameLength));
                         sb.Append("  ");
@@ -197,11 +197,11 @@ namespace a_slack_bot.Functions
 
 
                 case Messages.BlackjackMessageType.ToGame:
-                    gameDoc.moves.Add(new Documents.BlackjackMove { action = Documents.BlackjackAction.StateChange, to_state = Documents.BlackjackGameState.Running });
-                    gameDoc.state = Documents.BlackjackGameState.Running;
+                    gameDoc.moves.Add(new Documents.BlackjackMove { action = Documents.BlackjackAction.StateChange, to_state = Documents.BlackjackGameState.Finished });
+                    gameDoc.state = Documents.BlackjackGameState.Finished;
                     await UpsertGameDocument(docClient, gameDoc);
-                    await messageCollector.SendMessageAsync(inMessage, $"Running a game not yet supported. All bets cancelled. {inMessage.channel_id}|{inMessage.thread_ts}");
-                    logger.LogInformation("Updated game state to running.");
+                    await messageCollector.SendMessageAsync(inMessage, "Running a game not yet supported. All bets cancelled.");
+                    logger.LogInformation("Updated game state to finished.");
                     break;
 
 
