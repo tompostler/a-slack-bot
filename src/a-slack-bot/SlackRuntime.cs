@@ -23,6 +23,10 @@ namespace a_slack_bot
         {
             if (!string.IsNullOrWhiteSpace(Settings.SlackOauthBotToken))
                 httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Settings.SlackOauthBotToken);
+
+            // This would change to a setting on the DocumentClient in DocumentDB SDK 1.15+
+            // This change _shouldn't_ break anything.
+            Newtonsoft.Json.JsonConvert.DefaultSettings = () => new Newtonsoft.Json.JsonSerializerSettings { NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore };
         }
 
         private static SemaphoreSlim Lock = new SemaphoreSlim(1);

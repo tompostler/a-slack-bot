@@ -57,8 +57,10 @@ namespace a_slack_bot.Documents
             }
         }
 
+        public Cards.DeckStore deck { get; set; }
+
         // key=user_id,value=cards. quick state that can be reconstructed from moves
-        public Dictionary<string, List<string>> hands { get; set; } = new Dictionary<string, List<string>>();
+        public Dictionary<string, List<Cards.Cards>> hands { get; set; } = new Dictionary<string, List<Cards.Cards>>();
         // key=user_id,value=bet. quick state that can be reconstructed from moves
         public Dictionary<string, long> bets { get; set; } = new Dictionary<string, long>();
         public List<BlackjackMove> moves { get; set; } = new List<BlackjackMove>();
@@ -73,7 +75,7 @@ namespace a_slack_bot.Documents
         public BlackjackAction action { get; set; }
 
         public long bet { get; set; }
-        public string card { get; set; }
+        public Cards.Cards? card { get; set; }
         public BlackjackGameState? to_state { get; set; }
 
         public DateTimeOffset timestamp { get; set; } = DateTimeOffset.UtcNow;

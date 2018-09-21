@@ -165,7 +165,7 @@ namespace a_slack_bot.Functions
                     if (!gameDoc.hands.ContainsKey(inMessage.user_id) && gameDoc.state == Documents.BlackjackGameState.Joining)
                     {
                         gameDoc.moves.Add(new Documents.BlackjackMove { action = Documents.BlackjackAction.Join, user_id = inMessage.user_id });
-                        gameDoc.hands.Add(inMessage.user_id, new List<string>());
+                        gameDoc.hands.Add(inMessage.user_id, new List<Cards.Cards>());
                         await messageCollector.SendMessageAsync(inMessage, $"Thanks for joining, {SR.U.IdToName[inMessage.user_id]}.");
                         await UpsertGameDocument(docClient, gameDoc);
                     }

@@ -13,38 +13,11 @@
 
   <PropertyGroup>
     <TargetFramework>net47</TargetFramework>
-    <RootNamespace>a_slack_bot</RootNamespace>
     <LangVersion>latest</LangVersion>
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="GitVersionTask" Version="4.0.0-beta0014" />
-    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.DocumentDB" Version="1.2.0" />
-    <PackageReference Include="Microsoft.Azure.WebJobs.ServiceBus" Version="2.2.0" />
-    <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="1.0.21" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Cards\Cards.csproj" />
-    <ProjectReference Include="..\Slack\Slack.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Configuration" />
-    <Reference Include="System.Web" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="host.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="local.settings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
-    </None>
+    <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
   </ItemGroup>
 
 </Project>

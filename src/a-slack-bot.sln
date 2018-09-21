@@ -21,6 +21,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "templates", "templates", "{
 		..\deployment\templates\SimpleStorageAccount.json = ..\deployment\templates\SimpleStorageAccount.json
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cards", "Cards\Cards.csproj", "{887F06AB-1B47-4797-AE0E-C21C250B489B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,6 +37,10 @@ Global
 		{CD5D7121-CBAF-4577-86E5-A6B5D0483BB7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CD5D7121-CBAF-4577-86E5-A6B5D0483BB7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CD5D7121-CBAF-4577-86E5-A6B5D0483BB7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{887F06AB-1B47-4797-AE0E-C21C250B489B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{887F06AB-1B47-4797-AE0E-C21C250B489B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{887F06AB-1B47-4797-AE0E-C21C250B489B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{887F06AB-1B47-4797-AE0E-C21C250B489B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
