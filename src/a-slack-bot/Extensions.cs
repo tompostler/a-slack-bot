@@ -90,15 +90,15 @@ namespace a_slack_bot
             return results;
         }
 
-        public static string ToBase33String(this int @this)
+        public static string ToBase33String(this long @this)
         {
             const string base33Alphabet = "0123456789ABCDEFGHJKLMNPQRSTUVXYZ";
             string basic = string.Empty;
 
             do
             {
-                int remainder = @this % base33Alphabet.Length;
-                basic = base33Alphabet[remainder] + basic;
+                long remainder = @this % base33Alphabet.Length;
+                basic = base33Alphabet[(int)remainder] + basic;
                 @this = (@this - remainder) / base33Alphabet.Length;
             }
             while (@this > 0);

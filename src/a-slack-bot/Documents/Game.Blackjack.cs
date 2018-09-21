@@ -37,16 +37,16 @@ namespace a_slack_bot.Documents
             {
                 if (this._friendly_name == null)
                 {
-                    var ts = this.thread_ts.Split('.')[0];
+                    long ts = long.Parse(this.thread_ts.Replace(".", string.Empty));
                     var friendly = string.Empty;
                     do
                     {
-                        var chunk = ts.Substring(Math.Max(ts.Length - 4, 0));
-                        friendly += '.' + int.Parse(chunk).ToBase33String();
-                        Console.WriteLine(chunk);
-                        ts = ts.Substring(0, ts.Length - chunk.Length);
+                        const long Max3DigitBase33 = 35937;
+                        var chunk = ts % Max3DigitBase33;
+                        friendly = '.' + chunk.ToBase33String().PadLeft('0') + friendly;
+                        ts = ts / Max3DigitBase33;
                     }
-                    while (ts.Length > 0);
+                    while (ts > 0);
                     this._friendly_name = friendly.Substring(1);
                 }
                 return this._friendly_name;
