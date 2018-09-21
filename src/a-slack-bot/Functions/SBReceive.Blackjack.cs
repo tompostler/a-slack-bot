@@ -147,7 +147,7 @@ namespace a_slack_bot.Functions
                             for (int i = 0; i < chuckleHeads.Count; i++)
                             {
                                 var chuckleHead = chuckleHeads[i];
-                                await messageCollector.SendMessageAsync(inMessage, $"Betting timed out. Dropping <@{chuckleHead}> who loses ¤1 as a penalty for not betting.");
+                                await messageCollector.SendMessageAsync(inMessage, $"Betting timed out. Dropped <@{chuckleHead}> who loses ¤1 as a penalty for not betting.");
                                 var chuckleMessage = new BrokeredMessage(new Messages.ServiceBusBlackjack { type = Messages.BlackjackMessageType.UpdateBalance, channel_id = inMessage.channel_id, thread_ts = inMessage.thread_ts, user_id = chuckleHead, amount = -1 })
                                 {
                                     ScheduledEnqueueTimeUtc = DateTime.UtcNow.AddSeconds(2 * i)
