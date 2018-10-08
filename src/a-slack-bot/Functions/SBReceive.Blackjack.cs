@@ -29,57 +29,57 @@ namespace a_slack_bot.Functions
             await SR.Init(logger);
 
             var gameDocUri = UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, $"{inMessage.channel_id}|{inMessage.thread_ts}");
+            Documents.BlackjackStandings gameBalancesDoc = null;
+            try
+            {
+                gameBalancesDoc = await docClient.ReadDocumentAsync<Documents.BlackjackStandings>(Documents.BlackjackStandings.DocUri, new RequestOptions { PartitionKey = Documents.Blackjack.PartitionKey });
+            }
+            catch (DocumentClientException dce) when (dce.StatusCode == HttpStatusCode.NotFound)
+            {
+                await docClient.CreateDocumentAsync(
+                    Documents.Blackjack.DocColUri,
+                    new Documents.BlackjackStandings { Content = new Dictionary<string, long>() },
+                    new RequestOptions { PartitionKey = Documents.Blackjack.PartitionKey });
+
+                // Let SB retry us. Should only ever hit this once.
+                throw;
+            }
 
             // Handle a balance request
             if (inMessage.type == Messages.BlackjackMessageType.GetBalance || inMessage.type == Messages.BlackjackMessageType.GetBalances)
             {
-                try
-                {
-                    Documents.BlackjackStandings gameBalancesDoc = await docClient.ReadDocumentAsync<Documents.BlackjackStandings>(Documents.BlackjackStandings.DocUri, new RequestOptions { PartitionKey = Documents.Blackjack.PartitionKey });
-
-                    if (inMessage.type == Messages.BlackjackMessageType.GetBalance)
-                        if (gameBalancesDoc.Content.ContainsKey(inMessage.user_id))
-                            await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = inMessage.channel_id, text = $"<@{inMessage.user_id}>: ¤{gameBalancesDoc.Content[inMessage.user_id]}" });
-                        else
-                            await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = inMessage.channel_id, text = $"<@{inMessage.user_id}>: ¤1,000,000" });
+                if (inMessage.type == Messages.BlackjackMessageType.GetBalance)
+                    if (gameBalancesDoc.Content.ContainsKey(inMessage.user_id))
+                        await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = inMessage.channel_id, text = $"<@{inMessage.user_id}>: ¤{gameBalancesDoc.Content[inMessage.user_id]}" });
                     else
-                    {
-                        // all balances
-                        var sb = new StringBuilder();
-                        sb.AppendLine("Balances for those that have played:");
-                        sb.AppendLine("```");
-                        var maxNamLength = Math.Max(SR.U.MaxNameLength, 8);
-                        var maxBalLength = Math.Max($"{(gameBalancesDoc.Content.Values.Count == 0 ? 0 : gameBalancesDoc.Content.Values.Max()):#,#}".Length, 7);
-                        sb.Append("USER".PadRight(SR.U.MaxNameLength));
-                        sb.Append("  ");
-                        sb.Append("BALANCE".PadLeft(maxBalLength));
-                        sb.AppendLine();
-                        foreach (var user in gameBalancesDoc.Content)
-                        {
-                            if (SR.U.IdToName.ContainsKey(user.Key))
-                                sb.Append($"{SR.U.IdToName[user.Key].PadRight(maxNamLength)}  ");
-                            else
-                                sb.Append($"{user.Key.PadRight(maxNamLength)}  ");
-                            sb.AppendFormat($"{{0,{maxBalLength}:#,#}}", user.Value);
-                            sb.AppendLine();
-                        }
-                        sb.AppendLine("```");
-                        sb.AppendLine();
-                        sb.AppendLine("Balances for those that have not played: ¤1,000,000");
-                        await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = inMessage.channel_id, text = sb.ToString() });
-                    }
-                    return;
-                }
-                catch (DocumentClientException dce) when (dce.StatusCode == HttpStatusCode.NotFound)
+                        await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = inMessage.channel_id, text = $"<@{inMessage.user_id}>: ¤1,000,000" });
+                else
                 {
-                    await docClient.CreateDocumentAsync(
-                        Documents.Blackjack.DocColUri,
-                        new Documents.BlackjackStandings { Content = new Dictionary<string, long>() },
-                        new RequestOptions { PartitionKey = Documents.Blackjack.PartitionKey });
-
-                    // Let SB retry us. Should only ever hit this once.
-                    throw;
+                    // all balances
+                    var sb = new StringBuilder();
+                    sb.AppendLine("Balances for those that have played:");
+                    sb.AppendLine("```");
+                    var maxNamLength = Math.Max(SR.U.MaxNameLength, 8);
+                    var maxBalLength = Math.Max($"{(gameBalancesDoc.Content.Values.Count == 0 ? 0 : gameBalancesDoc.Content.Values.Max()):#,#}".Length, 7);
+                    sb.Append("USER".PadRight(SR.U.MaxNameLength));
+                    sb.Append("  ");
+                    sb.Append("BALANCE".PadLeft(maxBalLength));
+                    sb.AppendLine();
+                    foreach (var user in gameBalancesDoc.Content)
+                    {
+                        if (SR.U.IdToName.ContainsKey(user.Key))
+                            sb.Append($"{SR.U.IdToName[user.Key].PadRight(maxNamLength)}  ");
+                        else
+                            sb.Append($"{user.Key.PadRight(maxNamLength)}  ");
+                        sb.AppendFormat($"{{0,{maxBalLength}:#,#}}", user.Value);
+                        sb.AppendLine();
+                    }
+                    sb.AppendLine("```");
+                    sb.AppendLine();
+                    sb.AppendLine("Balances for those that have not played: ¤1,000,000");
+                    await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = inMessage.channel_id, text = sb.ToString() });
                 }
+                return;
             }
 
             // Get the game doc
@@ -89,9 +89,6 @@ namespace a_slack_bot.Functions
             switch (inMessage.type)
             {
                 case Messages.BlackjackMessageType.UpdateBalance:
-                    Documents.BlackjackStandings gameBalancesDoc = await docClient.ReadDocumentAsync<Documents.BlackjackStandings>(
-                        Documents.BlackjackStandings.DocUri,
-                        new RequestOptions { PartitionKey = Documents.Blackjack.PartitionKey });
                     var bals = gameBalancesDoc.Content;
                     if (!bals.ContainsKey(inMessage.user_id))
                     {
@@ -147,9 +144,15 @@ namespace a_slack_bot.Functions
                             for (int i = 0; i < chuckleHeads.Count; i++)
                             {
                                 var chuckleHead = chuckleHeads[i];
-                                await messageCollector.SendMessageAsync(inMessage, $"Betting timed out. Dropped <@{chuckleHead}> who loses ¤1 as a penalty for not betting.");
-                                var chuckleMessage = new BrokeredMessage(new Messages.ServiceBusBlackjack { type = Messages.BlackjackMessageType.UpdateBalance, channel_id = inMessage.channel_id, thread_ts = inMessage.thread_ts, user_id = chuckleHead, amount = -1 })
+                                long balance = 1_000_000;
+                                if (gameBalancesDoc.Content.ContainsKey(chuckleHead))
+                                    balance = gameBalancesDoc.Content[chuckleHead];
+                                // Lose at most 5% of total balance
+                                var loss = (long)Math.Max(SR.Rand.NextDouble() * 0.05 * balance, 1);
+                                await messageCollector.SendMessageAsync(inMessage, $"Betting timed out. Dropped <@{chuckleHead}> who loses ¤{loss} as a penalty for not betting.");
+                                var chuckleMessage = new BrokeredMessage(new Messages.ServiceBusBlackjack { type = Messages.BlackjackMessageType.UpdateBalance, channel_id = inMessage.channel_id, thread_ts = inMessage.thread_ts, user_id = chuckleHead, amount = -loss })
                                 {
+                                    // Schedule every 2s to give cosmos db a chance
                                     ScheduledEnqueueTimeUtc = DateTime.UtcNow.AddSeconds(2 * i)
                                 };
                                 await messageStateCollector.AddAsync(chuckleMessage);

@@ -70,6 +70,11 @@ namespace a_slack_bot
         public static SlackResponses R { get; private set; }
 
         /// <summary>
+        /// Shared static random.
+        /// </summary>
+        public static Random Rand { get; } = new Random();
+
+        /// <summary>
         /// Tokens
         /// </summary>
         public static SlackTokens T { get; private set; }
