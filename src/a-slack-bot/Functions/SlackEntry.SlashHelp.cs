@@ -28,7 +28,7 @@ namespace a_slack_bot.Functions
             return req.CreateResponse(HttpStatusCode.OK, new { response_type = "ephemeral", text = SlackEntry.HelpText });
         }
 
-        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////
         public static string HelpText => $@"```
 {C.VersionStr}
 
@@ -38,14 +38,22 @@ nuggets of goodness thrown in.
 
 Code, build, and release: https://tompostler.visualstudio.com/public/_git/a-slack-bot
 
-The following slash commands have longer descriptions than what fits in the Slack API configutation:
+The following are slash commands that can be triggered by the app:
 
     /asb-help           This helptext
+    /asb-response (add|list|remove) ['key' [value]]
+                        Add, list or remove custom message responses. Sending the command with no
+                        arguments will get you additional helptext.
     /asb-send-as-me [t] Store a user token to be used for replying to slash commands as you instead
                         of as the bot. This uses Slack's legacy token feature because I don't want
                         to deal with the proper OAuth 2.0 Slack flow. If you wish to remove token,
                         pass 'clear' for the token value. Visit
                         https://api.slack.com/custom-integrations/legacy-tokens to generate a token
+    /asb-whitelist (add|remove) 'thing-to-whitelist'
+                        Based on the thing-to-whitelist, will update whatever is necessary to make
+                        it happen. An example right now is needing to whitelist the /blackjack
+                        command in a channel.
+    /blackjack          Starts a threaded game of blackjack. Needs to be whitelist in a channel.
     /disapprove         Sends ಠ_ಠ to the channel
     /flip [text]        Echoes your message, followed by (╯°□°)╯︵ ┻━┻
     /spaces [text]      Echoes your message, with spaces inserted betwix letters
