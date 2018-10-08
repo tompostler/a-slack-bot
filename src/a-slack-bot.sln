@@ -21,7 +21,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "templates", "templates", "{
 		..\deployment\templates\SimpleStorageAccount.json = ..\deployment\templates\SimpleStorageAccount.json
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cards", "Cards\Cards.csproj", "{887F06AB-1B47-4797-AE0E-C21C250B489B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cards", "Cards\Cards.csproj", "{887F06AB-1B47-4797-AE0E-C21C250B489B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "upgrade.181008", "upgrade.181008\upgrade.181008.csproj", "{5F1508F8-39CB-429E-8AF4-50A525B4CBD3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,6 +43,10 @@ Global
 		{887F06AB-1B47-4797-AE0E-C21C250B489B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{887F06AB-1B47-4797-AE0E-C21C250B489B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{887F06AB-1B47-4797-AE0E-C21C250B489B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5F1508F8-39CB-429E-8AF4-50A525B4CBD3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F1508F8-39CB-429E-8AF4-50A525B4CBD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F1508F8-39CB-429E-8AF4-50A525B4CBD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F1508F8-39CB-429E-8AF4-50A525B4CBD3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
