@@ -54,10 +54,6 @@ namespace a_slack_bot.Functions
             "/asb-whitelist",
             "/blackjack"
         };
-        private static readonly HashSet<string> SilentEchoableCommands = new HashSet<string>
-        {
-            "/asb-response"
-        };
         [FunctionName(nameof(ReceiveSlash))]
         public static async Task<HttpResponseMessage> ReceiveSlash(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = "receive/slash")]HttpRequestMessage req,
@@ -85,8 +81,6 @@ namespace a_slack_bot.Functions
             // Return all is well
             if (EchoableCommands.Contains(slashData.command))
                 return req.CreateResponse(HttpStatusCode.OK, new { response_type = "in_channel" });
-            else if (SilentEchoableCommands.Contains(slashData.command))
-                return req.CreateResponse(HttpStatusCode.OK, new { response_type = "ephemeral" });
             else
                 return req.CreateResponse(HttpStatusCode.OK);
         }
