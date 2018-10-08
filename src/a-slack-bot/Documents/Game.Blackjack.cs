@@ -74,11 +74,11 @@ namespace a_slack_bot.Documents
         public string user_id { get; set; }
         public BlackjackAction action { get; set; }
 
-        public long bet { get; set; }
+        public long? bet { get; set; }
         public Cards.Cards? card { get; set; }
         public BlackjackGameState? to_state { get; set; }
 
-        public DateTimeOffset timestamp { get; set; } = DateTimeOffset.UtcNow;
+        public DateTimeOffset timestamp { get; set; } = DateTimeOffset.Now;
     }
 
     [JsonConverter(typeof(StringEnumConverter))]
@@ -88,6 +88,7 @@ namespace a_slack_bot.Documents
         StateChange,
         Join,
         Bet,
+        Loss,
         Fold,
         Hit,
         Split

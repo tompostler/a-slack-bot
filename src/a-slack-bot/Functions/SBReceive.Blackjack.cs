@@ -114,6 +114,8 @@ namespace a_slack_bot.Functions
                             PartitionKey = Documents.Blackjack.PartitionKey
                         },
                         disableAutomaticIdGeneration: true);
+                    gameDoc.moves.Add(new Documents.BlackjackMove { action = Documents.BlackjackAction.Loss, user_id = inMessage.user_id, bet = inMessage.amount });
+                    await UpsertGameDocument(docClient, gameDoc);
                     break;
 
 
