@@ -1,4 +1,5 @@
-﻿using Microsoft.Azure.WebJobs;
+﻿using Microsoft.Azure.Documents.Client;
+using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
@@ -10,6 +11,7 @@ namespace a_slack_bot.Functions
         [FunctionName(nameof(SBReceiveEvent))]
         public static async Task SBReceiveEvent(
             [ServiceBusTrigger(C.SBQ.InputEvent)]Messages.ServiceBusInputEvent eventMessage,
+            [DocumentDB(ConnectionStringSetting = C.CDB.CSS)]DocumentClient docClient,
             [DocumentDB(C.CDB.DN, C.CDB.CN, ConnectionStringSetting = C.CDB.CSS, PartitionKey = C.CDB.P, CreateIfNotExists = true)]IAsyncCollector<Documents.Event> documentCollector,
             [ServiceBus(C.SBQ.SendMessage)]IAsyncCollector<Slack.Events.Inner.message> messageCollector,
             [ServiceBus(C.SBQ.InputThread)]IAsyncCollector<Slack.Events.Inner.message> messageThreadCollector,
@@ -17,6 +19,8 @@ namespace a_slack_bot.Functions
         {
             if (Settings.Debug)
                 logger.LogInformation("Msg: {0}", JsonConvert.SerializeObject(eventMessage));
+
+            await SR.Init(logger);
 
             // First, send it to cosmos for the records
             var document = new Documents.Event { Content = eventMessage.@event };
@@ -34,6 +38,7 @@ namespace a_slack_bot.Functions
                 case Slack.Events.Inner.message message:
                     if (!string.IsNullOrWhiteSpace(message.thread_ts))
                         await messageThreadCollector.AddAsync(message);
+                    await SBReceiveEventMessage(message, docClient, messageCollector, logger);
                     break;
 
                 default:
