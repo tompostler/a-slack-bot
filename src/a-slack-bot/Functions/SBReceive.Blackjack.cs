@@ -147,9 +147,11 @@ namespace a_slack_bot.Functions
                                 long balance = 1_000_000;
                                 if (gameBalancesDoc.Content.ContainsKey(chuckleHead))
                                     balance = gameBalancesDoc.Content[chuckleHead];
-                                // Lose at most 5% of total balance
-                                var loss = (long)Math.Max(SR.Rand.NextDouble() * 0.05 * balance, 1);
-                                await messageCollector.SendMessageAsync(inMessage, $"Betting timed out. Dropped <@{chuckleHead}> who loses ¤{loss} as a penalty for not betting.");
+                                // Lose at most 2.5% of total balance
+                                var losspct = SR.Rand.NextDouble() * 0.025;
+                                logger.LogInformation("Loss percent {0} for {1}", losspct, chuckleHead);
+                                var loss = (long)Math.Max(losspct * balance, 1);
+                                await messageCollector.SendMessageAsync(inMessage, $"Betting timed out. Dropped <@{chuckleHead}> who loses ¤{loss:#,#} ({losspct:p}) as a penalty for not betting.");
                                 var chuckleMessage = new BrokeredMessage(new Messages.ServiceBusBlackjack { type = Messages.BlackjackMessageType.UpdateBalance, channel_id = inMessage.channel_id, thread_ts = inMessage.thread_ts, user_id = chuckleHead, amount = -loss })
                                 {
                                     // Schedule every 2s to give cosmos db a chance
@@ -179,7 +181,7 @@ namespace a_slack_bot.Functions
                     gameDoc.moves.Add(new Documents.BlackjackMove { action = Documents.BlackjackAction.StateChange, user_id = inMessage.user_id, to_state = Documents.BlackjackGameState.CollectingBets });
                     gameDoc.state = Documents.BlackjackGameState.CollectingBets;
                     await UpsertGameDocument(docClient, gameDoc);
-                    await messageCollector.SendMessageAsync(inMessage, "Collecting bets!");
+                    await messageCollector.SendMessageAsync(inMessage, "Collecting bets! Timing out in 1 minute.");
                     logger.LogInformation("Updated game state to collecting bets.");
                     break;
 
