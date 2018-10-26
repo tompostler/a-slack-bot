@@ -73,7 +73,7 @@
       "properties": {
         "databaseAccountOfferType": "Standard",
         "consistencyPolicy": {
-          "defaultConsistencyLevel": "BoundedStaleness",
+          "defaultConsistencyLevel": "Strong",
           "maxIntervalInSeconds": 5,
           "maxStalenessPrefix": 100
         }
