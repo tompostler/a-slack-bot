@@ -363,6 +363,7 @@ namespace a_slack_bot.Functions
 
                     await SendMessageAsync(messageCollector, inMessage, sb.ToString());
                     gameDoc = await UpsertGameDocument(docClient, gameDoc);
+                    await Task.Delay(TimeSpan.FromSeconds(0.5));
                     goto case Messages.BlackjackMessageType.ToFinish;
 
 
