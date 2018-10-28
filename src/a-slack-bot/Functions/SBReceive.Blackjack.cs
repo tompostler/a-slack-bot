@@ -177,8 +177,11 @@ namespace a_slack_bot.Functions
                 case Messages.BlackjackMessageType.Timer_Running:
                     if (gameDoc.state == Documents.BlackjackGameState.Running && gameDoc.user_active < gameDoc.users.Count && gameDoc.users[gameDoc.user_active] == inMessage.user_id)
                     {
-                        await SendMessageAsync(messageCollector, inMessage, $"<@{inMessage.user_id}> loses ¤{gameDoc.bets[inMessage.user_id] * 2} for not completing their game in time.");
+                        await SendMessageAsync(messageCollector, inMessage, $"<@{inMessage.user_id}> loses ¤{gameDoc.bets[inMessage.user_id] * 2:#,#} for not completing their game in time.");
                         await messageStateCollector.AddAsync(new BrokeredMessage(new Messages.ServiceBusBlackjack { type = Messages.BlackjackMessageType.UpdateBalance, channel_id = inMessage.channel_id, thread_ts = inMessage.thread_ts, user_id = inMessage.user_id, amount = -(gameDoc.bets[inMessage.user_id] * 2) }));
+                        gameDoc.users.Remove(inMessage.user_id);
+                        gameDoc.user_active--;
+                        gameDoc = await UpsertGameDocument(docClient, gameDoc);
                         await QueueNextPlayer(inMessage, gameDoc, messageStateCollector);
                     }
                     logger.LogInformation("Game state no longer waiting on that user. Timer ignored.");
@@ -212,7 +215,7 @@ namespace a_slack_bot.Functions
                         gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.Bet, user_id = inMessage.user_id, amount = inMessage.amount });
                         gameDoc.bets.Add(inMessage.user_id, inMessage.amount);
                         gameDoc = await UpsertGameDocument(docClient, gameDoc);
-                        await messageCollector.SendMessageAsync(inMessage, $"{SR.U.IdToName[inMessage.user_id]} bets ¤{inMessage.amount}");
+                        await messageCollector.SendMessageAsync(inMessage, $"{SR.U.IdToName[inMessage.user_id]} bets ¤{inMessage.amount:#,#}");
                         logger.LogInformation("Updated game with bet.");
 
                         if (gameDoc.bets.Count == gameDoc.users.Count)
