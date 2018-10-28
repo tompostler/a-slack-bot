@@ -455,11 +455,11 @@ namespace a_slack_bot.Functions
                                         channel_id = inMessage.channel_id,
                                         thread_ts = inMessage.thread_ts,
                                         user_id = gameDoc.users[i],
-                                        amount = -amount
+                                        amount = amount
                                     })
                                 {
                                     // Schedule every 2s to give cosmos db a chance
-                                    ScheduledEnqueueTimeUtc = DateTime.UtcNow.AddSeconds(1 + 2 * i)
+                                    ScheduledEnqueueTimeUtc = DateTime.UtcNow.AddSeconds(2 * (i + 1))
                                 });
                         }
                     }
