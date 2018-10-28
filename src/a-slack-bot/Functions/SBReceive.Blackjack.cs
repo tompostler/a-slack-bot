@@ -362,7 +362,7 @@ namespace a_slack_bot.Functions
                         sb.AppendLine("_stand_");
 
                     await SendMessageAsync(messageCollector, inMessage, sb.ToString());
-                    await UpsertGameDocument(docClient, gameDoc);
+                    gameDoc = await UpsertGameDocument(docClient, gameDoc);
                     goto case Messages.BlackjackMessageType.ToFinish;
 
 
@@ -429,7 +429,7 @@ namespace a_slack_bot.Functions
                             }
                             else
                             {
-                                if (finalScore.Value > dealerScore.Value)
+                                if (finalScore.Value > dealerScore.Value || (dealerScore.IsBust && !finalScore.IsBust))
                                 {
                                     sb.AppendFormat("{0} wins! (+ ¤{1:#,#})", SR.U.IdToName[gameDoc.users[i]], amount);
                                     sb.AppendLine();
