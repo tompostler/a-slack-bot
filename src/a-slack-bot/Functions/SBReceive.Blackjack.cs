@@ -377,7 +377,10 @@ namespace a_slack_bot.Functions
                 case Messages.BlackjackMessageType.ToFinish:
                     gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.StateChange, to_state = Documents.BlackjackGameState.Finished });
                     gameDoc.state = Documents.BlackjackGameState.Finished;
-                    dealerScore = Cards.CardHelpers.GetBlackjackScore(gameDoc.hands["dealer"]);
+                    if (gameDoc.hands.ContainsKey("dealer"))
+                        dealerScore = Cards.CardHelpers.GetBlackjackScore(gameDoc.hands["dealer"]);
+                    else
+                        dealerScore = new Cards.CardHelpers.BlackjackScore();
                     sb = new StringBuilder();
                     var finalScores = gameDoc.hands.ToDictionary(kvp => kvp.Key, kvp => Cards.CardHelpers.GetBlackjackScore(kvp.Value));
                     await ShowGameState(messageCollector, inMessage, gameDoc, showDealer: true);
