@@ -268,8 +268,8 @@ namespace a_slack_bot.Functions
                 case Messages.BlackjackMessageType.GameAction:
                     gameDoc.actions.Add(new Documents.BlackjackAction { type = inMessage.action, user_id = inMessage.user_id });
                     Cards.Deck gameDeck = gameDoc.deck;
-                    var sb = new StringBuilder();
                     Cards.CardHelpers.BlackjackScore score = Cards.CardHelpers.GetBlackjackScore(gameDoc.hands[inMessage.user_id]);
+                    var sb = new StringBuilder();
                     switch (inMessage.action)
                     {
                         case Documents.BlackjackActionType.Prompt:
@@ -300,6 +300,7 @@ namespace a_slack_bot.Functions
                         case Documents.BlackjackActionType.Hit:
                             gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.Deal, user_id = inMessage.user_id, card = gameDeck.Deal() });
                             gameDoc.hands[inMessage.user_id].Add(gameDoc.actions.Last().card.Value);
+                            score = Cards.CardHelpers.GetBlackjackScore(gameDoc.hands[inMessage.user_id]);
                             AddHandToGameState(sb, gameDoc.hands[inMessage.user_id]);
                             if (score.IsBust)
                             {
@@ -321,6 +322,7 @@ namespace a_slack_bot.Functions
                             sb.AppendLine();
                             gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.Deal, user_id = inMessage.user_id, card = gameDeck.Deal() });
                             gameDoc.hands[inMessage.user_id].Add(gameDoc.actions.Last().card.Value);
+                            score = Cards.CardHelpers.GetBlackjackScore(gameDoc.hands[inMessage.user_id]);
                             AddHandToGameState(sb, gameDoc.hands[inMessage.user_id]);
                             if (score.IsBust)
                             {
