@@ -59,22 +59,23 @@ namespace a_slack_bot.Documents
 
         public Cards.DeckStore deck { get; set; }
 
-        // key=user_id,value=cards. quick state that can be reconstructed from moves
+        public List<string> users { get; set; } = new List<string>();
+        // key=user_id,value=cards. quick state that can be reconstructed from actions
         public Dictionary<string, List<Cards.Cards>> hands { get; set; } = new Dictionary<string, List<Cards.Cards>>();
-        // key=user_id,value=bet. quick state that can be reconstructed from moves
+        // key=user_id,value=bet. quick state that can be reconstructed from actions
         public Dictionary<string, long> bets { get; set; } = new Dictionary<string, long>();
-        public List<BlackjackMove> moves { get; set; } = new List<BlackjackMove>();
+        public List<BlackjackAction> actions { get; set; } = new List<BlackjackAction>();
 
         public BlackjackGameState state { get; set; } = BlackjackGameState.Joining;
-        public string state_user { get; set; }
+        public int user_active { get; set; }
     }
 
-    public class BlackjackMove
+    public class BlackjackAction
     {
         public string user_id { get; set; }
-        public BlackjackAction action { get; set; }
+        public BlackjackActionType type { get; set; }
 
-        public long? bet { get; set; }
+        public long? amount { get; set; }
         public Cards.Cards? card { get; set; }
         public BlackjackGameState? to_state { get; set; }
 
@@ -82,16 +83,20 @@ namespace a_slack_bot.Documents
     }
 
     [JsonConverter(typeof(StringEnumConverter))]
-    public enum BlackjackAction
+    public enum BlackjackActionType
     {
         Invalid,
         StateChange,
         Join,
         Bet,
-        Loss,
-        Fold,
+        BalanceChange,
+        Deal,
+        Prompt,
         Hit,
-        Split
+        Stand,
+        Double,
+        Split,
+        Surrender
     }
 
     [JsonConverter(typeof(StringEnumConverter))]

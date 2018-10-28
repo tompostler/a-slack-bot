@@ -79,7 +79,7 @@ namespace a_slack_bot.Functions
 Syntax:
 ```
 /blackjack          Start a game of blackjack.
-/blackjack balance  Get your money balance.
+/blackjack balance  Get your balance.
 /blackjack balances Show all balances for all players.
 ```",
                         in_channel: false);
@@ -92,7 +92,7 @@ Syntax:
                     else
                     {
                         var threadStart = await SBSend.SendMessage(new Slack.Events.Inner.message { channel = slashData.channel_id, text = $"<@{slashData.user_id}> wants to start a game of blackjack! Open this thread to play." }, logger);
-                        var game = new Documents.Blackjack { user_start = slashData.user_id, channel_id = slashData.channel_id, thread_ts = threadStart.message.ts, hands = new Dictionary<string, List<Cards.Cards>> { [slashData.user_id] = new List<Cards.Cards>() } };
+                        var game = new Documents.Blackjack { user_start = slashData.user_id, channel_id = slashData.channel_id, thread_ts = threadStart.message.ts, users = new List<string> { slashData.user_id }, hands = new Dictionary<string, List<Cards.Cards>> { [slashData.user_id] = new List<Cards.Cards>() } };
                         await documentCollector.AddAsync(game);
                         await SBSend.SendMessage(new Slack.Events.Inner.message { channel = slashData.channel_id, ts = threadStart.message.ts, text = $"<@{slashData.user_id}> wants to start a game of blackjack! Open this thread to play. Friendly game ref: {game.friendly_name}" }, logger);
                         await SBSend.SendMessage(new Slack.Events.Inner.message { channel = threadStart.channel, text = "Type `join` to join or `start` when ready to play. Starting in 1 minute.", thread_ts = threadStart.message.ts }, logger);
