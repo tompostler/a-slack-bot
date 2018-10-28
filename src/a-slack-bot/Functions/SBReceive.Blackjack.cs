@@ -341,6 +341,7 @@ namespace a_slack_bot.Functions
                             sb.AppendFormat("{0} surrenders ¤{1:#,#}", SR.U.IdToName[inMessage.user_id], gameDoc.bets[inMessage.user_id]);
                             gameDoc.bets[inMessage.user_id] *= -1;
                             gameDoc.users.Remove(inMessage.user_id);
+                            gameDoc.user_active--;
                             await QueueNextPlayer(inMessage, gameDoc, messageStateCollector);
                             break;
 
@@ -493,7 +494,7 @@ namespace a_slack_bot.Functions
 
         private static async Task QueueNextPlayer(Messages.ServiceBusBlackjack inMessage, Documents.Blackjack gameDoc, IAsyncCollector<BrokeredMessage> messageStateCollector)
         {
-            if (++gameDoc.user_active == gameDoc.users.Count)
+            if (++gameDoc.user_active >= gameDoc.users.Count)
                 await messageStateCollector.AddAsync(
                     new BrokeredMessage(
                         new Messages.ServiceBusBlackjack
