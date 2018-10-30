@@ -121,12 +121,6 @@ namespace a_slack_bot.Functions
                     if (gameDoc.state == Documents.BlackjackGameState.Joining)
                     {
                         await messageCollector.SendMessageAsync(inMessage, "Joining timed out.");
-                        var msg = new BrokeredMessage(new Messages.ServiceBusBlackjack { channel_id = inMessage.channel_id, thread_ts = inMessage.thread_ts, type = Messages.BlackjackMessageType.Timer_CollectingBets })
-                        {
-                            ScheduledEnqueueTimeUtc = DateTime.UtcNow.AddMinutes(1)
-                        };
-                        await messageStateCollector.AddAsync(msg);
-                        logger.LogInformation("New timer message for 1 minute.");
                         goto case Messages.BlackjackMessageType.ToCollectingBets;
                     }
                     logger.LogInformation("Game state no longer joining. Timer ignored.");
@@ -205,6 +199,17 @@ namespace a_slack_bot.Functions
                     gameDoc.state = Documents.BlackjackGameState.CollectingBets;
                     gameDoc = await UpsertGameDocument(docClient, gameDoc);
                     await messageCollector.SendMessageAsync(inMessage, "Collecting bets! Pays 1:1 or 3:2 on blackjack. Timing out in 1 minute.");
+                    await messageStateCollector.AddAsync(
+                        new BrokeredMessage(
+                            new Messages.ServiceBusBlackjack
+                            {
+                                channel_id = inMessage.channel_id,
+                                thread_ts = inMessage.thread_ts,
+                                type = Messages.BlackjackMessageType.Timer_CollectingBets
+                            })
+                        {
+                            ScheduledEnqueueTimeUtc = DateTime.UtcNow.AddMinutes(1)
+                        });
                     logger.LogInformation("Updated game state to collecting bets.");
                     break;
 
