@@ -233,7 +233,7 @@ namespace a_slack_bot.Functions
                     logger.LogInformation("Updated game state to running.");
 
                     // Deal first two cards to everybody
-                    Cards.Deck deck = new Cards.Deck();
+                    Cards.Deck deck = new Cards.Deck(numDecks: 8);
                     foreach (var hand in gameDoc.hands)
                     {
                         gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.Deal, user_id = hand.Key, card = deck.Deal() });
@@ -354,6 +354,7 @@ namespace a_slack_bot.Functions
                     }
                     if (sb.Length > 0)
                         await SendMessageAsync(messageCollector, inMessage, sb.ToString());
+                    gameDoc.deck = gameDeck;
                     gameDoc = await UpsertGameDocument(docClient, gameDoc);
                     break;
 
@@ -377,6 +378,7 @@ namespace a_slack_bot.Functions
                         sb.AppendLine("_stand_");
 
                     await SendMessageAsync(messageCollector, inMessage, sb.ToString());
+                    gameDoc.deck = gameDeck;
                     gameDoc = await UpsertGameDocument(docClient, gameDoc);
                     await Task.Delay(TimeSpan.FromSeconds(0.5));
                     goto case Messages.BlackjackMessageType.ToFinish;
