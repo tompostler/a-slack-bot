@@ -31,7 +31,7 @@ namespace a_slack_bot.Functions
                             Documents.BlackjackStandings.DocUri,
                             new RequestOptions { PartitionKey = Documents.Blackjack.PartitionKey });
                         var standings = gameBalancesDoc.Document.Content;
-                        if ((standings.ContainsKey(message.user) && bet <= standings[message.user]) || bet < 1_000_000)
+                        if ((standings.ContainsKey(message.user) && bet <= standings[message.user]) || bet < 10_000)
                             await blackjackCollector.AddAsync(new Messages.ServiceBusBlackjack { type = Messages.BlackjackMessageType.PlaceBet, channel_id = message.channel, thread_ts = message.thread_ts, user_id = message.user, amount = bet });
                     }
                     break;

@@ -50,9 +50,9 @@ namespace a_slack_bot.Functions
             {
                 if (inMessage.type == Messages.BlackjackMessageType.GetBalance)
                     if (gameBalancesDoc.Content.ContainsKey(inMessage.user_id))
-                        await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = inMessage.channel_id, text = $"<@{inMessage.user_id}>: ¤{gameBalancesDoc.Content[inMessage.user_id]}" });
+                        await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = inMessage.channel_id, text = $"<@{inMessage.user_id}>: ¤{gameBalancesDoc.Content[inMessage.user_id]:#,#}" });
                     else
-                        await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = inMessage.channel_id, text = $"<@{inMessage.user_id}>: ¤1,000,000" });
+                        await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = inMessage.channel_id, text = $"<@{inMessage.user_id}>: ¤{10_000:#,#}" });
                 else
                 {
                     // all balances
@@ -76,7 +76,7 @@ namespace a_slack_bot.Functions
                     }
                     sb.AppendLine("```");
                     sb.AppendLine();
-                    sb.AppendLine("Balances for those that have not played: ¤1,000,000");
+                    sb.AppendFormat("Balances for those that have not played: ¤{0:#,#}", 10_000);
                     await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = inMessage.channel_id, text = sb.ToString() });
                 }
                 return;
@@ -92,7 +92,7 @@ namespace a_slack_bot.Functions
                     var bals = gameBalancesDoc.Content;
                     if (!bals.ContainsKey(inMessage.user_id))
                     {
-                        bals[inMessage.user_id] = 1_000_000;
+                        bals[inMessage.user_id] = 10_000;
                         logger.LogInformation("{0} didn't have money. Initial balance set.", inMessage.user_id);
                     }
                     bals[inMessage.user_id] += inMessage.amount;
@@ -146,7 +146,7 @@ namespace a_slack_bot.Functions
                             for (int i = 0; i < chuckleHeads.Count; i++)
                             {
                                 var chuckleHead = chuckleHeads[i];
-                                long balance = 1_000_000;
+                                long balance = 10_000;
                                 if (gameBalancesDoc.Content.ContainsKey(chuckleHead))
                                     balance = gameBalancesDoc.Content[chuckleHead];
                                 // Lose at most 2.5% of total balance
