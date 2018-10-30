@@ -114,8 +114,6 @@ namespace a_slack_bot.Functions
                             PartitionKey = Documents.Blackjack.PartitionKey
                         },
                         disableAutomaticIdGeneration: true);
-                    gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.BalanceChange, user_id = inMessage.user_id, amount = inMessage.amount });
-                    gameDoc = await UpsertGameDocument(docClient, gameDoc);
                     break;
 
 
@@ -155,6 +153,7 @@ namespace a_slack_bot.Functions
                                 var loss = (long)Math.Max(losspct * balance, 1);
                                 gameDoc.users.Remove(chuckleHead);
                                 gameDoc.hands.Remove(chuckleHead);
+                                gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.BalanceChange, user_id = chuckleHead, amount = -loss });
                                 gameDoc = await UpsertGameDocument(docClient, gameDoc);
                                 await messageCollector.SendMessageAsync(inMessage, $"Betting timed out. Dropped <@{chuckleHead}> who loses ¤{loss:#,#} ({losspct:p}) as a penalty for not betting.");
                                 var chuckleMessage = new BrokeredMessage(new Messages.ServiceBusBlackjack { type = Messages.BlackjackMessageType.UpdateBalance, channel_id = inMessage.channel_id, thread_ts = inMessage.thread_ts, user_id = chuckleHead, amount = -loss })
@@ -179,6 +178,7 @@ namespace a_slack_bot.Functions
                     {
                         await SendMessageAsync(messageCollector, inMessage, $"<@{inMessage.user_id}> loses ¤{gameDoc.bets[inMessage.user_id] * 2:#,#} for not completing their game in time.");
                         await messageStateCollector.AddAsync(new BrokeredMessage(new Messages.ServiceBusBlackjack { type = Messages.BlackjackMessageType.UpdateBalance, channel_id = inMessage.channel_id, thread_ts = inMessage.thread_ts, user_id = inMessage.user_id, amount = -(gameDoc.bets[inMessage.user_id] * 2) }));
+                        gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.BalanceChange, user_id = inMessage.user_id, amount = -(gameDoc.bets[inMessage.user_id] * 2) });
                         gameDoc.users.Remove(inMessage.user_id);
                         gameDoc.user_active--;
                         gameDoc = await UpsertGameDocument(docClient, gameDoc);
@@ -363,7 +363,7 @@ namespace a_slack_bot.Functions
                     sb = new StringBuilder();
                     gameDeck = gameDoc.deck;
 
-                    sb.AppendLine("dealers's turn:");
+                    sb.AppendLine("dealer's turn:");
                     AddHandToGameState(sb, gameDoc.hands["dealer"]);
                     while (score.Value < 17 || (score.Value == 17 && score.IsSoft))
                     {
@@ -411,6 +411,7 @@ namespace a_slack_bot.Functions
                                 sb.AppendFormat("{0} loses ¤{1:#,#}", SR.U.IdToName[gameDoc.users[i]], amount);
                                 sb.AppendLine();
                             }
+                            gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.BalanceChange, user_id = gameDoc.users[i], amount = -amount });
                             await messageStateCollector.AddAsync(
                                 new BrokeredMessage(
                                     new Messages.ServiceBusBlackjack
@@ -466,6 +467,7 @@ namespace a_slack_bot.Functions
                                     amount *= -1;
                                 }
                             }
+                            gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.BalanceChange, user_id = gameDoc.users[i], amount = amount });
                             await messageStateCollector.AddAsync(
                                 new BrokeredMessage(
                                     new Messages.ServiceBusBlackjack
