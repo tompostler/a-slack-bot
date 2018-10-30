@@ -18,9 +18,9 @@ namespace a_slack_bot.Functions
             switch (gameDoc.state)
             {
                 case Documents.BlackjackGameState.Joining:
-                    if (message.text.Contains("join") && !gameDoc.users.Contains(message.user))
+                    if (message.text.Trim().ToLowerInvariant() == "join" && !gameDoc.users.Contains(message.user))
                         await blackjackCollector.AddAsync(new Messages.ServiceBusBlackjack { type = Messages.BlackjackMessageType.JoinGame, channel_id = message.channel, thread_ts = message.thread_ts, user_id = message.user });
-                    else if (message.text.Contains("start") && gameDoc.users.Contains(message.user))
+                    else if (message.text.Trim().ToLowerInvariant() == "start" && gameDoc.users.Contains(message.user))
                         await blackjackCollector.AddAsync(new Messages.ServiceBusBlackjack { type = Messages.BlackjackMessageType.ToCollectingBets, channel_id = message.channel, thread_ts = message.thread_ts, user_id = message.user });
                     break;
 
