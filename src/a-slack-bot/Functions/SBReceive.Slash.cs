@@ -91,6 +91,7 @@ Syntax:
                         await SendResponse(logger, slashData, $"I don't know about '{slashData.text}'");
                     else
                     {
+                        await Task.Delay(TimeSpan.FromSeconds(0.5));
                         var threadStart = await SBSend.SendMessage(new Slack.Events.Inner.message { channel = slashData.channel_id, text = $"<@{slashData.user_id}> wants to start a game of blackjack! Open this thread to play." }, logger);
                         var game = new Documents.Blackjack { user_start = slashData.user_id, channel_id = slashData.channel_id, thread_ts = threadStart.message.ts, users = new List<string> { slashData.user_id }, hands = new Dictionary<string, List<Cards.Cards>> { [slashData.user_id] = new List<Cards.Cards>() } };
                         await documentCollector.AddAsync(game);
