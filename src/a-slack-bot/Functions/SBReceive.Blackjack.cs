@@ -340,7 +340,7 @@ namespace a_slack_bot.Functions
                             break;
 
                         case Documents.BlackjackActionType.Surrender:
-                            gameDoc.bets[inMessage.user_id] /= 2;
+                            gameDoc.bets[inMessage.user_id] = (long)Math.Ceiling(gameDoc.bets[inMessage.user_id] / 2f);
                             sb.AppendFormat("{0} surrenders ¤{1:#,#}", SR.U.IdToName[inMessage.user_id], gameDoc.bets[inMessage.user_id]);
                             gameDoc.bets[inMessage.user_id] *= -1;
                             gameDoc.users.Remove(inMessage.user_id);
