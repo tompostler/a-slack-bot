@@ -55,7 +55,7 @@ namespace a_slack_bot
             await Task.WhenAll(new[] {
                 R.Init(logger, docClient),
                 T.Init(logger, docClient),
-                U.Init(logger),
+                U.Init(logger, docClient),
                 W.Init(logger, docClient),
             });
 
@@ -142,7 +142,7 @@ namespace a_slack_bot
 
             private Dictionary<string, Slack.Types.user> users { get; set; }
 
-            public async Task Init(ILogger logger)
+            public async Task Init(ILogger logger, DocumentClient docClient)
             {
                 var response = await httpClient.GetAsync("https://slack.com/api/users.list");
                 var userResponse = await response.Content.ReadAsAsync<Slack.WebAPIResponse>();
@@ -159,8 +159,21 @@ namespace a_slack_bot
 
                 BotUser = users.Values.Single(u => u.profile.api_app_id == Settings.SlackAppID);
 
-                IdToName = users.Values.ToDictionary(u => u.id, u => string.IsNullOrEmpty(u.profile.display_name) ? u.profile.real_name : u.profile.display_name);
+                var idToNameDict = users.Values.ToDictionary(u => u.id, u => string.IsNullOrEmpty(u.profile.display_name) ? u.profile.real_name : u.profile.display_name);
+                this.IdToName = idToNameDict;
                 MaxNameLength = IdToName.Values.Max(un => un.Length);
+
+                var userMapDoc = new Documents.IdMapping
+                {
+                    Id = nameof(SlackUsers),
+                    Subtype = nameof(SR),
+                    Content = idToNameDict
+                };
+                await docClient.UpsertDocumentAsync(
+                    UriFactory.CreateDocumentCollectionUri(C.CDB.DN, C.CDB.CN),
+                    userMapDoc,
+                    new RequestOptions { PartitionKey = new PartitionKey(userMapDoc.TypeSubtype) },
+                    disableAutomaticIdGeneration: true);
             }
         }
 
