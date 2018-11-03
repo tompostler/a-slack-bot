@@ -92,7 +92,7 @@ namespace a_slack_bot
         public class SlackResponses
         {
             public HashSet<string> Keys { get; private set; }
-            public Dictionary<string, HashSet<string>> esponses { get; private set; }
+            public Dictionary<string, Dictionary<string, string>> AllResponses { get; private set; }
 
             public async Task Init(ILogger logger, DocumentClient docClient)
             {
@@ -104,14 +104,14 @@ namespace a_slack_bot
 
                 var responses = await docQuery.GetAllResults(logger);
 
-                esponses = new Dictionary<string, HashSet<string>>();
+                this.AllResponses = new Dictionary<string, Dictionary<string, string>>();
                 foreach (var response in responses)
                 {
-                    if (!esponses.ContainsKey(response.key))
-                        esponses.Add(response.key, new HashSet<string>());
-                    esponses[response.key].Add(response.value);
+                    if (!this.AllResponses.ContainsKey(response.key))
+                        this.AllResponses.Add(response.key, new Dictionary<string, string>());
+                    this.AllResponses[response.key].Add(response.Id, response.value);
                 }
-                Keys = new HashSet<string>(this.esponses.Keys);
+                this.Keys = new HashSet<string>(this.AllResponses.Keys);
             }
         }
 
@@ -128,17 +128,17 @@ namespace a_slack_bot
 
                 var tokens = await docQuery.GetAllResults(logger);
 
-                ChatWriteUser = tokens.ToDictionary(t => t.Id, t => t.token);
+                this.ChatWriteUser = tokens.ToDictionary(t => t.Id, t => t.token);
             }
         }
 
         public class SlackUsers
         {
-            public IReadOnlyCollection<Slack.Types.user> All => users.Values;
+            public IReadOnlyCollection<Slack.Types.user> All => this.users.Values;
             public Slack.Types.user BotUser { get; private set; }
             public IReadOnlyDictionary<string, string> IdToName { get; private set; }
             public int MaxNameLength { get; private set; }
-            public IReadOnlyDictionary<string, Slack.Types.user> IdToUser => users;
+            public IReadOnlyDictionary<string, Slack.Types.user> IdToUser => this.users;
 
             private Dictionary<string, Slack.Types.user> users { get; set; }
 
@@ -152,16 +152,16 @@ namespace a_slack_bot
                     throw new Exception($"Bad {nameof(SlackUsers)}.{nameof(Init)}");
                 }
 
-                users = userResponse.members.ToDictionary(_ => _.id);
-                logger.LogInformation("Populated {0} users.", users.Count);
+                this.users = userResponse.members.ToDictionary(_ => _.id);
+                logger.LogInformation("Populated {0} users.", this.users.Count);
                 if (Settings.Debug)
-                    logger.LogInformation("Display names: '{0}'", string.Join("','", users.Values.Select(u => u.profile.display_name)));
+                    logger.LogInformation("Display names: '{0}'", string.Join("','", this.users.Values.Select(u => u.profile.display_name)));
 
-                BotUser = users.Values.Single(u => u.profile.api_app_id == Settings.SlackAppID);
+                this.BotUser = this.users.Values.Single(u => u.profile.api_app_id == Settings.SlackAppID);
 
-                var idToNameDict = users.Values.ToDictionary(u => u.id, u => string.IsNullOrEmpty(u.profile.display_name) ? u.profile.real_name : u.profile.display_name);
+                var idToNameDict = this.users.Values.ToDictionary(u => u.id, u => string.IsNullOrEmpty(u.profile.display_name) ? u.profile.real_name : u.profile.display_name);
                 this.IdToName = idToNameDict;
-                MaxNameLength = IdToName.Values.Max(un => un.Length);
+                this.MaxNameLength = this.IdToName.Values.Max(un => un.Length);
 
                 var userMapDoc = new Documents.IdMapping
                 {
@@ -190,7 +190,7 @@ namespace a_slack_bot
 
                 var tokens = await docQuery.GetAllResults(logger);
 
-                CommandsChannels = tokens.ToDictionary(t => t.Id, t => t.values);
+                this.CommandsChannels = tokens.ToDictionary(t => t.Id, t => t.values);
             }
         }
     }
