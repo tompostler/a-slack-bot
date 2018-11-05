@@ -28,7 +28,7 @@ namespace a_slack_bot.Functions
         {
             await SR.Init(logger);
 
-            if (message.user == SR.U.BotUser.id)
+            if (message.bot_id == SR.U.BotUser.profile.bot_id)
             {
                 logger.LogInformation("Detected message from self. Not responding.");
                 return;
