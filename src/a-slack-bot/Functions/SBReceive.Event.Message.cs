@@ -79,6 +79,7 @@ namespace a_slack_bot.Functions
             // Pick one to respond with
             var unusedIds = SR.R.AllResponses[matchedKey].Keys.Except(usedIds.ids_used).ToList();
             var pickedId = unusedIds[SR.Rand.Next(unusedIds.Count)];
+            usedIds.ids_used.Add(pickedId);
             logger.LogInformation("Picked {0}", pickedId);
 
             // Send the message and upsert the used ids doc
