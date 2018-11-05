@@ -19,6 +19,6 @@ namespace a_slack_bot.Documents
         public override string Subtype { get { return this.key; } set { } }
 
         public string key { get; set; }
-        public HashSet<string> ids_used { get; set; }
+        public HashSet<string> ids_used { get; set; } = new HashSet<string>();
     }
 }
