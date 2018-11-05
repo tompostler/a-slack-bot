@@ -17,11 +17,11 @@ namespace a_slack_bot.Functions
         }
 
         [FunctionName(nameof(SBSendMessage))]
-        public static async Task SBSendMessage(
+        public static Task SBSendMessage(
             [ServiceBusTrigger(C.SBQ.SendMessage)]Slack.Events.Inner.message messageData,
             ILogger logger)
         {
-            await SendMessage(messageData, logger);
+            return SendMessage(messageData, logger);
         }
 
         // This is pulled into a separate message to ease message threading scenarios.

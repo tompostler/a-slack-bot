@@ -16,7 +16,8 @@
         "input-event",
         "input-slash",
         "input-thread",
-        "send-message"
+        "send-message",
+        "send-message-ephemeral"
       ]
     },
     "packageLink": {

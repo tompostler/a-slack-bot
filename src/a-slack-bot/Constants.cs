@@ -25,6 +25,7 @@
             public const string InputThread = "input-thread";
 
             public const string SendMessage = "send-message";
+            public const string SendMessageEphemeral = "send-message-ephemeral";
         }
 
         public static class Headers

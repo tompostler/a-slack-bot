@@ -6,6 +6,7 @@ namespace a_slack_bot
 {
     public static class Settings
     {
+        public static string AzureWebJobsServiceBus => ConfigurationManager.AppSettings.Get(nameof(AzureWebJobsServiceBus));
         public static string CosmosDBConnection => ConfigurationManager.AppSettings.Get(nameof(CosmosDBConnection));
 
         // https://github.com/Azure/azure-documentdb-dotnet/issues/203
