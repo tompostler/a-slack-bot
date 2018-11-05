@@ -250,12 +250,12 @@ Syntax:
                     await SendResponse(logger, slashData, $"Key: `{key}` Values:\n{string.Join("\n\n", results.Select(r => $"`{r.Id}` {r.value}"))}", in_channel: false);
                     break;
 
-                case "delete":
+                case "remove":
                     try
                     {
-                        logger.LogInformation("Attempting to delete existing record...");
+                        logger.LogInformation("Attempting to remove existing record...");
                         await docClient.DeleteDocumentAsync(UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, value), new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + key) });
-                        await SendResponse(logger, slashData, $"Deleted `{key}`: {value}", in_channel: false);
+                        await SendResponse(logger, slashData, $"Removed `{key}`: {value}", in_channel: false);
                         SR.Deit();
                     }
                     catch (DocumentClientException dce) when (dce.StatusCode == HttpStatusCode.NotFound)
