@@ -2,6 +2,7 @@
 using Microsoft.Azure.Documents.Client;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -66,6 +67,7 @@ namespace a_slack_bot.Functions
                 logger.LogWarning("Didn't find a response used document. Creating one.", matchedKey);
                 usedIds = new Documents.ResponsesUsed { key = matchedKey };
             }
+            usedIds.ids_used = usedIds.ids_used ?? new HashSet<string>();
 
             // Pick one to respond with
             var unusedIds = SR.R.AllResponses[matchedKey].Keys.Except(usedIds.ids_used).ToList();
