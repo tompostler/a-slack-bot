@@ -63,23 +63,23 @@ namespace a_slack_bot.Functions
                     UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, nameof(Documents.ResponsesUsed)),
                     new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + matchedKey) });
 
-                if (usedIds.ids_used.Count >= SR.R.AllResponses[matchedKey].Count)
+                if (usedIds.Content.Count >= SR.R.AllResponses[matchedKey].Count)
                 {
                     logger.LogInformation("Used IDs count indicates all used. Reseting.");
-                    usedIds = new Documents.ResponsesUsed { key = matchedKey };
+                    usedIds = new Documents.ResponsesUsed { Subtype = matchedKey };
                 }
             }
             catch (DocumentClientException dce) when (dce.StatusCode == HttpStatusCode.NotFound)
             {
                 logger.LogWarning("Didn't find a response used document. Creating one.", matchedKey);
-                usedIds = new Documents.ResponsesUsed { key = matchedKey };
+                usedIds = new Documents.ResponsesUsed { Subtype = matchedKey };
             }
-            usedIds.ids_used = usedIds.ids_used ?? new HashSet<string>();
+            usedIds.Content = usedIds.Content ?? new HashSet<string>();
 
             // Pick one to respond with
-            var unusedIds = SR.R.AllResponses[matchedKey].Keys.Except(usedIds.ids_used).ToList();
+            var unusedIds = SR.R.AllResponses[matchedKey].Keys.Except(usedIds.Content).ToList();
             var pickedId = unusedIds[SR.Rand.Next(unusedIds.Count)];
-            usedIds.ids_used.Add(pickedId);
+            usedIds.Content.Add(pickedId);
             logger.LogInformation("Picked {0}", pickedId);
 
             // Send the message and upsert the used ids doc

@@ -196,7 +196,7 @@ Syntax:
                 logger.LogInformation("Retrieving list of all custom response keys...");
                 var query = docClient.CreateDocumentQuery<string>(
                     UriFactory.CreateDocumentCollectionUri(C.CDB.DN, C.CDB.CN),
-                    $"SELECT DISTINCT VALUE r.{nameof(Documents.Response.key)} FROM r WHERE r.{nameof(Documents.BaseDocument.Type)} = '{nameof(Documents.Response)}'",
+                    $"SELECT DISTINCT VALUE r.{nameof(Documents.Response.Subtype)} FROM r WHERE r.{nameof(Documents.BaseDocument.Type)} = '{nameof(Documents.Response)}'",
                     new FeedOptions { EnableCrossPartitionQuery = true })
                     .AsDocumentQuery();
                 var results = await query.GetAllResults(logger);
@@ -230,8 +230,8 @@ Syntax:
                         new Documents.Response
                         {
                             Id = Guid.NewGuid().ToString().Split('-')[0],
-                            key = key,
-                            value = value,
+                            Subtype = key,
+                            Content = value,
                             user_id = slashData.user_id
                         },
                         new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + key) },
@@ -247,7 +247,7 @@ Syntax:
                         new FeedOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + key) })
                         .AsDocumentQuery();
                     var results = await query.GetAllResults(logger);
-                    await SendResponse(logger, slashData, $"Key: `{key}` Values:\n{string.Join("\n\n", results.Select(r => $"`{r.Id}` {r.value}"))}", in_channel: false);
+                    await SendResponse(logger, slashData, $"Key: `{key}` Values:\n{string.Join("\n\n", results.Select(r => $"`{r.Id}` {r.Content}"))}", in_channel: false);
                     break;
 
                 case "remove":

@@ -107,9 +107,9 @@ namespace a_slack_bot
                 this.AllResponses = new Dictionary<string, Dictionary<string, string>>();
                 foreach (var response in responses)
                 {
-                    if (!this.AllResponses.ContainsKey(response.key))
-                        this.AllResponses.Add(response.key, new Dictionary<string, string>());
-                    this.AllResponses[response.key].Add(response.Id, response.value);
+                    if (!this.AllResponses.ContainsKey(response.Subtype))
+                        this.AllResponses.Add(response.Subtype, new Dictionary<string, string>());
+                    this.AllResponses[response.Subtype].Add(response.Id, response.Content);
                 }
                 this.Keys = new HashSet<string>(this.AllResponses.Keys);
             }
