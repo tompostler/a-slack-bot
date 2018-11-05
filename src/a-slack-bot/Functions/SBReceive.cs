@@ -14,11 +14,17 @@ namespace a_slack_bot.Functions
 
         private static async Task AddAsync(this IAsyncCollector<BrokeredMessage> messageCollector, Slack.Events.Inner.message message)
         {
-            var msgQueue = await sbNamespace.GetQueueAsync(C.SBQ.SendMessage);
+            // Just take whichever queue is larger
+            var queuesToLookAt = await Task.WhenAll(new[]
+            {
+                sbNamespace.GetQueueAsync(C.SBQ.SendMessage),
+                sbNamespace.GetQueueAsync(C.SBQ.SendMessageEphemeral)
+            });
+            var maxLen = Math.Max(queuesToLookAt[0].MessageCount, queuesToLookAt[1].MessageCount);
             await messageCollector.AddAsync(
                 new BrokeredMessage(message)
                 {
-                    ScheduledEnqueueTimeUtc = DateTime.UtcNow.AddSeconds(msgQueue.MessageCount / 2.0)
+                    ScheduledEnqueueTimeUtc = DateTime.UtcNow.AddSeconds(maxLen / 2.0)
                 });
         }
 

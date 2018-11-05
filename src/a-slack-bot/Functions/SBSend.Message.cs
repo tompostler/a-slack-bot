@@ -56,5 +56,30 @@ namespace a_slack_bot.Functions
 
             return responseContent;
         }
+
+        [FunctionName(nameof(SBSendMessageEphemeral))]
+        public static async Task SBSendMessageEphemeral(
+            [ServiceBusTrigger(C.SBQ.SendMessageEphemeral)]Slack.Events.Inner.message messageData,
+            ILogger logger)
+        {
+            var response = await httpClient.PostAsJsonAsync("https://slack.com/api/chat.postEphemeral", messageData);
+            logger.LogInformation("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
+
+            var responseContent = await response.Content.ReadAsAsync<Slack.WebAPIResponse>();
+            if (!responseContent.ok)
+                switch (responseContent.error)
+                {
+                    // These are fine in this scenario
+                    case "not_in_channel":
+                        break;
+
+                    case "app_rate_limited":
+                        await Task.Delay(response.Headers.RetryAfter.Delta ?? TimeSpan.FromSeconds(5));
+                        throw new Exception("Retry-After; requeue with ServiceBus");
+
+                    default:
+                        throw new Exception("Slack API Error: " + responseContent.error);
+                }
+        }
     }
 }
