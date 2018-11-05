@@ -98,7 +98,7 @@ namespace a_slack_bot
             {
                 var docQuery = docClient.CreateDocumentQuery<Documents.Response>(
                     UriFactory.CreateDocumentCollectionUri(C.CDB.DN, C.CDB.CN),
-                    $"SELECT * FROM r WHERE r.{nameof(Documents.BaseDocument.Type)} = '{nameof(Documents.Response)}'",
+                    $"SELECT * FROM r WHERE r.{nameof(Documents.BaseDocument.Type)} = '{nameof(Documents.Response)}' AND r.id <> '{nameof(Documents.ResponsesUsed)}'",
                     new FeedOptions { EnableCrossPartitionQuery = true })
                     .AsDocumentQuery();
 
