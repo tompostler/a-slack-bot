@@ -15,7 +15,7 @@ namespace a_slack_bot.Functions
         [FunctionName(nameof(ReceiveEvent))]
         public static async Task<HttpResponseMessage> ReceiveEvent(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = "receive/event")]HttpRequestMessage req,
-            [ServiceBus(C.SBQ.InputEvent, AccessRights.Manage)]IAsyncCollector<BrokeredMessage> messageCollector,
+            [ServiceBus(C.SBQ.InputEvent, AccessRights.Manage)]IAsyncCollector<ServiceBusInputEvent> messageCollector,
             ILogger logger)
         {
             if (Settings.Debug)
@@ -38,17 +38,11 @@ namespace a_slack_bot.Functions
             // Send it off to be processed
             if (outerEvent is Slack.Events.Outer.event_callback)
             {
-                var event_callback = outerEvent as Slack.Events.Outer.event_callback;
                 logger.LogInformation("Sending inner event into the queue.");
-                await messageCollector.AddAsync(
-                    new BrokeredMessage(
-                        new ServiceBusInputEvent
-                        {
-                            @event = event_callback.@event
-                        })
-                    {
-                        MessageId = event_callback.event_id
-                    });
+                await messageCollector.AddAsync(new ServiceBusInputEvent
+                {
+                    @event = ((Slack.Events.Outer.event_callback)outerEvent).@event
+                });
             }
 
             // Return all is well
