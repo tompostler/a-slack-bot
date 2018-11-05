@@ -48,6 +48,13 @@ namespace a_slack_bot.Functions
 
             logger.LogInformation("Found a custom response match with key '{0}'", matchedKey);
 
+            // Check for optimized case of only one response
+            if (SR.R.AllResponses[matchedKey].Count == 1)
+            {
+                await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = message.channel, text = SR.R.AllResponses[matchedKey].Single().Value });
+                    return;
+            }
+
             // Get the used keys dictionary
             Documents.ResponsesUsed usedIds = null;
             try
