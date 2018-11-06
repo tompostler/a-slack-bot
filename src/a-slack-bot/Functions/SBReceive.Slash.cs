@@ -47,7 +47,7 @@ namespace a_slack_bot.Functions
             {
                 case "/asb-response":
                     if (slashData.text == "help" || string.IsNullOrWhiteSpace(slashData.text))
-                        await ephemeralMessageCollector.AddAsync(
+                        await ephemeralMessageCollector.AddEAsync(
                             slashData,
                             "Add, list, or remove custom message responses. Syntax:" + @"```
 add `key` some random text      Add a single response.
@@ -62,17 +62,17 @@ remove `key` id                 Remove a single response.
 
                 case "/asb-send-as-me":
                     if (slashData.text == "help" || string.IsNullOrWhiteSpace(slashData.text))
-                        await ephemeralMessageCollector.AddAsync(slashData, "Visit https://api.slack.com/custom-integrations/legacy-tokens to generate a token, or send `clear` to remove your existing token.");
+                        await ephemeralMessageCollector.AddEAsync(slashData, "Visit https://api.slack.com/custom-integrations/legacy-tokens to generate a token, or send `clear` to remove your existing token.");
                     else if (slashData.text == "clear")
                     {
                         await docClient.DeleteDocumentAsync(UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, slashData.user_id), new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.OAuthToken) + "|user") });
-                        await ephemeralMessageCollector.AddAsync(slashData, "token cleared :thumbsup:");
+                        await ephemeralMessageCollector.AddEAsync(slashData, "token cleared :thumbsup:");
                         SR.Deit();
                     }
                     else
                     {
                         await documentCollector.AddAsync(new Documents.OAuthToken { Subtype = "user", user_id = slashData.user_id, token = slashData.text });
-                        await ephemeralMessageCollector.AddAsync(slashData, "token added :thumbsup:");
+                        await ephemeralMessageCollector.AddEAsync(slashData, "token added :thumbsup:");
                         SR.Deit();
                     }
                     break;
@@ -83,9 +83,9 @@ remove `key` id                 Remove a single response.
 
                 case "/blackjack":
                     if (!SR.W.CommandsChannels.ContainsKey("blackjack") || !SR.W.CommandsChannels["blackjack"].Contains(slashData.channel_id))
-                        await ephemeralMessageCollector.AddAsync(slashData, $"`{slashData.command}` is not whitelisted for this channel. See `/asb-whitelist` to add it.");
+                        await ephemeralMessageCollector.AddEAsync(slashData, $"`{slashData.command}` is not whitelisted for this channel. See `/asb-whitelist` to add it.");
                     else if (slashData.text == "help")
-                        await ephemeralMessageCollector.AddAsync(slashData, @"Start a game of blackjack with some overrides available.
+                        await ephemeralMessageCollector.AddEAsync(slashData, @"Start a game of blackjack with some overrides available.
 Syntax:
 ```
 /blackjack          Start a game of blackjack.
@@ -138,7 +138,7 @@ Syntax:
                     break;
 
                 default:
-                    await ephemeralMessageCollector.AddAsync(slashData, "*NOT SUPPORTED*");
+                    await ephemeralMessageCollector.AddEAsync(slashData, "*NOT SUPPORTED*");
                     break;
             }
         }
@@ -163,12 +163,12 @@ Syntax:
             {
                 if (responseObj.error == "invalid_auth" || responseObj.error == "token_revoked")
                 {
-                    await ephemeralMessageCollector.AddAsync(slashData, "Your user token is invalid.");
+                    await ephemeralMessageCollector.AddEAsync(slashData, "Your user token is invalid.");
                     logger.LogWarning("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
                 }
                 else
                 {
-                    await ephemeralMessageCollector.AddAsync(slashData, $"Something went wrong: `{responseObj.error}`");
+                    await ephemeralMessageCollector.AddEAsync(slashData, $"Something went wrong: `{responseObj.error}`");
                     logger.LogError("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
                 }
             }
@@ -191,19 +191,19 @@ Syntax:
                     .AsDocumentQuery();
                 var results = await query.GetAllResults(logger);
 
-                await ephemeralMessageCollector.AddAsync(slashData, $"Keys in use: `{string.Join("`|`", results)}`");
+                await ephemeralMessageCollector.AddEAsync(slashData, $"Keys in use: `{string.Join("`|`", results)}`");
                 return;
             }
 
             // Now proceed to more "normal" commands that at least look the same
             if (!(slashData.text.StartsWith("add `") || slashData.text.StartsWith("addb `") || slashData.text.StartsWith("list `") || slashData.text.StartsWith("remove `")))
             {
-                await ephemeralMessageCollector.AddAsync(slashData, "Did not detect a valid start for that command.");
+                await ephemeralMessageCollector.AddEAsync(slashData, "Did not detect a valid start for that command.");
                 return;
             }
             else if (slashData.text.Count(c => c == '`') < 2)
             {
-                await ephemeralMessageCollector.AddAsync(slashData, "Did not detect enough backtick characters for that command.");
+                await ephemeralMessageCollector.AddEAsync(slashData, "Did not detect enough backtick characters for that command.");
                 return;
             }
 
@@ -226,7 +226,7 @@ Syntax:
                         },
                         new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + key) },
                         disableAutomaticIdGeneration: true);
-                    await ephemeralMessageCollector.AddAsync(slashData, $"Added: `{key}` (`{doc.Resource.Id}`) {value}");
+                    await ephemeralMessageCollector.AddEAsync(slashData, $"Added: `{key}` (`{doc.Resource.Id}`) {value}");
                     SR.Deit();
                     break;
 
@@ -245,7 +245,7 @@ Syntax:
                             },
                             new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + key) },
                             disableAutomaticIdGeneration: true);
-                        await ephemeralMessageCollector.AddAsync(slashData, $"Added: `{key}` (`{doc.Resource.Id}`) {value}");
+                        await ephemeralMessageCollector.AddEAsync(slashData, $"Added: `{key}` (`{doc.Resource.Id}`) {value}");
                     }
                     SR.Deit();
                     break;
@@ -257,7 +257,7 @@ Syntax:
                         new FeedOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + key) })
                         .AsDocumentQuery();
                     var results = await query.GetAllResults(logger);
-                    await ephemeralMessageCollector.AddAsync(slashData, $"Key: `{key}` Values:\n{string.Join("\n\n", results.Select(r => $"`{r.Id}` {r.Content}"))}");
+                    await ephemeralMessageCollector.AddEAsync(slashData, $"Key: `{key}` Values:\n{string.Join("\n\n", results.Select(r => $"`{r.Id}` {r.Content}"))}");
                     break;
 
                 case "remove":
@@ -265,12 +265,12 @@ Syntax:
                     {
                         logger.LogInformation("Attempting to remove existing record...");
                         await docClient.DeleteDocumentAsync(UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, value), new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + key) });
-                        await ephemeralMessageCollector.AddAsync(slashData, $"Removed `{key}`: {value}");
+                        await ephemeralMessageCollector.AddEAsync(slashData, $"Removed `{key}`: {value}");
                         SR.Deit();
                     }
                     catch (DocumentClientException dce) when (dce.StatusCode == HttpStatusCode.NotFound)
                     {
-                        await ephemeralMessageCollector.AddAsync(slashData, $"Error! `{key}` ({value}) not found!");
+                        await ephemeralMessageCollector.AddEAsync(slashData, $"Error! `{key}` ({value}) not found!");
                     }
                     break;
             }
@@ -287,12 +287,12 @@ Syntax:
             logger.LogInformation(nameof(HandleAsbWhitelistCommand));
             if (slashData.text.Split(' ').Length != 2)
             {
-                await ephemeralMessageCollector.AddAsync(slashData, "That is not a valid usage of that command.");
+                await ephemeralMessageCollector.AddEAsync(slashData, "That is not a valid usage of that command.");
                 return;
             }
             else if (!WhitelistableCommands.Contains(slashData.text.Split(' ')[1]))
             {
-                await ephemeralMessageCollector.AddAsync(slashData, $"`{slashData.text.Split(' ')[1]}` is not a valid slash command to whitelist.");
+                await ephemeralMessageCollector.AddEAsync(slashData, $"`{slashData.text.Split(' ')[1]}` is not a valid slash command to whitelist.");
                 return;
             }
 
@@ -320,7 +320,7 @@ Syntax:
             else if (slashData.text.StartsWith("remove"))
             {
                 if (!doc.values.Contains(slashData.channel_id))
-                    await ephemeralMessageCollector.AddAsync(slashData, $"`{whitelistBits}` wasn't on the whitelist for this channel :facepalm:");
+                    await ephemeralMessageCollector.AddEAsync(slashData, $"`{whitelistBits}` wasn't on the whitelist for this channel :facepalm:");
                 else
                 {
                     doc.values.Remove(slashData.channel_id);
@@ -331,7 +331,7 @@ Syntax:
             }
             else
             {
-                await ephemeralMessageCollector.AddAsync(slashData, $"I don't know how to interpret `{slashData.text}`");
+                await ephemeralMessageCollector.AddEAsync(slashData, $"I don't know how to interpret `{slashData.text}`");
             }
         }
     }

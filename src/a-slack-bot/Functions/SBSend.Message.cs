@@ -62,9 +62,6 @@ namespace a_slack_bot.Functions
             [ServiceBusTrigger(C.SBQ.SendMessageEphemeral)]Slack.Events.Inner.message messageData,
             ILogger logger)
         {
-            // chat.postEphemeral: Pass true to post the message as the authed bot. 
-            messageData.as_user = true;
-
             var response = await httpClient.PostAsJsonAsync("https://slack.com/api/chat.postEphemeral", messageData);
             logger.LogInformation("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
 

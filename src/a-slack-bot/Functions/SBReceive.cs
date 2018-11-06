@@ -48,5 +48,16 @@ namespace a_slack_bot.Functions
                     text = text
                 });
         }
+
+        private static Task AddEAsync(this IAsyncCollector<BrokeredMessage> messageCollector, Slack.Slash metadata, string text)
+        {
+            return messageCollector.AddAsync(
+                new Slack.Events.Inner.message
+                {
+                    channel = metadata.channel_id,
+                    text = text,
+                    user = metadata.user_id
+                });
+        }
     }
 }
