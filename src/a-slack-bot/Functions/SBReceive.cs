@@ -26,6 +26,7 @@ namespace a_slack_bot.Functions
                 {
                     ScheduledEnqueueTimeUtc = DateTime.UtcNow.AddSeconds(maxLen / 2.0)
                 });
+            await messageCollector.FlushAsync();
         }
 
         private static Task AddAsync(this IAsyncCollector<BrokeredMessage> messageCollector, Messages.ServiceBusBlackjack metadata, string text)
