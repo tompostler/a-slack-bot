@@ -191,7 +191,7 @@ Syntax:
                     .AsDocumentQuery();
                 var results = await query.GetAllResults(logger);
 
-                await ephemeralMessageCollector.AddEAsync(slashData, $"Keys in use: `{string.Join("`|`", results)}`");
+                await ephemeralMessageCollector.AddEAsync(slashData, $"Keys in use: `{string.Join("` `", results)}`");
                 return;
             }
 
@@ -240,12 +240,12 @@ Syntax:
                             {
                                 Id = Guid.NewGuid().ToString().Split('-')[0],
                                 Subtype = key,
-                                Content = value,
+                                Content = valueb,
                                 user_id = slashData.user_id
                             },
                             new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + key) },
                             disableAutomaticIdGeneration: true);
-                        await ephemeralMessageCollector.AddEAsync(slashData, $"Added: `{key}` (`{doc.Resource.Id}`) {value}");
+                        await ephemeralMessageCollector.AddEAsync(slashData, $"Added: `{key}` (`{doc.Resource.Id}`) {valueb}");
                     }
                     SR.Deit();
                     break;
