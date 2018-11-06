@@ -196,7 +196,7 @@ Syntax:
             }
 
             // Now proceed to more "normal" commands that at least look the same
-            if (!(slashData.text.StartsWith("add `") || slashData.text.StartsWith("list `") || slashData.text.StartsWith("remove `")))
+            if (!(slashData.text.StartsWith("add `") || slashData.text.StartsWith("addb `") || slashData.text.StartsWith("list `") || slashData.text.StartsWith("remove `")))
             {
                 await ephemeralMessageCollector.AddAsync(slashData, "Did not detect a valid start for that command.");
                 return;
@@ -227,6 +227,26 @@ Syntax:
                         new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + key) },
                         disableAutomaticIdGeneration: true);
                     await ephemeralMessageCollector.AddAsync(slashData, $"Added: `{key}` (`{doc.Resource.Id}`) {value}");
+                    SR.Deit();
+                    break;
+
+                case "addb":
+                    logger.LogInformation("Attempting to bulk add new custom responses...");
+                    foreach (var valueb in value.Split(new string[] { "||" }, StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        doc = await docClient.CreateDocumentAsync(
+                            UriFactory.CreateDocumentCollectionUri(C.CDB.DN, C.CDB.CN),
+                            new Documents.Response
+                            {
+                                Id = Guid.NewGuid().ToString().Split('-')[0],
+                                Subtype = key,
+                                Content = value,
+                                user_id = slashData.user_id
+                            },
+                            new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + key) },
+                            disableAutomaticIdGeneration: true);
+                        await ephemeralMessageCollector.AddAsync(slashData, $"Added: `{key}` (`{doc.Resource.Id}`) {value}");
+                    }
                     SR.Deit();
                     break;
 
