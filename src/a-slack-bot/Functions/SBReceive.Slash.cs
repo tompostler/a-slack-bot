@@ -232,7 +232,7 @@ Syntax:
 
                 case "addb":
                     logger.LogInformation("Attempting to bulk add new custom responses...");
-                    foreach (var valueb in value.Split(new string[] { "||" }, StringSplitOptions.RemoveEmptyEntries))
+                    foreach (var valueb in value.Split(new string[] { "||" }, StringSplitOptions.RemoveEmptyEntries).Select(_ => _.Trim()))
                     {
                         doc = await docClient.CreateDocumentAsync(
                             UriFactory.CreateDocumentCollectionUri(C.CDB.DN, C.CDB.CN),
