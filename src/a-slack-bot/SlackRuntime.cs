@@ -47,12 +47,14 @@ namespace a_slack_bot
         }
         private static async Task InnerInit(ILogger logger)
         {
+            C = new SlackConversations();
             R = new SlackResponses();
             T = new SlackTokens();
             U = new SlackUsers();
             W = new SlackWhitelist();
             var docClient = new DocumentClient(Settings.CosmosDBEndpoint, Settings.CosmosDBKey);
             await Task.WhenAll(new[] {
+                C.Init(logger, docClient),
                 R.Init(logger, docClient),
                 T.Init(logger, docClient),
                 U.Init(logger, docClient),
@@ -63,6 +65,8 @@ namespace a_slack_bot
             Initialized = true;
         }
         public static void Deit() => Initialized = false;
+
+        public static SlackConversations C { get; private set; }
 
         /// <summary>
         /// Responses
@@ -89,6 +93,48 @@ namespace a_slack_bot
         /// </summary>
         public static SlackWhitelist W { get; private set; }
 
+        public class SlackConversations
+        {
+            public IReadOnlyCollection<Slack.Types.converation> All => this.conversations.Values;
+            public IReadOnlyDictionary<string, string> IdToName { get; private set; }
+            public int MaxNameLength { get; private set; }
+            public IReadOnlyDictionary<string, Slack.Types.converation> IdToUser => this.conversations;
+
+            private Dictionary<string, Slack.Types.converation> conversations { get; set; }
+
+            public async Task Init(ILogger logger, DocumentClient docClient)
+            {
+                var response = await httpClient.GetAsync("https://slack.com/api/conversations.list");
+                var conversationResponse = await response.Content.ReadAsAsync<Slack.WebAPIResponse>();
+                if (!conversationResponse.ok)
+                {
+                    logger.LogError("Not ok when trying to fetch users! Warning:'{0}' Error:'{1}'", conversationResponse.warning, conversationResponse.error);
+                    throw new Exception($"Bad {nameof(SlackConversations)}.{nameof(Init)}");
+                }
+
+                this.conversations = conversationResponse.channels.ToDictionary(_ => _.id);
+                logger.LogInformation("Populated {0} conversations.", this.conversations.Count);
+                if (Settings.Debug)
+                    logger.LogInformation("Display names: '{0}'", string.Join("','", this.conversations.Values.Select(u => u.name)));
+
+                var idToNameDict = this.conversations.Values.ToDictionary(u => u.id, u => u.name);
+                this.IdToName = idToNameDict;
+                this.MaxNameLength = this.IdToName.Values.Max(un => un.Length);
+
+                var converationMapDoc = new Documents.IdMapping
+                {
+                    Id = nameof(SlackConversations),
+                    Subtype = nameof(SR),
+                    Content = idToNameDict
+                };
+                await docClient.UpsertDocumentAsync(
+                    UriFactory.CreateDocumentCollectionUri(a_slack_bot.C.CDB.DN, a_slack_bot.C.CDB.CN),
+                    converationMapDoc,
+                    new RequestOptions { PartitionKey = new PartitionKey(converationMapDoc.TypeSubtype) },
+                    disableAutomaticIdGeneration: true);
+            }
+        }
+
         public class SlackResponses
         {
             public HashSet<string> Keys { get; private set; }
@@ -97,7 +143,7 @@ namespace a_slack_bot
             public async Task Init(ILogger logger, DocumentClient docClient)
             {
                 var docQuery = docClient.CreateDocumentQuery<Documents.Response>(
-                    UriFactory.CreateDocumentCollectionUri(C.CDB.DN, C.CDB.CN),
+                    UriFactory.CreateDocumentCollectionUri(a_slack_bot.C.CDB.DN, a_slack_bot.C.CDB.CN),
                     $"SELECT * FROM r WHERE r.{nameof(Documents.BaseDocument.Type)} = '{nameof(Documents.Response)}' AND r.id <> '{nameof(Documents.ResponsesUsed)}'",
                     new FeedOptions { EnableCrossPartitionQuery = true })
                     .AsDocumentQuery();
@@ -122,7 +168,7 @@ namespace a_slack_bot
             public async Task Init(ILogger logger, DocumentClient docClient)
             {
                 var docQuery = docClient.CreateDocumentQuery<Documents.OAuthToken>(
-                    UriFactory.CreateDocumentCollectionUri(C.CDB.DN, C.CDB.CN),
+                    UriFactory.CreateDocumentCollectionUri(a_slack_bot.C.CDB.DN, a_slack_bot.C.CDB.CN),
                     new FeedOptions { PartitionKey = new PartitionKey(nameof(Documents.OAuthToken) + "|user") })
                     .AsDocumentQuery();
 
@@ -170,7 +216,7 @@ namespace a_slack_bot
                     Content = idToNameDict
                 };
                 await docClient.UpsertDocumentAsync(
-                    UriFactory.CreateDocumentCollectionUri(C.CDB.DN, C.CDB.CN),
+                    UriFactory.CreateDocumentCollectionUri(a_slack_bot.C.CDB.DN, a_slack_bot.C.CDB.CN),
                     userMapDoc,
                     new RequestOptions { PartitionKey = new PartitionKey(userMapDoc.TypeSubtype) },
                     disableAutomaticIdGeneration: true);
@@ -184,7 +230,7 @@ namespace a_slack_bot
             public async Task Init(ILogger logger, DocumentClient docClient)
             {
                 var docQuery = docClient.CreateDocumentQuery<Documents.Whitelist>(
-                    UriFactory.CreateDocumentCollectionUri(C.CDB.DN, C.CDB.CN),
+                    UriFactory.CreateDocumentCollectionUri(a_slack_bot.C.CDB.DN, a_slack_bot.C.CDB.CN),
                     new FeedOptions { PartitionKey = new PartitionKey(nameof(Documents.Whitelist) + "|command") })
                     .AsDocumentQuery();
 

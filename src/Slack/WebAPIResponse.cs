@@ -46,6 +46,11 @@ namespace Slack
         public string channel { get; set; }
 
         /// <summary>
+        /// conversations.list
+        /// </summary>
+        public List<Types.converation> channels { get; set; }
+
+        /// <summary>
         /// chat.postMessage
         /// </summary>
         public Events.Inner.message message { get; set; }
