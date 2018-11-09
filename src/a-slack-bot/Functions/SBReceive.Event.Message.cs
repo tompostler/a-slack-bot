@@ -34,11 +34,11 @@ namespace a_slack_bot.Functions
             var matches = ConversationId.Matches(messageText);
             for (int i = 0; i < matches.Count; i++)
                 if (SR.C.IdToName.ContainsKey(matches[i].Groups["id"].Value))
-                    messageText = messageText.Replace(matches[i].Value, SR.C.IdToName[matches[i].Groups["id"].Value]);
+                    messageText = messageText.Replace(matches[i].Value, '#' + SR.C.IdToName[matches[i].Groups["id"].Value]);
             matches = UserId.Matches(messageText);
             for (int i = 0; i < matches.Count; i++)
                 if (SR.U.IdToName.ContainsKey(matches[i].Groups["id"].Value))
-                    messageText = messageText.Replace(matches[i].Value, SR.U.IdToName[matches[i].Groups["id"].Value]);
+                    messageText = messageText.Replace(matches[i].Value, '@' + SR.U.IdToName[matches[i].Groups["id"].Value]);
             // Remove any remaining special characters (URLs, etc)
             messageText = messageText.Replace("<", string.Empty).Replace(">", string.Empty);
             // Put back the escaped chars
