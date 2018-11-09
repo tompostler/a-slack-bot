@@ -98,7 +98,7 @@ namespace a_slack_bot
             public IReadOnlyCollection<Slack.Types.converation> All => this.conversations.Values;
             public IReadOnlyDictionary<string, string> IdToName { get; private set; }
             public int MaxNameLength { get; private set; }
-            public IReadOnlyDictionary<string, Slack.Types.converation> IdToUser => this.conversations;
+            public IReadOnlyDictionary<string, Slack.Types.converation> IdToConversation => this.conversations;
 
             private Dictionary<string, Slack.Types.converation> conversations { get; set; }
 

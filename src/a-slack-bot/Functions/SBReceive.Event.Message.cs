@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace a_slack_bot.Functions
@@ -17,11 +18,38 @@ namespace a_slack_bot.Functions
             IAsyncCollector<Slack.Events.Inner.message> messageCollector,
             ILogger logger)
         {
-            await SBReceiveEventMessageCustomResponse(message, docClient, messageCollector, logger);
+            await SR.Init(logger);
+            var text = message.text;
+            var textD = SBReceiveEventMessageDecode(text);
+            var textDL = textD.ToLower();
+            logger.LogInformation("{0}: {1}", nameof(textDL), textDL);
+
+            await SBReceiveEventMessageCustomResponse(message, textDL, docClient, messageCollector, logger);
+        }
+
+        private static Regex ConversationId = new Regex(@"<#(?<id>\w+)(?>\|[a-z0-9_-]+)?>", RegexOptions.Compiled);
+        private static Regex UserId = new Regex(@"<@(?<id>\w+)(?>\|[\w_-]+)?>", RegexOptions.Compiled);
+        private static string SBReceiveEventMessageDecode(string messageText)
+        {
+            var matches = ConversationId.Matches(messageText);
+            for (int i = 0; i < matches.Count; i++)
+                if (SR.C.IdToName.ContainsKey(matches[i].Groups["id"].Value))
+                    messageText = messageText.Replace(matches[i].Value, SR.C.IdToName[matches[i].Groups["id"].Value]);
+            matches = UserId.Matches(messageText);
+            for (int i = 0; i < matches.Count; i++)
+                if (SR.U.IdToName.ContainsKey(matches[i].Groups["id"].Value))
+                    messageText = messageText.Replace(matches[i].Value, SR.U.IdToName[matches[i].Groups["id"].Value]);
+            // Remove any remaining special characters (URLs, etc)
+            messageText = messageText.Replace("<", string.Empty).Replace(">", string.Empty);
+            // Put back the escaped chars
+            messageText = messageText.Replace("&lt;", "<").Replace("&gt;", ">").Replace("&amp;", "&");
+
+            return messageText;
         }
 
         private static async Task SBReceiveEventMessageCustomResponse(
             Slack.Events.Inner.message message,
+            string textDL,
             DocumentClient docClient,
             IAsyncCollector<Slack.Events.Inner.message> messageCollector,
             ILogger logger)
@@ -34,10 +62,9 @@ namespace a_slack_bot.Functions
                 return;
             }
 
-            string messageText = message.text.Trim().ToLower();
             string matchedKey = null;
             foreach (var key in SR.R.Keys)
-                if (messageText.Contains(key))
+                if (textDL.Contains(key))
                 {
                     matchedKey = key;
                     break;
@@ -52,7 +79,7 @@ namespace a_slack_bot.Functions
             if (SR.R.AllResponses[matchedKey].Count == 1)
             {
                 await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = message.channel, text = SR.R.AllResponses[matchedKey].Single().Value });
-                    return;
+                return;
             }
 
             // Get the used keys dictionary
