@@ -1,4 +1,7 @@
-﻿namespace Cards
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+
+namespace Cards
 {
     /// <summary>
     /// Card number, where value is equal to the number position. Ace high.
@@ -38,6 +41,7 @@
     /// <summary>
     /// Full deck of cards, ordered lowest to highest by suit and then by value.
     /// </summary>
+    [JsonConverter(typeof(StringEnumConverter))]
     public enum Cards
     {
         Invalid = CardSuit.Invalid | CardNumber.Invalid,
