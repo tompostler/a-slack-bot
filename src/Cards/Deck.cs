@@ -62,7 +62,8 @@ namespace Cards
             this.deck = new Cards[52 * numDecks];
             for (int i = 0; i < this.deck.Length; i++)
                 this.deck[i] = Deck.OneDeck[i % 52];
-            this.Shuffle();
+            for (int i = 0; i < this.idx / this.deck.Length; i++)
+                this.Shuffle();
         }
 
         /// <summary>
