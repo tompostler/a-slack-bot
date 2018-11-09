@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -97,6 +98,7 @@ namespace a_slack_bot
         {
             public IReadOnlyCollection<Slack.Types.converation> All => this.conversations.Values;
             public IReadOnlyDictionary<string, string> IdToName { get; private set; }
+            public IReadOnlyDictionary<string, string> LowerNameToId { get; private set; }
             public int MaxNameLength { get; private set; }
             public IReadOnlyDictionary<string, Slack.Types.converation> IdToConversation => this.conversations;
 
@@ -119,6 +121,7 @@ namespace a_slack_bot
 
                 var idToNameDict = this.conversations.Values.ToDictionary(u => u.id, u => u.name);
                 this.IdToName = idToNameDict;
+                this.LowerNameToId = this.IdToName.ToDictionary(u => u.Value.ToLower(), u => u.Key);
                 this.MaxNameLength = this.IdToName.Values.Max(un => un.Length);
 
                 var converationMapDoc = new Documents.IdMapping
@@ -183,6 +186,7 @@ namespace a_slack_bot
             public IReadOnlyCollection<Slack.Types.user> All => this.users.Values;
             public Slack.Types.user BotUser { get; private set; }
             public IReadOnlyDictionary<string, string> IdToName { get; private set; }
+            public IReadOnlyDictionary<string, string> LowerNameToId { get; private set; }
             public int MaxNameLength { get; private set; }
             public IReadOnlyDictionary<string, Slack.Types.user> IdToUser => this.users;
 
@@ -207,6 +211,7 @@ namespace a_slack_bot
 
                 var idToNameDict = this.users.Values.ToDictionary(u => u.id, u => string.IsNullOrEmpty(u.profile.display_name) ? u.profile.real_name : u.profile.display_name);
                 this.IdToName = idToNameDict;
+                this.LowerNameToId = this.IdToName.ToDictionary(u => u.Value.ToLower(), u => u.Key);
                 this.MaxNameLength = this.IdToName.Values.Max(un => un.Length);
 
                 var userMapDoc = new Documents.IdMapping
@@ -238,6 +243,45 @@ namespace a_slack_bot
 
                 this.CommandsChannels = tokens.ToDictionary(t => t.Id, t => t.values);
             }
+        }
+
+        private static Regex ConversationId = new Regex(@"<#(?<id>\w+)(?>\|[a-z0-9_-]+)?>", RegexOptions.Compiled);
+        private static Regex UserId = new Regex(@"<@(?<id>\w+)(?>\|[\w_-]+)?>", RegexOptions.Compiled);
+        public static string MessageToPlainText(string messageText)
+        {
+            var matches = ConversationId.Matches(messageText);
+            for (int i = 0; i < matches.Count; i++)
+                if (SR.C.IdToName.ContainsKey(matches[i].Groups["id"].Value))
+                    messageText = messageText.Replace(matches[i].Value, '#' + SR.C.IdToName[matches[i].Groups["id"].Value]);
+            matches = UserId.Matches(messageText);
+            for (int i = 0; i < matches.Count; i++)
+                if (SR.U.IdToName.ContainsKey(matches[i].Groups["id"].Value))
+                    messageText = messageText.Replace(matches[i].Value, '@' + SR.U.IdToName[matches[i].Groups["id"].Value]);
+            // Remove any remaining special characters (URLs, etc)
+            messageText = messageText.Replace("<", string.Empty).Replace(">", string.Empty);
+            // Put back the escaped chars
+            messageText = messageText.Replace("&lt;", "<").Replace("&gt;", ">").Replace("&amp;", "&");
+
+            return messageText;
+        }
+
+        private static Regex Conversation = new Regex(@"#(?<id>[a-z0-9_-]+)\b", RegexOptions.Compiled);
+        private static Regex User = new Regex(@"@(?<id>\w+)\b", RegexOptions.Compiled);
+        public static string MessageSlackEncode(string messageText)
+        {
+            // Put back the escaped chars
+            messageText = messageText.Replace("<", "&lt;").Replace(">", "&gt;").Replace("&", "&amp;");
+
+            var matches = Conversation.Matches(messageText);
+            for (int i = 0; i < matches.Count; i++)
+                if (SR.C.LowerNameToId.ContainsKey(matches[i].Groups["id"].Value.ToLower()))
+                    messageText = messageText.Replace(matches[i].Value, $"<#{SR.C.LowerNameToId[matches[i].Groups["id"].Value.ToLower()]}>");
+            matches = User.Matches(messageText);
+            for (int i = 0; i < matches.Count; i++)
+                if (SR.U.LowerNameToId.ContainsKey(matches[i].Groups["id"].Value.ToLower()))
+                    messageText = messageText.Replace(matches[i].Value, $"<@{SR.U.LowerNameToId[matches[i].Groups["id"].Value.ToLower()]}>");
+
+            return messageText;
         }
     }
 }

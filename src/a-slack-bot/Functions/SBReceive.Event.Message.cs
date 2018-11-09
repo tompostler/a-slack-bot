@@ -20,31 +20,11 @@ namespace a_slack_bot.Functions
         {
             await SR.Init(logger);
             var text = message.text;
-            var textD = SBReceiveEventMessageDecode(text);
+            var textD = SR.MessageToPlainText(text);
             var textDL = textD.ToLower();
             logger.LogInformation("{0}: {1}", nameof(textDL), textDL);
 
             await SBReceiveEventMessageCustomResponse(message, textDL, docClient, messageCollector, logger);
-        }
-
-        private static Regex ConversationId = new Regex(@"<#(?<id>\w+)(?>\|[a-z0-9_-]+)?>", RegexOptions.Compiled);
-        private static Regex UserId = new Regex(@"<@(?<id>\w+)(?>\|[\w_-]+)?>", RegexOptions.Compiled);
-        private static string SBReceiveEventMessageDecode(string messageText)
-        {
-            var matches = ConversationId.Matches(messageText);
-            for (int i = 0; i < matches.Count; i++)
-                if (SR.C.IdToName.ContainsKey(matches[i].Groups["id"].Value))
-                    messageText = messageText.Replace(matches[i].Value, '#' + SR.C.IdToName[matches[i].Groups["id"].Value]);
-            matches = UserId.Matches(messageText);
-            for (int i = 0; i < matches.Count; i++)
-                if (SR.U.IdToName.ContainsKey(matches[i].Groups["id"].Value))
-                    messageText = messageText.Replace(matches[i].Value, '@' + SR.U.IdToName[matches[i].Groups["id"].Value]);
-            // Remove any remaining special characters (URLs, etc)
-            messageText = messageText.Replace("<", string.Empty).Replace(">", string.Empty);
-            // Put back the escaped chars
-            messageText = messageText.Replace("&lt;", "<").Replace("&gt;", ">").Replace("&amp;", "&");
-
-            return messageText;
         }
 
         private static async Task SBReceiveEventMessageCustomResponse(

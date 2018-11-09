@@ -209,7 +209,7 @@ Syntax:
 
             var instruction = slashData.text.Split(' ')[0];
             var key = slashData.text.Split('`')[1].Trim().ToLowerInvariant();
-            var value = slashData.text.Substring(slashData.text.IndexOf('`', slashData.text.IndexOf('`') + 1) + 1).Trim();
+            var value = SR.MessageSlackEncode(slashData.text.Substring(slashData.text.IndexOf('`', slashData.text.IndexOf('`') + 1) + 1).Trim());
 
             switch (instruction)
             {
