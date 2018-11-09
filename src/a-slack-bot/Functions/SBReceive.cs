@@ -24,7 +24,7 @@ namespace a_slack_bot.Functions
             await messageCollector.AddAsync(
                 new BrokeredMessage(message)
                 {
-                    ScheduledEnqueueTimeUtc = DateTime.UtcNow.AddSeconds(maxLen / 2.0)
+                    ScheduledEnqueueTimeUtc = DateTime.UtcNow.AddSeconds(maxLen * 0.25)
                 });
             await messageCollector.FlushAsync();
         }
