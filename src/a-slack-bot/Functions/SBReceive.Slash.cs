@@ -236,21 +236,21 @@ Syntax:
 
                 case "addb":
                     logger.LogInformation("Attempting to bulk add new custom responses...");
-                    value = await ReplaceImageURIs(key, value, logger);
                     foreach (var valueb in value.Split(new string[] { "||" }, StringSplitOptions.RemoveEmptyEntries).Select(_ => _.Trim()))
                     {
+                        var valuec = await ReplaceImageURIs(key, valueb, logger);
                         doc = await docClient.CreateDocumentAsync(
                             UriFactory.CreateDocumentCollectionUri(C.CDB.DN, C.CDB.CN),
                             new Documents.Response
                             {
                                 Id = Guid.NewGuid().ToString().Split('-')[0],
                                 Subtype = key,
-                                Content = valueb,
+                                Content = valuec,
                                 user_id = slashData.user_id
                             },
                             new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + key) },
                             disableAutomaticIdGeneration: true);
-                        await ephemeralMessageCollector.AddEAsync(slashData, $"Added: `{key}` (`{doc.Resource.Id}`) {valueb}");
+                        await ephemeralMessageCollector.AddEAsync(slashData, $"Added: `{key}` (`{doc.Resource.Id}`) {valuec}");
                     }
                     SR.Deit();
                     break;
