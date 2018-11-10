@@ -218,13 +218,14 @@ Syntax:
             {
                 case "add":
                     logger.LogInformation("Attempting to add new custom response...");
+                    value = await ReplaceImageURIs(key, value, logger);
                     var doc = await docClient.CreateDocumentAsync(
                         UriFactory.CreateDocumentCollectionUri(C.CDB.DN, C.CDB.CN),
                         new Documents.Response
                         {
                             Id = Guid.NewGuid().ToString().Split('-')[0],
                             Subtype = key,
-                            Content = await ReplaceImageURIs(key, value, logger),
+                            Content = value,
                             user_id = slashData.user_id
                         },
                         new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + key) },
@@ -235,6 +236,7 @@ Syntax:
 
                 case "addb":
                     logger.LogInformation("Attempting to bulk add new custom responses...");
+                    value = await ReplaceImageURIs(key, value, logger);
                     foreach (var valueb in value.Split(new string[] { "||" }, StringSplitOptions.RemoveEmptyEntries).Select(_ => _.Trim()))
                     {
                         doc = await docClient.CreateDocumentAsync(
@@ -243,7 +245,7 @@ Syntax:
                             {
                                 Id = Guid.NewGuid().ToString().Split('-')[0],
                                 Subtype = key,
-                                Content = await ReplaceImageURIs(key, valueb, logger),
+                                Content = valueb,
                                 user_id = slashData.user_id
                             },
                             new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + key) },
@@ -298,7 +300,7 @@ Syntax:
                     logger.LogInformation("Was valid. Replacing...");
 
                     var imageName = matchUri.Substring(matchUri.LastIndexOf('/'));
-                    var blob = blobContainer.GetBlockBlobReference(key + '/' + imageName);
+                    var blob = blobContainer.GetBlockBlobReference(key.Replace(' ', '-') + imageName);
                     await blob.UploadFromStreamAsync(stream);
                     text = text.Replace(matchUri, blob.Uri.AbsoluteUri);
                     logger.LogInformation("Replaced with {0}", blob.Uri.AbsoluteUri);
