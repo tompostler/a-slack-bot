@@ -4,15 +4,18 @@ using Microsoft.Azure.Documents.Linq;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Microsoft.ServiceBus.Messaging;
+using Microsoft.WindowsAzure.Storage;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace a_slack_bot.Functions
@@ -221,7 +224,7 @@ Syntax:
                         {
                             Id = Guid.NewGuid().ToString().Split('-')[0],
                             Subtype = key,
-                            Content = value,
+                            Content = await ReplaceImageURIs(key, value, logger),
                             user_id = slashData.user_id
                         },
                         new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + key) },
@@ -240,7 +243,7 @@ Syntax:
                             {
                                 Id = Guid.NewGuid().ToString().Split('-')[0],
                                 Subtype = key,
-                                Content = valueb,
+                                Content = await ReplaceImageURIs(key, valueb, logger),
                                 user_id = slashData.user_id
                             },
                             new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + key) },
@@ -274,6 +277,37 @@ Syntax:
                     }
                     break;
             }
+        }
+
+        private static Regex ShortURI = new Regex(@"((https?|ftp):)?\/\/[^\s\/$.?#].[^\s]*", RegexOptions.Compiled);
+        private static async Task<string> ReplaceImageURIs(string key, string text, ILogger logger)
+        {
+            var client = CloudStorageAccount.Parse(Settings.AzureWebJobsStorage).CreateCloudBlobClient();
+            var blobContainer = client.GetContainerReference(Settings.BlobContainerName);
+            var matches = ShortURI.Matches(text);
+            for (int i = 0; i < matches.Count; i++)
+            {
+                var matchUri = matches[i].Value;
+                logger.LogInformation("Attempting to download: {0}", matchUri);
+                var response = await httpClient.GetAsync(matchUri);
+                try
+                {
+                    var stream = await response.Content.ReadAsStreamAsync();
+                    Image.FromStream(stream);
+                    stream.Seek(0, System.IO.SeekOrigin.Begin);
+                    logger.LogInformation("Was valid. Replacing...");
+
+                    var imageName = matchUri.Substring(matchUri.LastIndexOf('/'));
+                    var blob = blobContainer.GetBlockBlobReference(key + '/' + imageName);
+                    await blob.UploadFromStreamAsync(stream);
+                    text = text.Replace(matchUri, blob.Uri.AbsoluteUri);
+                    logger.LogInformation("Replaced with {0}", blob.Uri.AbsoluteUri);
+                }
+                catch (OutOfMemoryException)
+                { }
+                GC.Collect();
+            }
+            return text;
         }
 
         private static async Task HandleAsbWhitelistCommand(
