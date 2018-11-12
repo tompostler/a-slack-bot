@@ -259,6 +259,7 @@ Syntax:
                     logger.LogInformation("Retrieving list of all custom responses for specified key...");
                     var query = docClient.CreateDocumentQuery<Documents.Response>(
                         UriFactory.CreateDocumentCollectionUri(C.CDB.DN, C.CDB.CN),
+                        $"SELECT * FROM r WHERE r.id <> '{nameof(Documents.ResponsesUsed)}'",
                         new FeedOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + key) })
                         .AsDocumentQuery();
                     var results = await query.GetAllResults(logger);
