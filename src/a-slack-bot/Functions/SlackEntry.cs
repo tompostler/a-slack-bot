@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace a_slack_bot.Functions
@@ -44,10 +45,7 @@ namespace a_slack_bot.Functions
             {
                 var @event = ((Slack.Events.Outer.event_callback)outerEvent).@event;
                 logger.LogInformation("Sending inner event into the queue.");
-                var stream = new MemoryStream();
-                var streamWriter = new StreamWriter(stream);
-                await streamWriter.WriteAsync(JsonConvert.SerializeObject(new ServiceBusInputEvent { @event = @event }));
-                stream.Seek(0, SeekOrigin.Begin);
+                var stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new ServiceBusInputEvent { @event = @event })), writable: false);
                 await messageCollector.AddAsync(
                     new BrokeredMessage(stream, ownsStream: true)
                     {
