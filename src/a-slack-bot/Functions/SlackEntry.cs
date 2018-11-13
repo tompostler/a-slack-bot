@@ -17,8 +17,7 @@ namespace a_slack_bot.Functions
         [FunctionName(nameof(ReceiveEvent))]
         public static async Task<HttpResponseMessage> ReceiveEvent(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = "receive/event")]HttpRequestMessage req,
-            [ServiceBus(C.SBQ.InputEvent, AccessRights.Manage)]IAsyncCollector<ServiceBusInputEvent> messageCollector,
-            [ServiceBus(C.SBQ.InputEvent + "-test", AccessRights.Manage)]IAsyncCollector<BrokeredMessage> messageBCollector,
+            [ServiceBus(C.SBQ.InputEvent)]IAsyncCollector<BrokeredMessage> messageCollector,
             ILogger logger)
         {
             if (Settings.Debug)
@@ -43,28 +42,17 @@ namespace a_slack_bot.Functions
             {
                 var @event = ((Slack.Events.Outer.event_callback)outerEvent).@event;
                 logger.LogInformation("Sending inner event into the queue.");
-                await messageCollector.AddAsync(new ServiceBusInputEvent
-                {
-                    @event = @event
-                });
-                try
-                {
-                    await messageBCollector.AddAsync(
-                        new BrokeredMessage(
-                            JsonConvert.SerializeObject(
-                                new ServiceBusInputEvent
-                                {
-                                    @event = @event
-                                }))
-                        {
-                            ContentType = "application/json",
-                            MessageId = @event.event_ts
-                        });
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError("Couldn't test: {0}", ex.ToString());
-                }
+                await messageCollector.AddAsync(
+                    new BrokeredMessage(
+                        JsonConvert.SerializeObject(
+                            new ServiceBusInputEvent
+                            {
+                                @event = @event
+                            }))
+                    {
+                        ContentType = "application/json",
+                        MessageId = @event.event_ts
+                    });
             }
 
             // Return all is well
