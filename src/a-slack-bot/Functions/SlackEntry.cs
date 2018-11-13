@@ -6,6 +6,7 @@ using Microsoft.ServiceBus.Messaging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -18,7 +19,7 @@ namespace a_slack_bot.Functions
         public static async Task<HttpResponseMessage> ReceiveEvent(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = "receive/event")]HttpRequestMessage req,
             [ServiceBus(C.SBQ.InputEvent)]IAsyncCollector<BrokeredMessage> messageCollector,
-            [ServiceBus(C.SBQ.InputEvent+"-test")]IAsyncCollector<ServiceBusInputEvent> message2Collector,
+            [ServiceBus(C.SBQ.InputEvent + "-test")]IAsyncCollector<ServiceBusInputEvent> message2Collector,
             ILogger logger)
         {
             if (Settings.Debug)
@@ -43,13 +44,12 @@ namespace a_slack_bot.Functions
             {
                 var @event = ((Slack.Events.Outer.event_callback)outerEvent).@event;
                 logger.LogInformation("Sending inner event into the queue.");
+                var stream = new MemoryStream();
+                var streamWriter = new StreamWriter(stream);
+                await streamWriter.WriteAsync(JsonConvert.SerializeObject(new ServiceBusInputEvent { @event = @event }));
+                stream.Seek(0, SeekOrigin.Begin);
                 await messageCollector.AddAsync(
-                    new BrokeredMessage(
-                        JsonConvert.SerializeObject(
-                            new ServiceBusInputEvent
-                            {
-                                @event = @event
-                            }))
+                    new BrokeredMessage(stream, ownsStream: true)
                     {
                         ContentType = "application/json",
                         MessageId = @event.event_ts
