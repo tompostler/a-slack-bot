@@ -3,6 +3,7 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.ServiceBus.Messaging;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
@@ -16,6 +17,7 @@ namespace a_slack_bot.Functions
         public static async Task<HttpResponseMessage> ReceiveEvent(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = "receive/event")]HttpRequestMessage req,
             [ServiceBus(C.SBQ.InputEvent, AccessRights.Manage)]IAsyncCollector<ServiceBusInputEvent> messageCollector,
+            [ServiceBus(C.SBQ.InputEvent + "-test", AccessRights.Manage)]IAsyncCollector<BrokeredMessage> messageBCollector,
             ILogger logger)
         {
             if (Settings.Debug)
@@ -38,11 +40,29 @@ namespace a_slack_bot.Functions
             // Send it off to be processed
             if (outerEvent is Slack.Events.Outer.event_callback)
             {
+                var @event = ((Slack.Events.Outer.event_callback)outerEvent).@event;
                 logger.LogInformation("Sending inner event into the queue.");
                 await messageCollector.AddAsync(new ServiceBusInputEvent
                 {
-                    @event = ((Slack.Events.Outer.event_callback)outerEvent).@event
+                    @event = @event
                 });
+                try
+                {
+                    await messageBCollector.AddAsync(
+                        new BrokeredMessage(
+                            new ServiceBusInputEvent
+                            {
+                                @event = @event
+                            })
+                        {
+                            ContentType = "application/json",
+                            MessageId = @event.event_ts
+                        });
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError("Couldn't test: {0}", ex.ToString());
+                }
             }
 
             // Return all is well
