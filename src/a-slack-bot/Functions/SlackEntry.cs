@@ -4,7 +4,6 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.ServiceBus.Messaging;
 using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -20,7 +19,6 @@ namespace a_slack_bot.Functions
         public static async Task<HttpResponseMessage> ReceiveEvent(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = "receive/event")]HttpRequestMessage req,
             [ServiceBus(C.SBQ.InputEvent)]IAsyncCollector<BrokeredMessage> messageCollector,
-            [ServiceBus(C.SBQ.InputEvent + "-test")]IAsyncCollector<ServiceBusInputEvent> message2Collector,
             ILogger logger)
         {
             if (Settings.Debug)
@@ -52,7 +50,6 @@ namespace a_slack_bot.Functions
                         ContentType = "application/json",
                         MessageId = @event.event_ts
                     });
-                await message2Collector.AddAsync(new ServiceBusInputEvent { @event = @event });
             }
 
             // Return all is well
