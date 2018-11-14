@@ -2,10 +2,10 @@
 using Microsoft.Azure.Documents.Client;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace a_slack_bot.Functions
@@ -19,6 +19,12 @@ namespace a_slack_bot.Functions
             ILogger logger)
         {
             await SR.Init(logger);
+            if (String.IsNullOrEmpty(message.text))
+            {
+                logger.LogInformation("Empty message text. Exiting from {0}.", nameof(SBReceiveEventMessage));
+                return;
+            }
+
             var text = message.text;
             var textD = SR.MessageToPlainText(text);
             var textDL = textD.ToLower();
