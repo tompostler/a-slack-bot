@@ -42,14 +42,14 @@ namespace a_slack_bot.Functions
             if (outerEvent is Slack.Events.Outer.event_callback)
             {
                 var @event = ((Slack.Events.Outer.event_callback)outerEvent).@event;
-                logger.LogInformation("Sending inner event into the queue.");
                 var stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new ServiceBusInputEvent { @event = @event })), writable: false);
-                await messageCollector.AddAsync(
-                    new BrokeredMessage(stream, ownsStream: true)
-                    {
-                        ContentType = "application/json",
-                        MessageId = @event.event_ts
-                    });
+                var msg = new BrokeredMessage(stream, ownsStream: true)
+                {
+                    ContentType = "application/json",
+                    MessageId = @event.event_ts
+                };
+                logger.LogInformation("Sending inner event into the queue with id {0}.", msg.MessageId);
+                await messageCollector.AddAsync(msg);
             }
 
             // Return all is well

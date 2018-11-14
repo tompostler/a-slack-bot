@@ -101,6 +101,7 @@
         "lockDuration": "PT5M",
         "defaultMessageTimeToLive": "PT4H",
         "deadLetteringOnMessageExpiration": true,
+        "requiresDuplicateDetection": true,
         "duplicateDetectionHistoryTimeWindow": "PT5M",
         "maxDeliveryCount": 3
       },
