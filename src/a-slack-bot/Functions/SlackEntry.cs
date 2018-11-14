@@ -46,7 +46,7 @@ namespace a_slack_bot.Functions
                 var msg = new BrokeredMessage(stream, ownsStream: true)
                 {
                     ContentType = "application/json",
-                    MessageId = @event.event_ts
+                    MessageId = @event.type + '|' + @event.event_ts
                 };
                 logger.LogInformation("Sending inner event into the queue with id {0}.", msg.MessageId);
                 await messageCollector.AddAsync(msg);
