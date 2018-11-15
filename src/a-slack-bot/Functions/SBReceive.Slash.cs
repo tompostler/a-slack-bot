@@ -192,9 +192,10 @@ Syntax:
                     $"SELECT DISTINCT VALUE r.{nameof(Documents.Response.Subtype)} FROM r WHERE r.{nameof(Documents.BaseDocument.Type)} = '{nameof(Documents.Response)}'",
                     new FeedOptions { EnableCrossPartitionQuery = true })
                     .AsDocumentQuery();
-                var results = await query.GetAllResults(logger);
+                var results = (await query.GetAllResults(logger)).ToList();
+                results.Sort();
 
-                await ephemeralMessageCollector.AddEAsync(slashData, $"Keys in use: `{string.Join("` `", results)}`");
+                await ephemeralMessageCollector.AddEAsync(slashData, $"Keys in use: `{string.Join("` | `", results)}`");
                 return;
             }
 
@@ -262,7 +263,8 @@ Syntax:
                         $"SELECT * FROM r WHERE r.id <> '{nameof(Documents.ResponsesUsed)}'",
                         new FeedOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + key) })
                         .AsDocumentQuery();
-                    var results = await query.GetAllResults(logger);
+                    var results = (await query.GetAllResults(logger)).ToList();
+                    results.Sort((r1,r2) => r1.Id.CompareTo(r2.Id));
                     await ephemeralMessageCollector.AddEAsync(slashData, $"Key: `{key}` Values:\n{string.Join("\n\n", results.Select(r => $"`{r.Id}` {r.Content}"))}");
                     break;
 
