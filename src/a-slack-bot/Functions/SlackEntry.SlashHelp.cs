@@ -40,6 +40,7 @@ Code, build, and release: https://tompostler.visualstudio.com/public/_git/a-slac
 
 The following are slash commands that can be triggered by the app:
 
+    /guid               Generate a guid
     /asb-help           This helptext
     /asb-response (add|list|remove) ['key' [value]]
                         Add, list or remove custom message responses. Sending the command with no
