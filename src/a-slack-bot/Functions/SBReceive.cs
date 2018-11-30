@@ -29,7 +29,7 @@ namespace a_slack_bot.Functions
             await messageCollector.FlushAsync();
         }
 
-        private static Task AddAsync(this IAsyncCollector<BrokeredMessage> messageCollector, Messages.ServiceBusBlackjack metadata, string text, bool thread_broadcast = false)
+        private static Task AddAsync(this IAsyncCollector<BrokeredMessage> messageCollector, Messages.ServiceBusBlackjack metadata, string text, bool reply_broadcast = false)
         {
             return messageCollector.AddAsync(
                 new Slack.Events.Inner.message
@@ -37,7 +37,7 @@ namespace a_slack_bot.Functions
                     channel = metadata.channel_id,
                     thread_ts = metadata.thread_ts,
                     text = text,
-                    thread_broadcast = thread_broadcast
+                    reply_broadcast = reply_broadcast
                 });
         }
 
