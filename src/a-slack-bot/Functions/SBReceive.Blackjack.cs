@@ -493,7 +493,7 @@ namespace a_slack_bot.Functions
                     }
 
                     await Task.Delay(TimeSpan.FromSeconds(0.5));
-                    await AddAsync(messageCollector, inMessage, sb.ToString());
+                    await AddAsync(messageCollector, inMessage, sb.ToString(), thread_broadcast: true);
                     gameDoc = await UpsertGameDocument(docClient, gameDoc);
                     break;
 
