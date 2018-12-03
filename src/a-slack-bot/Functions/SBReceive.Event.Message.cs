@@ -81,7 +81,7 @@ namespace a_slack_bot.Functions
                 .AsEnumerable().FirstOrDefault();
 
             response.count++;
-            response.random = Guid.NewGuid().ToString();
+            response.random = Guid.NewGuid();
 
             // Send the message and upsert the used ids doc
             await Task.WhenAll(new[]

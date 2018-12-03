@@ -10,18 +10,18 @@ using System.Threading.Tasks;
 namespace upgrade._181202
 {
     /// <summary>
-    /// Migrate old data format to the new format
+    /// Migrate old data format to the new format (run only once!)
     /// </summary>
     internal class Program
     {
         private static async Task Main(string[] args)
         {
-            var oldDc = new DocumentClient(new Uri("https://aslackbot.documents.azure.com:443/"), args[0]);
+            var dc = new DocumentClient(new Uri("https://aslackbot.documents.azure.com:443/"), args[0]);
 
             //
             // CustomResponses
             //
-            var query = oldDc.CreateDocumentQuery(
+            var query = dc.CreateDocumentQuery(
                 UriFactory.CreateDocumentCollectionUri(C.CDB.DN, C.CDB.CN),
                 "SELECT * FROM c WHERE c.Type = 'Response' AND c.id <> 'ResponsesUsed'",
                 new FeedOptions { EnableCrossPartitionQuery = true })
@@ -48,7 +48,7 @@ namespace upgrade._181202
             {
                 await ss.WaitAsync();
 
-                await oldDc.UpsertDocumentAsync(
+                await dc.UpsertDocumentAsync(
                     UriFactory.CreateDocumentCollectionUri(C.CDB2.DN, C.CDB2.Col.CustomResponses),
                     new
                     {

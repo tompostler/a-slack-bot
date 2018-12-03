@@ -1,5 +1,6 @@
 ﻿using Microsoft.Azure.Documents;
 using Newtonsoft.Json;
+using System;
 
 namespace a_slack_bot.Documents2
 {
@@ -13,6 +14,6 @@ namespace a_slack_bot.Documents2
         public string user_id { get; set; }
 
         public int count { get; set; }
-        public string random { get; set; }
+        public Guid random { get; set; }
     }
 }
