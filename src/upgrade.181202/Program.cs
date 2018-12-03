@@ -23,7 +23,7 @@ namespace upgrade._181202
             //
             var query = oldDc.CreateDocumentQuery(
                 UriFactory.CreateDocumentCollectionUri(C.CDB.DN, C.CDB.CN),
-                "SELECT * FROM c WHERE c.Type = 'Response' AND c.id <> ResponsesUsed",
+                "SELECT * FROM c WHERE c.Type = 'Response' AND c.id <> 'ResponsesUsed'",
                 new FeedOptions { EnableCrossPartitionQuery = true })
                 .AsDocumentQuery();
 

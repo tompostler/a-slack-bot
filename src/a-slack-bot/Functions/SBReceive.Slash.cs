@@ -188,7 +188,7 @@ Syntax:
             {
                 logger.LogInformation("Retrieving list of all custom response keys...");
                 var query = docClient.CreateDocumentQuery<string>(
-                    UriFactory.CreateDocumentCollectionUri(C.CDB.DN, C.CDB.CN),
+                    UriFactory.CreateDocumentCollectionUri(C.CDB2.DN, C.CDB2.Col.CustomResponses),
                     $"SELECT DISTINCT VALUE r.{nameof(Documents2.Response.key)} FROM r",
                     new FeedOptions { EnableCrossPartitionQuery = true })
                     .AsDocumentQuery();
