@@ -186,7 +186,7 @@ namespace a_slack_bot
                 {
                     if (!this.AllResponses.ContainsKey(response.key))
                         this.AllResponses.Add(response.key, new Dictionary<string, string>());
-                    this.AllResponses[response.key].Add(response.Id, response.key);
+                    this.AllResponses[response.key].Add(response.Id, response.value);
                 }
                 this.Keys = new HashSet<string>(this.AllResponses.Keys);
             }
