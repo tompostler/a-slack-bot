@@ -174,7 +174,7 @@ namespace a_slack_bot
             public async Task Init(ILogger logger, DocumentClient docClient)
             {
                 var docQuery = docClient.CreateDocumentQuery<Documents2.Response>(
-                    UriFactory.CreateDocumentCollectionUri(a_slack_bot.C.CDB.DN, a_slack_bot.C.CDB.CN),
+                    UriFactory.CreateDocumentCollectionUri(a_slack_bot.C.CDB2.DN, a_slack_bot.C.CDB2.Col.CustomResponses),
                     "SELECT * FROM r",
                     new FeedOptions { EnableCrossPartitionQuery = true })
                     .AsDocumentQuery();
