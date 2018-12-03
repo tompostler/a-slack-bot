@@ -76,7 +76,7 @@ namespace a_slack_bot.Functions
             // Pick one
             var response = docClient.CreateDocumentQuery<Documents2.Response>(
                 UriFactory.CreateDocumentCollectionUri(C.CDB2.DN, C.CDB2.Col.CustomResponses),
-                $"SELECT TOP 1 * FROM r WHERE c.{nameof(Documents2.Response.count)} = {count} ORDER BY r.{nameof(Documents2.Response.random)}",
+                $"SELECT TOP 1 * FROM r WHERE r.{nameof(Documents2.Response.count)} = {count} ORDER BY r.{nameof(Documents2.Response.random)}",
                 new FeedOptions { PartitionKey = new PartitionKey(matchedKey) })
                 .AsEnumerable().FirstOrDefault();
 
