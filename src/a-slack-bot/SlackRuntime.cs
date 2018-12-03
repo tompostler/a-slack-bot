@@ -32,6 +32,7 @@ namespace a_slack_bot
 
         private static SemaphoreSlim Lock = new SemaphoreSlim(1);
         private static bool Initialized = false;
+        private static bool OneTimeInitialized = false;
         private static Stopwatch InitializedDuration;
         public static async Task Init(ILogger logger)
         {
@@ -54,6 +55,11 @@ namespace a_slack_bot
             U = new SlackUsers();
             W = new SlackWhitelist();
             var docClient = new DocumentClient(Settings.CosmosDBEndpoint, Settings.CosmosDBKey);
+            if (!OneTimeInitialized)
+            {
+                await InnerOneTimeInit(logger, docClient);
+                OneTimeInitialized = true;
+            }
             await Task.WhenAll(new[] {
                 C.Init(logger, docClient),
                 R.Init(logger, docClient),
@@ -64,6 +70,28 @@ namespace a_slack_bot
 
             InitializedDuration = Stopwatch.StartNew();
             Initialized = true;
+        }
+        private static async Task InnerOneTimeInit(ILogger logger, DocumentClient docClient)
+        {
+            var dbResponse = await docClient.CreateDatabaseIfNotExistsAsync(new Database { Id = a_slack_bot.C.CDB2.DN }, new RequestOptions { OfferThroughput = 400 });
+            logger.LogInformation("DB: {0}", dbResponse.StatusCode);
+            foreach (var pk in a_slack_bot.C.CDB2.PKs)
+            {
+                var colResponse = await docClient.CreateDocumentCollectionIfNotExistsAsync(
+                    dbResponse.Resource.SelfLink,
+                    new DocumentCollection
+                    {
+                        Id = pk.Key,
+                        PartitionKey = new PartitionKeyDefinition
+                        {
+                            Paths = new System.Collections.ObjectModel.Collection<string>
+                            {
+                                "/" + pk.Value
+                            }
+                        }
+                    });
+                logger.LogInformation("Col {0}: {1}", pk.Key, colResponse.StatusCode);
+            }
         }
         public static void Deit() => Initialized = false;
 
@@ -145,9 +173,9 @@ namespace a_slack_bot
 
             public async Task Init(ILogger logger, DocumentClient docClient)
             {
-                var docQuery = docClient.CreateDocumentQuery<Documents.Response>(
+                var docQuery = docClient.CreateDocumentQuery<Documents2.Response>(
                     UriFactory.CreateDocumentCollectionUri(a_slack_bot.C.CDB.DN, a_slack_bot.C.CDB.CN),
-                    $"SELECT * FROM r WHERE r.{nameof(Documents.BaseDocument.Type)} = '{nameof(Documents.Response)}' AND r.id <> '{nameof(Documents.ResponsesUsed)}'",
+                    "SELECT * FROM r",
                     new FeedOptions { EnableCrossPartitionQuery = true })
                     .AsDocumentQuery();
 
@@ -156,9 +184,9 @@ namespace a_slack_bot
                 this.AllResponses = new Dictionary<string, Dictionary<string, string>>();
                 foreach (var response in responses)
                 {
-                    if (!this.AllResponses.ContainsKey(response.Subtype))
-                        this.AllResponses.Add(response.Subtype, new Dictionary<string, string>());
-                    this.AllResponses[response.Subtype].Add(response.Id, response.Content);
+                    if (!this.AllResponses.ContainsKey(response.key))
+                        this.AllResponses.Add(response.key, new Dictionary<string, string>());
+                    this.AllResponses[response.key].Add(response.Id, response.key);
                 }
                 this.Keys = new HashSet<string>(this.AllResponses.Keys);
             }

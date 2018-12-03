@@ -1,4 +1,6 @@
-﻿namespace a_slack_bot
+﻿using System.Collections.Generic;
+
+namespace a_slack_bot
 {
     public static class C
     {
@@ -10,6 +12,28 @@
             public const string DN = "aslackbot";
             public const string CN = "aslackbot";
             public const string P = "/" + nameof(Documents.BaseDocument.TypeSubtype);
+            public const string CSS = nameof(Settings.CosmosDBConnection);
+        }
+        /// <summary>
+        /// Cosmos DB
+        /// </summary>
+        public static class CDB2
+        {
+            public const string DN = "aslackbot2";
+
+            /// <summary>
+            /// Collections
+            /// </summary>
+            public static class Col
+            {
+                public const string CustomResponses = "custom-responses";
+            }
+
+            public static readonly IReadOnlyDictionary<string, string> PKs = new Dictionary<string, string>
+            {
+                [Col.CustomResponses] = nameof(Documents2.Response.key)
+            };
+
             public const string CSS = nameof(Settings.CosmosDBConnection);
         }
 

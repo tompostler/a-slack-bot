@@ -3,9 +3,7 @@ using Microsoft.Azure.Documents.Client;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 
 namespace a_slack_bot.Functions
@@ -68,42 +66,32 @@ namespace a_slack_bot.Functions
                 return;
             }
 
-            // Get the used keys dictionary
-            Documents.ResponsesUsed usedIds = null;
-            try
-            {
-                usedIds = await docClient.ReadDocumentAsync<Documents.ResponsesUsed>(
-                    UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, nameof(Documents.ResponsesUsed)),
-                    new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + matchedKey) });
+            // Get the minimum display count
+            var count = docClient.CreateDocumentQuery<int>(
+                UriFactory.CreateDocumentCollectionUri(C.CDB2.DN, C.CDB2.Col.CustomResponses),
+                $"SELECT VALUE MIN(r.{nameof(Documents2.Response.count)}) FROM r",
+                new FeedOptions { PartitionKey = new PartitionKey(matchedKey) })
+                .AsEnumerable().FirstOrDefault();
 
-                if (usedIds.Content.Count >= SR.R.AllResponses[matchedKey].Count)
-                {
-                    logger.LogInformation("Used IDs count indicates all used. Reseting.");
-                    usedIds = new Documents.ResponsesUsed { Subtype = matchedKey };
-                }
-            }
-            catch (DocumentClientException dce) when (dce.StatusCode == HttpStatusCode.NotFound)
-            {
-                logger.LogWarning("Didn't find a response used document. Creating one.", matchedKey);
-                usedIds = new Documents.ResponsesUsed { Subtype = matchedKey };
-            }
-            usedIds.Content = usedIds.Content ?? new HashSet<string>();
+            // Pick one
+            var response = docClient.CreateDocumentQuery<Documents2.Response>(
+                UriFactory.CreateDocumentCollectionUri(C.CDB2.DN, C.CDB2.Col.CustomResponses),
+                $"SELECT TOP 1 * FROM r WHERE c.{nameof(Documents2.Response.count)} = {count} ORDER BY r.{nameof(Documents2.Response.random)}",
+                new FeedOptions { PartitionKey = new PartitionKey(matchedKey) })
+                .AsEnumerable().FirstOrDefault();
 
-            // Pick one to respond with
-            var unusedIds = SR.R.AllResponses[matchedKey].Keys.Except(usedIds.Content).ToList();
-            var pickedId = unusedIds[SR.Rand.Next(unusedIds.Count)];
-            usedIds.Content.Add(pickedId);
-            logger.LogInformation("Picked {0}", pickedId);
+            response.count++;
+            response.random = Guid.NewGuid().ToString();
 
             // Send the message and upsert the used ids doc
             await Task.WhenAll(new[]
             {
                 docClient.UpsertDocumentAsync(
-                    UriFactory.CreateDocumentCollectionUri(C.CDB.DN, C.CDB.CN),
-                    usedIds,
-                    new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + matchedKey) },
+                    UriFactory.CreateDocumentCollectionUri(C.CDB2.DN, C.CDB2.Col.CustomResponses),
+                    response,
+                    new RequestOptions { PartitionKey = new PartitionKey(matchedKey) },
                     disableAutomaticIdGeneration: true),
-                messageCollector.AddAsync(new Slack.Events.Inner.message{channel = message.channel, text = SR.R.AllResponses[matchedKey][pickedId]})
+                messageCollector.AddAsync(new Slack.Events.Inner.message{channel = message.channel, text = response.value})
             });
         }
     }

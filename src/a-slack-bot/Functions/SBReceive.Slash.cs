@@ -189,7 +189,7 @@ Syntax:
                 logger.LogInformation("Retrieving list of all custom response keys...");
                 var query = docClient.CreateDocumentQuery<string>(
                     UriFactory.CreateDocumentCollectionUri(C.CDB.DN, C.CDB.CN),
-                    $"SELECT DISTINCT VALUE r.{nameof(Documents.Response.Subtype)} FROM r WHERE r.{nameof(Documents.BaseDocument.Type)} = '{nameof(Documents.Response)}'",
+                    $"SELECT DISTINCT VALUE r.{nameof(Documents2.Response.key)} FROM r",
                     new FeedOptions { EnableCrossPartitionQuery = true })
                     .AsDocumentQuery();
                 var results = (await query.GetAllResults(logger)).ToList();
@@ -221,15 +221,15 @@ Syntax:
                     logger.LogInformation("Attempting to add new custom response...");
                     value = await ReplaceImageURIs(key, value, logger);
                     var doc = await docClient.CreateDocumentAsync(
-                        UriFactory.CreateDocumentCollectionUri(C.CDB.DN, C.CDB.CN),
-                        new Documents.Response
+                        UriFactory.CreateDocumentCollectionUri(C.CDB2.DN, C.CDB2.Col.CustomResponses),
+                        new Documents2.Response
                         {
                             Id = Guid.NewGuid().ToString().Split('-')[0],
-                            Subtype = key,
-                            Content = value,
+                            key = key,
+                            value = value,
                             user_id = slashData.user_id
                         },
-                        new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + key) },
+                        new RequestOptions { PartitionKey = new PartitionKey(key) },
                         disableAutomaticIdGeneration: true);
                     await ephemeralMessageCollector.AddEAsync(slashData, $"Added: `{key}` (`{doc.Resource.Id}`) {value}");
                     SR.Deit();
@@ -241,15 +241,15 @@ Syntax:
                     {
                         var valuec = await ReplaceImageURIs(key, valueb, logger);
                         doc = await docClient.CreateDocumentAsync(
-                            UriFactory.CreateDocumentCollectionUri(C.CDB.DN, C.CDB.CN),
-                            new Documents.Response
+                            UriFactory.CreateDocumentCollectionUri(C.CDB2.DN, C.CDB2.Col.CustomResponses),
+                            new Documents2.Response
                             {
                                 Id = Guid.NewGuid().ToString().Split('-')[0],
-                                Subtype = key,
-                                Content = valuec,
+                                key = key,
+                                value = valuec,
                                 user_id = slashData.user_id
                             },
-                            new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + key) },
+                            new RequestOptions { PartitionKey = new PartitionKey(key) },
                             disableAutomaticIdGeneration: true);
                         await ephemeralMessageCollector.AddEAsync(slashData, $"Added: `{key}` (`{doc.Resource.Id}`) {valuec}");
                     }
@@ -258,21 +258,21 @@ Syntax:
 
                 case "list":
                     logger.LogInformation("Retrieving list of all custom responses for specified key...");
-                    var query = docClient.CreateDocumentQuery<Documents.Response>(
-                        UriFactory.CreateDocumentCollectionUri(C.CDB.DN, C.CDB.CN),
-                        $"SELECT * FROM r WHERE r.id <> '{nameof(Documents.ResponsesUsed)}'",
-                        new FeedOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + key) })
+                    var query = docClient.CreateDocumentQuery<Documents2.Response>(
+                        UriFactory.CreateDocumentCollectionUri(C.CDB2.DN, C.CDB2.Col.CustomResponses),
+                        "SELECT * FROM r",
+                        new FeedOptions { PartitionKey = new PartitionKey(key) })
                         .AsDocumentQuery();
                     var results = (await query.GetAllResults(logger)).ToList();
-                    results.Sort((r1,r2) => r1.Id.CompareTo(r2.Id));
-                    await ephemeralMessageCollector.AddEAsync(slashData, $"Key: `{key}` Values:\n{string.Join("\n\n", results.Select(r => $"`{r.Id}` {r.Content}"))}");
+                    results.Sort((r1, r2) => r1.Id.CompareTo(r2.Id));
+                    await ephemeralMessageCollector.AddEAsync(slashData, $"Key: `{key}` Values:\n{string.Join("\n\n", results.Select(r => $"`{r.Id}` {r.value}"))}");
                     break;
 
                 case "remove":
                     try
                     {
                         logger.LogInformation("Attempting to remove existing record...");
-                        await docClient.DeleteDocumentAsync(UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, value), new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Response) + "|" + key) });
+                        await docClient.DeleteDocumentAsync(UriFactory.CreateDocumentUri(C.CDB2.DN, C.CDB2.Col.CustomResponses, value), new RequestOptions { PartitionKey = new PartitionKey(key) });
                         await ephemeralMessageCollector.AddEAsync(slashData, $"Removed `{key}`: {value}");
                         SR.Deit();
                     }
