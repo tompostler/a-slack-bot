@@ -152,16 +152,15 @@ namespace a_slack_bot
                 this.LowerNameToId = this.IdToName.ToDictionary(u => u.Value.ToLower(), u => u.Key);
                 this.MaxNameLength = this.IdToName.Values.Max(un => un.Length);
 
-                var converationMapDoc = new Documents.IdMapping
+                var converationMapDoc = new Documents2.IdMapping
                 {
-                    Id = nameof(SlackConversations),
-                    Subtype = nameof(SR),
-                    Content = idToNameDict
+                    name = nameof(SlackConversations),
+                    mapping = idToNameDict
                 };
                 await docClient.UpsertDocumentAsync(
                     UriFactory.CreateDocumentCollectionUri(a_slack_bot.C.CDB.DN, a_slack_bot.C.CDB.CN),
                     converationMapDoc,
-                    new RequestOptions { PartitionKey = new PartitionKey(converationMapDoc.TypeSubtype) },
+                    new RequestOptions { PartitionKey = new PartitionKey(converationMapDoc.name) },
                     disableAutomaticIdGeneration: true);
             }
         }
@@ -242,16 +241,15 @@ namespace a_slack_bot
                 this.LowerNameToId = this.IdToName.ToDictionary(u => u.Value.ToLower(), u => u.Key);
                 this.MaxNameLength = this.IdToName.Values.Max(un => un.Length);
 
-                var userMapDoc = new Documents.IdMapping
+                var userMapDoc = new Documents2.IdMapping
                 {
-                    Id = nameof(SlackUsers),
-                    Subtype = nameof(SR),
-                    Content = idToNameDict
+                    name = nameof(SlackUsers),
+                    mapping = idToNameDict
                 };
                 await docClient.UpsertDocumentAsync(
                     UriFactory.CreateDocumentCollectionUri(a_slack_bot.C.CDB.DN, a_slack_bot.C.CDB.CN),
                     userMapDoc,
-                    new RequestOptions { PartitionKey = new PartitionKey(userMapDoc.TypeSubtype) },
+                    new RequestOptions { PartitionKey = new PartitionKey(userMapDoc.name) },
                     disableAutomaticIdGeneration: true);
             }
         }

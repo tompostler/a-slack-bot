@@ -27,11 +27,13 @@ namespace a_slack_bot
             public static class Col
             {
                 public const string CustomResponses = "custom-responses";
+                public const string IdMappings = "id-mappings";
             }
 
             public static readonly IReadOnlyDictionary<string, string> PKs = new Dictionary<string, string>
             {
-                [Col.CustomResponses] = nameof(Documents2.Response.key)
+                [Col.CustomResponses] = nameof(Documents2.Response.key),
+                [Col.IdMappings] = nameof(Documents2.IdMapping.name)
             };
 
             public const string CSS = nameof(Settings.CosmosDBConnection);
