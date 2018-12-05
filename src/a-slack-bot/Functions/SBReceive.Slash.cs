@@ -188,7 +188,7 @@ Syntax:
             {
                 logger.LogInformation("Retrieving list of all custom response keys...");
                 var query = docClient.CreateDocumentQuery<string>(
-                    UriFactory.CreateDocumentCollectionUri(C.CDB2.DN, C.CDB2.Col.CustomResponses),
+                    C.CDB2.CUs[C.CDB2.Col.CustomResponses],
                     $"SELECT DISTINCT VALUE r.{nameof(Documents2.Response.key)} FROM r",
                     new FeedOptions { EnableCrossPartitionQuery = true })
                     .AsDocumentQuery();
@@ -220,16 +220,17 @@ Syntax:
                 case "add":
                     logger.LogInformation("Attempting to add new custom response...");
                     value = await ReplaceImageURIs(key, value, logger);
+                    var resp = new Documents2.Response
+                    {
+                        Id = Guid.NewGuid().ToString().Split('-')[0],
+                        key = key,
+                        value = value,
+                        user_id = slashData.user_id
+                    };
                     var doc = await docClient.CreateDocumentAsync(
-                        UriFactory.CreateDocumentCollectionUri(C.CDB2.DN, C.CDB2.Col.CustomResponses),
-                        new Documents2.Response
-                        {
-                            Id = Guid.NewGuid().ToString().Split('-')[0],
-                            key = key,
-                            value = value,
-                            user_id = slashData.user_id
-                        },
-                        new RequestOptions { PartitionKey = new PartitionKey(key) },
+                        C.CDB2.CUs[C.CDB2.Col.CustomResponses],
+                        resp,
+                        new RequestOptions { PartitionKey = resp.PK },
                         disableAutomaticIdGeneration: true);
                     await ephemeralMessageCollector.AddEAsync(slashData, $"Added: `{key}` (`{doc.Resource.Id}`) {value}");
                     SR.Deit();
@@ -240,16 +241,17 @@ Syntax:
                     foreach (var valueb in value.Split(new string[] { "||" }, StringSplitOptions.RemoveEmptyEntries).Select(_ => _.Trim()))
                     {
                         var valuec = await ReplaceImageURIs(key, valueb, logger);
+                        resp = new Documents2.Response
+                        {
+                            Id = Guid.NewGuid().ToString().Split('-')[0],
+                            key = key,
+                            value = valuec,
+                            user_id = slashData.user_id
+                        };
                         doc = await docClient.CreateDocumentAsync(
-                            UriFactory.CreateDocumentCollectionUri(C.CDB2.DN, C.CDB2.Col.CustomResponses),
-                            new Documents2.Response
-                            {
-                                Id = Guid.NewGuid().ToString().Split('-')[0],
-                                key = key,
-                                value = valuec,
-                                user_id = slashData.user_id
-                            },
-                            new RequestOptions { PartitionKey = new PartitionKey(key) },
+                            C.CDB2.CUs[C.CDB2.Col.CustomResponses],
+                            resp,
+                            new RequestOptions { PartitionKey = resp.PK },
                             disableAutomaticIdGeneration: true);
                         await ephemeralMessageCollector.AddEAsync(slashData, $"Added: `{key}` (`{doc.Resource.Id}`) {valuec}");
                     }
@@ -259,7 +261,7 @@ Syntax:
                 case "list":
                     logger.LogInformation("Retrieving list of all custom responses for specified key...");
                     var query = docClient.CreateDocumentQuery<Documents2.Response>(
-                        UriFactory.CreateDocumentCollectionUri(C.CDB2.DN, C.CDB2.Col.CustomResponses),
+                        C.CDB2.CUs[C.CDB2.Col.CustomResponses],
                         "SELECT * FROM r",
                         new FeedOptions { PartitionKey = new PartitionKey(key) })
                         .AsDocumentQuery();

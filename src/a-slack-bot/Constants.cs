@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.Azure.Documents.Client;
+using System;
+using System.Collections.Generic;
 
 namespace a_slack_bot
 {
@@ -29,6 +31,12 @@ namespace a_slack_bot
                 public const string CustomResponses = "custom-responses";
                 public const string IdMappings = "id-mappings";
             }
+
+            public static readonly IReadOnlyDictionary<string, Uri> CUs = new Dictionary<string, Uri>
+            {
+                [Col.CustomResponses] = UriFactory.CreateDocumentCollectionUri(DN, Col.CustomResponses),
+                [Col.IdMappings] = UriFactory.CreateDocumentCollectionUri(DN, Col.IdMappings)
+            };
 
             public static readonly IReadOnlyDictionary<string, string> PKs = new Dictionary<string, string>
             {

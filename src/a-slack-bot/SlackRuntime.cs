@@ -158,9 +158,9 @@ namespace a_slack_bot
                     mapping = idToNameDict
                 };
                 await docClient.UpsertDocumentAsync(
-                    UriFactory.CreateDocumentCollectionUri(a_slack_bot.C.CDB2.DN, a_slack_bot.C.CDB2.Col.IdMappings),
+                    a_slack_bot.C.CDB2.CUs[a_slack_bot.C.CDB2.Col.IdMappings],
                     converationMapDoc,
-                    new RequestOptions { PartitionKey = new PartitionKey(converationMapDoc.name) },
+                    new RequestOptions { PartitionKey = converationMapDoc.PK },
                     disableAutomaticIdGeneration: true);
             }
         }
@@ -173,7 +173,7 @@ namespace a_slack_bot
             public async Task Init(ILogger logger, DocumentClient docClient)
             {
                 var docQuery = docClient.CreateDocumentQuery<Documents2.Response>(
-                    UriFactory.CreateDocumentCollectionUri(a_slack_bot.C.CDB2.DN, a_slack_bot.C.CDB2.Col.CustomResponses),
+                    a_slack_bot.C.CDB2.CUs[a_slack_bot.C.CDB2.Col.CustomResponses],
                     "SELECT * FROM r",
                     new FeedOptions { EnableCrossPartitionQuery = true })
                     .AsDocumentQuery();
@@ -247,9 +247,9 @@ namespace a_slack_bot
                     mapping = idToNameDict
                 };
                 await docClient.UpsertDocumentAsync(
-                    UriFactory.CreateDocumentCollectionUri(a_slack_bot.C.CDB2.DN, a_slack_bot.C.CDB2.Col.IdMappings),
+                    a_slack_bot.C.CDB2.CUs[a_slack_bot.C.CDB2.Col.IdMappings],
                     userMapDoc,
-                    new RequestOptions { PartitionKey = new PartitionKey(userMapDoc.name) },
+                    new RequestOptions { PartitionKey = userMapDoc.PK },
                     disableAutomaticIdGeneration: true);
             }
         }

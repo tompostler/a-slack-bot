@@ -68,14 +68,14 @@ namespace a_slack_bot.Functions
 
             // Get the minimum display count
             var count = docClient.CreateDocumentQuery<int>(
-                UriFactory.CreateDocumentCollectionUri(C.CDB2.DN, C.CDB2.Col.CustomResponses),
+                C.CDB2.CUs[C.CDB2.Col.CustomResponses],
                 $"SELECT VALUE MIN(r.{nameof(Documents2.Response.count)}) FROM r",
                 new FeedOptions { PartitionKey = new PartitionKey(matchedKey) })
                 .AsEnumerable().FirstOrDefault();
 
             // Pick one
             var response = docClient.CreateDocumentQuery<Documents2.Response>(
-                UriFactory.CreateDocumentCollectionUri(C.CDB2.DN, C.CDB2.Col.CustomResponses),
+                C.CDB2.CUs[C.CDB2.Col.CustomResponses],
                 $"SELECT TOP 1 * FROM r WHERE r.{nameof(Documents2.Response.count)} = {count} ORDER BY r.{nameof(Documents2.Response.random)}",
                 new FeedOptions { PartitionKey = new PartitionKey(matchedKey) })
                 .AsEnumerable().FirstOrDefault();
@@ -87,7 +87,7 @@ namespace a_slack_bot.Functions
             await Task.WhenAll(new[]
             {
                 docClient.UpsertDocumentAsync(
-                    UriFactory.CreateDocumentCollectionUri(C.CDB2.DN, C.CDB2.Col.CustomResponses),
+                    C.CDB2.CUs[C.CDB2.Col.CustomResponses],
                     response,
                     new RequestOptions { PartitionKey = new PartitionKey(matchedKey) },
                     disableAutomaticIdGeneration: true),
