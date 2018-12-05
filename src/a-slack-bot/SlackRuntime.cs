@@ -158,7 +158,7 @@ namespace a_slack_bot
                     mapping = idToNameDict
                 };
                 await docClient.UpsertDocumentAsync(
-                    UriFactory.CreateDocumentCollectionUri(a_slack_bot.C.CDB.DN, a_slack_bot.C.CDB.CN),
+                    UriFactory.CreateDocumentCollectionUri(a_slack_bot.C.CDB2.DN, a_slack_bot.C.CDB2.Col.IdMappings),
                     converationMapDoc,
                     new RequestOptions { PartitionKey = new PartitionKey(converationMapDoc.name) },
                     disableAutomaticIdGeneration: true);
@@ -247,7 +247,7 @@ namespace a_slack_bot
                     mapping = idToNameDict
                 };
                 await docClient.UpsertDocumentAsync(
-                    UriFactory.CreateDocumentCollectionUri(a_slack_bot.C.CDB.DN, a_slack_bot.C.CDB.CN),
+                    UriFactory.CreateDocumentCollectionUri(a_slack_bot.C.CDB2.DN, a_slack_bot.C.CDB2.Col.IdMappings),
                     userMapDoc,
                     new RequestOptions { PartitionKey = new PartitionKey(userMapDoc.name) },
                     disableAutomaticIdGeneration: true);
