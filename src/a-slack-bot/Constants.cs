@@ -29,18 +29,21 @@ namespace a_slack_bot
             public static class Col
             {
                 public const string CustomResponses = "custom-responses";
+                public const string SlackEvents = "slack-events";
                 public const string IdMappings = "id-mappings";
             }
 
             public static readonly IReadOnlyDictionary<string, Uri> CUs = new Dictionary<string, Uri>
             {
                 [Col.CustomResponses] = UriFactory.CreateDocumentCollectionUri(DN, Col.CustomResponses),
+                [Col.SlackEvents] = UriFactory.CreateDocumentCollectionUri(DN, Col.SlackEvents),
                 [Col.IdMappings] = UriFactory.CreateDocumentCollectionUri(DN, Col.IdMappings)
             };
 
             public static readonly IReadOnlyDictionary<string, string> PKs = new Dictionary<string, string>
             {
                 [Col.CustomResponses] = nameof(Documents2.Response.key),
+                [Col.SlackEvents] = nameof(Documents2.Event.type),
                 [Col.IdMappings] = nameof(Documents2.IdMapping.name)
             };
 

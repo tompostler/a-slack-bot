@@ -1,6 +1,5 @@
 ﻿using Microsoft.Azure.Documents;
 using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
 
 namespace a_slack_bot.Documents2
