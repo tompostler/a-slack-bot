@@ -59,10 +59,27 @@ namespace a_slack_bot.Functions
 
             logger.LogInformation("Found a custom response match with key '{0}'", matchedKey);
 
-            // Check for optimized case of only one response
+            // Check for optimized case of only one response, but still get and upsert the doc to keep track of the count
+            // TODO: Consider a sproc for this operation
             if (SR.R.AllResponses[matchedKey].Count == 1)
             {
-                await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = message.channel, text = SR.R.AllResponses[matchedKey].Single().Value });
+                async Task upsertWithCountIncreased()
+                {
+                    var sracr = SR.R.AllResponses[matchedKey].Single();
+                    var doc = (await docClient.ReadDocumentAsync<Documents2.Response>(
+                        UriFactory.CreateDocumentUri(C.CDB2.DN, C.CDB2.Col.CustomResponses, sracr.Key),
+                        new RequestOptions { PartitionKey = new PartitionKey(matchedKey) })).Document;
+                    doc.count++;
+                    await docClient.UpsertDocumentAsync(
+                        C.CDB2.CUs[C.CDB2.Col.CustomResponses],
+                        doc,
+                        new RequestOptions { PartitionKey = new PartitionKey(matchedKey) },
+                        disableAutomaticIdGeneration: true);
+                }
+                await Task.WhenAll(new[] {
+                    messageCollector.AddAsync(new Slack.Events.Inner.message { channel = message.channel, text = SR.R.AllResponses[matchedKey].Single().Value }),
+                    upsertWithCountIncreased()
+                });
                 return;
             }
 

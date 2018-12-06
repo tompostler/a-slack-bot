@@ -30,13 +30,13 @@ namespace upgrade._181206
             while (query.HasMoreResults)
             {
                 results.AddRange(await query.ExecuteNextAsync());
-                Console.WriteLine("Found {0} things to update...", results.Count);
+                Console.WriteLine("Found {0} things to migrate...", results.Count);
                 await Task.Delay(TimeSpan.FromSeconds(0.5));
                 // Batch it 2k at a time
-                if (results.Count > 2_000)
+                if (results.Count >= 2_000)
                     break;
             }
-            Console.WriteLine("Found {0} things to update.", results.Count);
+            Console.WriteLine("Found {0} things to migrate.", results.Count);
             await Task.Delay(TimeSpan.FromSeconds(2));
 
             // Fan them all out, 25 at a time
