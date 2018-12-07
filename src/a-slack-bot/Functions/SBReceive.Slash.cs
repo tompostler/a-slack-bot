@@ -31,7 +31,7 @@ namespace a_slack_bot.Functions
         public static async Task SBReceiveSlash(
             [ServiceBusTrigger(C.SBQ.InputSlash)]Messages.ServiceBusInputSlash slashMessage,
             [DocumentDB(C.CDB.DN, C.CDB.CN, ConnectionStringSetting = C.CDB.CSS, PartitionKey = C.CDB.P, CreateIfNotExists = true)]IAsyncCollector<Resource> documentCollector,
-            [DocumentDB(ConnectionStringSetting = C.CDB.CSS)]DocumentClient docClient,
+            [DocumentDB(ConnectionStringSetting = C.CDB2.CSS)]DocumentClient docClient,
             [ServiceBus(C.SBQ.Blackjack)]IAsyncCollector<BrokeredMessage> blackjackMessageCollector,
             [ServiceBus(C.SBQ.SendMessage)]IAsyncCollector<BrokeredMessage> messageCollector,
             [ServiceBus(C.SBQ.SendMessageEphemeral)]IAsyncCollector<BrokeredMessage> ephemeralMessageCollector,
@@ -81,7 +81,7 @@ remove `key` id                 Remove a single response.
                     break;
 
                 case "/asb-whitelist":
-                    await HandleAsbWhitelistCommand(slashData, documentCollector, docClient, messageCollector, ephemeralMessageCollector, logger);
+                    await HandleAsbWhitelistCommand(slashData, docClient, messageCollector, ephemeralMessageCollector, logger);
                     break;
 
                 case "/blackjack":
@@ -319,7 +319,6 @@ Syntax:
 
         private static async Task HandleAsbWhitelistCommand(
             Slack.Slash slashData,
-            IAsyncCollector<Resource> documentCollector,
             DocumentClient docClient,
             IAsyncCollector<BrokeredMessage> messageCollector,
             IAsyncCollector<BrokeredMessage> ephemeralMessageCollector,
@@ -354,7 +353,11 @@ Syntax:
             if (slashData.text.StartsWith("add"))
             {
                 doc.values.Add(slashData.channel_id);
-                await documentCollector.AddAsync(doc);
+                await docClient.UpsertDocumentAsync(
+                    C.CDB2.CUs[C.CDB2.Col.Whitelists],
+                    doc,
+                    new RequestOptions { PartitionKey = new PartitionKey(null)},
+                    disableAutomaticIdGeneration: true);
                 await messageCollector.AddAsync(slashData, $"Added to `{whitelistBits}` whitelist for this channel :thumbsup:");
                 SR.Deit();
             }
@@ -365,7 +368,11 @@ Syntax:
                 else
                 {
                     doc.values.Remove(slashData.channel_id);
-                    await documentCollector.AddAsync(doc);
+                    await docClient.UpsertDocumentAsync(
+                        C.CDB2.CUs[C.CDB2.Col.Whitelists],
+                        doc,
+                        new RequestOptions { PartitionKey = new PartitionKey(null) },
+                        disableAutomaticIdGeneration: true);
                     await messageCollector.AddAsync(slashData, $"Removed `{whitelistBits}` from whitelist for this channel :thumbsup:");
                     SR.Deit();
                 }
