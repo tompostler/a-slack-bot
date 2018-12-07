@@ -33,14 +33,14 @@ namespace upgrade._181206
                 Console.WriteLine("Found {0} things to migrate...", results.Count);
                 await Task.Delay(TimeSpan.FromSeconds(0.5));
                 // Batch it 2k at a time
-                if (results.Count >= 2_000)
+                if (results.Count >= 5_000)
                     break;
             }
             Console.WriteLine("Found {0} things to migrate.", results.Count);
             await Task.Delay(TimeSpan.FromSeconds(2));
 
-            // Fan them all out, 25 at a time
-            var ss = new SemaphoreSlim(20);
+            // Fan them all out, 30 at a time
+            var ss = new SemaphoreSlim(30);
             int i = 0;
             var tasks = results.Select(async (doc) =>
             {
