@@ -356,7 +356,7 @@ Syntax:
                 await docClient.UpsertDocumentAsync(
                     C.CDB2.CUs[C.CDB2.Col.Whitelists],
                     doc,
-                    new RequestOptions { PartitionKey = new PartitionKey(null)},
+                    new RequestOptions { PartitionKey = doc.PK },
                     disableAutomaticIdGeneration: true);
                 await messageCollector.AddAsync(slashData, $"Added to `{whitelistBits}` whitelist for this channel :thumbsup:");
                 SR.Deit();
@@ -371,7 +371,7 @@ Syntax:
                     await docClient.UpsertDocumentAsync(
                         C.CDB2.CUs[C.CDB2.Col.Whitelists],
                         doc,
-                        new RequestOptions { PartitionKey = new PartitionKey(null) },
+                        new RequestOptions { PartitionKey = doc.PK },
                         disableAutomaticIdGeneration: true);
                     await messageCollector.AddAsync(slashData, $"Removed `{whitelistBits}` from whitelist for this channel :thumbsup:");
                     SR.Deit();
