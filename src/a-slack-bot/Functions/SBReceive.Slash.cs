@@ -68,13 +68,18 @@ remove `key` id                 Remove a single response.
                         await ephemeralMessageCollector.AddEAsync(slashData, "Visit https://api.slack.com/custom-integrations/legacy-tokens to generate a token, or send `clear` to remove your existing token.");
                     else if (slashData.text == "clear")
                     {
-                        await docClient.DeleteDocumentAsync(UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, slashData.user_id), new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.OAuthToken) + "|user") });
+                        await docClient.DeleteDocumentAsync(UriFactory.CreateDocumentUri(C.CDB2.DN, C.CDB2.Col.SlackOAuthTokens, slashData.user_id), new RequestOptions { PartitionKey = new PartitionKey(null) });
                         await ephemeralMessageCollector.AddEAsync(slashData, "token cleared :thumbsup:");
                         SR.Deit();
                     }
                     else
                     {
-                        await documentCollector.AddAsync(new Documents.OAuthToken { Subtype = "user", user_id = slashData.user_id, token = slashData.text });
+                        var tokDoc = new Documents2.OAuthToken { Id = slashData.user_id, type = "user", token = slashData.text };
+                        await docClient.UpsertDocumentAsync(
+                            C.CDB2.CUs[C.CDB2.Col.Whitelists],
+                            tokDoc,
+                            new RequestOptions { PartitionKey = tokDoc.PK },
+                            disableAutomaticIdGeneration: true);
                         await ephemeralMessageCollector.AddEAsync(slashData, "token added :thumbsup:");
                         SR.Deit();
                     }

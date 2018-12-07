@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace upgrade._181206
 {
     /// <summary>
-    /// Migrate all previous documents with Type == 'Event' to the new data format.
+    /// Migrate all previous documents with Type == 'Event' or Type == '' to the new data format.
     /// </summary>
     class Program
     {
@@ -32,7 +32,7 @@ namespace upgrade._181206
                 results.AddRange(await query.ExecuteNextAsync());
                 Console.WriteLine("Found {0} things to migrate...", results.Count);
                 await Task.Delay(TimeSpan.FromSeconds(0.5));
-                // Batch it 2k at a time
+                // Batch it 5k at a time
                 if (results.Count >= 5_000)
                     break;
             }
@@ -55,6 +55,47 @@ namespace upgrade._181206
                 await ExecuteWithIndefiniteRetries(doc.id as string, async () =>
                 {
                     await dc.UpsertDocumentAsync(UriFactory.CreateDocumentCollectionUri(C.CDB2.DN, C.CDB2.Col.SlackEvents), newDoc, new RequestOptions { PartitionKey = new PartitionKey(newDoc.type) });
+                    await dc.DeleteDocumentAsync(UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, doc.id as string), new RequestOptions { PartitionKey = new PartitionKey(doc.TypeSubtype) });
+                });
+                Console.WriteLine("{0}: {1}", Interlocked.Increment(ref i), doc.id);
+
+                ss.Release();
+            }).ToList();
+            await Task.WhenAll(tasks);
+
+
+            query = dc.CreateDocumentQuery(
+                UriFactory.CreateDocumentCollectionUri(C.CDB.DN, C.CDB.CN),
+                "SELECT * FROM c WHERE c.Type = 'OAuthToken'",
+                new FeedOptions { EnableCrossPartitionQuery = true })
+                .AsDocumentQuery();
+
+            // Just load it all in memory. Should be less than a few hundred MBs
+            results = new List<dynamic>();
+            while (query.HasMoreResults)
+            {
+                results.AddRange(await query.ExecuteNextAsync());
+                Console.WriteLine("Found {0} things to migrate...", results.Count);
+                await Task.Delay(TimeSpan.FromSeconds(0.5));
+            }
+            Console.WriteLine("Found {0} things to migrate.", results.Count);
+            await Task.Delay(TimeSpan.FromSeconds(2));
+
+            // Fan them all out, 30 at a time
+            i = 0;
+            tasks = results.Select(async (doc) =>
+            {
+                await ss.WaitAsync();
+
+                var newDoc = new
+                {
+                    id = doc.id,
+                    type = doc.Subtype,
+                    token = doc.token
+                };
+                await ExecuteWithIndefiniteRetries(doc.id as string, async () =>
+                {
+                    await dc.UpsertDocumentAsync(UriFactory.CreateDocumentCollectionUri(C.CDB2.DN, C.CDB2.Col.SlackOAuthTokens), newDoc, new RequestOptions { PartitionKey = new PartitionKey(newDoc.type) });
                     await dc.DeleteDocumentAsync(UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, doc.id as string), new RequestOptions { PartitionKey = new PartitionKey(doc.TypeSubtype) });
                 });
                 Console.WriteLine("{0}: {1}", Interlocked.Increment(ref i), doc.id);

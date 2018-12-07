@@ -23,6 +23,7 @@
             public static class Col
             {
                 public const string SlackEvents = "slack-events";
+                public const string SlackOAuthTokens = "slack-tokens";
             }
         }
     }
