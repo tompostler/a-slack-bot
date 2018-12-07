@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace upgrade._181206
 {
     /// <summary>
-    /// Migrate all previous documents with Type == 'Event' to have ids matching their 'event_ts'.
+    /// Migrate all previous documents with Type == 'Event' to the new data format.
     /// </summary>
     class Program
     {

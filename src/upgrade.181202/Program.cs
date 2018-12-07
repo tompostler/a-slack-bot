@@ -61,6 +61,7 @@ namespace upgrade._181202
                     },
                     new RequestOptions { PartitionKey = new PartitionKey(doc.Subtype) },
                     disableAutomaticIdGeneration: true);
+                await dc.DeleteDocumentAsync(UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, doc.id), new RequestOptions { PartitionKey = new PartitionKey(doc.TypeSubtype) });
                 Console.WriteLine("{0}: {1}", Interlocked.Increment(ref i), doc.id);
 
                 ss.Release();
