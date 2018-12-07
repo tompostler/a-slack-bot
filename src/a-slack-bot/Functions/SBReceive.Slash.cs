@@ -338,17 +338,17 @@ Syntax:
             }
 
             var whitelistBits = slashData.text.Split(' ')[1];
-            Documents.Whitelist doc = null;
+            Documents2.Whitelist doc = null;
             try
             {
                 logger.LogInformation("Attempting to get existing record...");
-                doc = await docClient.ReadDocumentAsync<Documents.Whitelist>(UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, whitelistBits.Substring(1)), new RequestOptions { PartitionKey = new PartitionKey(nameof(Documents.Whitelist) + "|command") });
+                doc = await docClient.ReadDocumentAsync<Documents2.Whitelist>(UriFactory.CreateDocumentUri(C.CDB2.DN, C.CDB2.Col.Whitelists, whitelistBits.Substring(1)), new RequestOptions { PartitionKey = new PartitionKey("command") });
                 logger.LogInformation("Existing record found.");
             }
             catch (DocumentClientException dce) when (dce.StatusCode == HttpStatusCode.NotFound)
             {
                 logger.LogInformation("Existing record not found.");
-                doc = new Documents.Whitelist { Subtype = "command", Id = whitelistBits.Substring(1), values = new HashSet<string>() };
+                doc = new Documents2.Whitelist { type = "command", Id = whitelistBits.Substring(1), values = new HashSet<string>() };
             }
 
             if (slashData.text.StartsWith("add"))

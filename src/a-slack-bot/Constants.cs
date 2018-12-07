@@ -31,20 +31,23 @@ namespace a_slack_bot
                 public const string CustomResponses = "custom-responses";
                 public const string SlackEvents = "slack-events";
                 public const string IdMappings = "id-mappings";
+                public const string Whitelists = "whitelists";
             }
 
             public static readonly IReadOnlyDictionary<string, Uri> CUs = new Dictionary<string, Uri>
             {
                 [Col.CustomResponses] = UriFactory.CreateDocumentCollectionUri(DN, Col.CustomResponses),
                 [Col.SlackEvents] = UriFactory.CreateDocumentCollectionUri(DN, Col.SlackEvents),
-                [Col.IdMappings] = UriFactory.CreateDocumentCollectionUri(DN, Col.IdMappings)
+                [Col.IdMappings] = UriFactory.CreateDocumentCollectionUri(DN, Col.IdMappings),
+                [Col.Whitelists] = UriFactory.CreateDocumentCollectionUri(DN, Col.Whitelists)
             };
 
             public static readonly IReadOnlyDictionary<string, string> PKs = new Dictionary<string, string>
             {
                 [Col.CustomResponses] = nameof(Documents2.Response.key),
                 [Col.SlackEvents] = nameof(Documents2.Event.type),
-                [Col.IdMappings] = nameof(Documents2.IdMapping.name)
+                [Col.IdMappings] = nameof(Documents2.IdMapping.name),
+                [Col.Whitelists] = nameof(Documents2.Whitelist.type)
             };
 
             public const string CSS = nameof(Settings.CosmosDBConnection);

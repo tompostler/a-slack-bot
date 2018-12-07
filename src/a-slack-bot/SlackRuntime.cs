@@ -260,9 +260,9 @@ namespace a_slack_bot
 
             public async Task Init(ILogger logger, DocumentClient docClient)
             {
-                var docQuery = docClient.CreateDocumentQuery<Documents.Whitelist>(
-                    UriFactory.CreateDocumentCollectionUri(a_slack_bot.C.CDB.DN, a_slack_bot.C.CDB.CN),
-                    new FeedOptions { PartitionKey = new PartitionKey(nameof(Documents.Whitelist) + "|command") })
+                var docQuery = docClient.CreateDocumentQuery<Documents2.Whitelist>(
+                    a_slack_bot.C.CDB2.CUs[a_slack_bot.C.CDB2.Col.Whitelists],
+                    new FeedOptions { PartitionKey = new PartitionKey("command") })
                     .AsDocumentQuery();
 
                 var tokens = await docQuery.GetAllResults(logger);
