@@ -19,7 +19,7 @@ namespace upgrade._181208
 
             var query = dc.CreateDocumentQuery<a_slack_bot.Documents2.Blackjack>(
                 UriFactory.CreateDocumentCollectionUri(C.CDB.DN, C.CDB.CN),
-                "SELECT * FROM c WHERE c.TypeSubtype = 'Game|Blackjack' AND c.id <> 'BlackjackStandings",
+                "SELECT * FROM c WHERE c.TypeSubtype = 'Game|Blackjack' AND c.id <> 'BlackjackStandings'",
                 new FeedOptions { EnableCrossPartitionQuery = true })
                 .AsDocumentQuery();
 

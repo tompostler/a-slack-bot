@@ -32,7 +32,7 @@ namespace a_slack_bot.Functions
             try
             {
                 gameBalancesDoc = await docClient.ReadDocumentAsync<Documents2.BlackjackStandings>(
-                    C.CDB2.CUs[C.CDB2.Col.GamesBlackjack],
+                    Documents2.BlackjackStandings.DocUri,
                     new RequestOptions { PartitionKey = Documents2.BlackjackStandings.PK });
             }
             catch (DocumentClientException dce) when (dce.StatusCode == HttpStatusCode.NotFound)
