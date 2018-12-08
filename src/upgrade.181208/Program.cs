@@ -47,7 +47,7 @@ namespace upgrade._181208
                 await ExecuteWithIndefiniteRetries(doc.Id as string, async () =>
                 {
                     await dc.UpsertDocumentAsync(C.CDB2.CUs[C.CDB2.Col.GamesBlackjack], doc, new RequestOptions { PartitionKey = doc.PK });
-                    await dc.DeleteDocumentAsync(UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, doc.Id), new RequestOptions { PartitionKey = new PartitionKey("Game|Blackjack") });
+                    await dc.DeleteDocumentAsync(UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, $"{doc.channel_id}|{doc.thread_ts}"), new RequestOptions { PartitionKey = new PartitionKey("Game|Blackjack") });
                 });
                 Console.WriteLine("{0}: {1}", Interlocked.Increment(ref i), doc.Id);
 
