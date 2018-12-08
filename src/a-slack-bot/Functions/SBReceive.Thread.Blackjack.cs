@@ -10,27 +10,27 @@ namespace a_slack_bot.Functions
     {
         private static async Task SBReceiveThreadBlackjack(
             DocumentClient docClient,
-            Documents.Blackjack gameDoc,
+            Documents2.Blackjack gameDoc,
             Slack.Events.Inner.message message,
             IAsyncCollector<Messages.ServiceBusBlackjack> blackjackCollector,
             ILogger logger)
         {
             switch (gameDoc.state)
             {
-                case Documents.BlackjackGameState.Joining:
+                case Documents2.BlackjackGameState.Joining:
                     if (message.text.Trim().ToLowerInvariant() == "join" && !gameDoc.users.Contains(message.user))
                         await blackjackCollector.AddAsync(new Messages.ServiceBusBlackjack { type = Messages.BlackjackMessageType.JoinGame, channel_id = message.channel, thread_ts = message.thread_ts, user_id = message.user });
                     else if (message.text.Trim().ToLowerInvariant() == "start" && gameDoc.users.Contains(message.user))
                         await blackjackCollector.AddAsync(new Messages.ServiceBusBlackjack { type = Messages.BlackjackMessageType.ToCollectingBets, channel_id = message.channel, thread_ts = message.thread_ts, user_id = message.user });
                     break;
 
-                case Documents.BlackjackGameState.CollectingBets:
+                case Documents2.BlackjackGameState.CollectingBets:
                     if (!gameDoc.bets.ContainsKey(message.user) && ((long.TryParse(message.text, out long bet) && bet > 0) || message.text.ToLower() == "all"))
                     {
-                        var gameBalancesDoc = await docClient.ReadDocumentAsync<Documents.BlackjackStandings>(
-                            Documents.BlackjackStandings.DocUri,
-                            new RequestOptions { PartitionKey = Documents.Blackjack.PartitionKey });
-                        var standings = gameBalancesDoc.Document.Content;
+                        var gameBalancesDoc = await docClient.ReadDocumentAsync<Documents2.BlackjackStandings>(
+                            Documents2.BlackjackStandings.DocUri,
+                            new RequestOptions { PartitionKey = Documents2.BlackjackStandings.PK });
+                        var standings = gameBalancesDoc.Document.bals;
                         if (message.text.ToLower() == "all")
                             bet = standings.ContainsKey(message.user) ? standings[message.user] : 10_000;
                         if ((standings.ContainsKey(message.user) && bet <= standings[message.user]) || bet <= 10_000)
@@ -38,10 +38,10 @@ namespace a_slack_bot.Functions
                     }
                     break;
 
-                case Documents.BlackjackGameState.Running:
+                case Documents2.BlackjackGameState.Running:
                     if (gameDoc.user_active < gameDoc.users.Count && gameDoc.users[gameDoc.user_active] == message.user)
                     {
-                        Documents.BlackjackActionType action = Documents.BlackjackActionType.Invalid;
+                        Documents2.BlackjackActionType action = Documents2.BlackjackActionType.Invalid;
                         switch (message.text.Trim().ToLowerInvariant())
                         {
                             case "hit":
@@ -49,7 +49,7 @@ namespace a_slack_bot.Functions
                             case "double":
                             case "split":
                             case "surrender":
-                                action = (Documents.BlackjackActionType)Enum.Parse(typeof(Documents.BlackjackActionType), message.text.Trim(), ignoreCase: true);
+                                action = (Documents2.BlackjackActionType)Enum.Parse(typeof(Documents2.BlackjackActionType), message.text.Trim(), ignoreCase: true);
                                 break;
                             default:
                                 logger.LogInformation($"{message.user} said '{message.text}' which is not a valid action.");
@@ -57,7 +57,7 @@ namespace a_slack_bot.Functions
                         }
                         // Throw away invalid game state choices. We'll only be in here if the user is currently the active player,
                         //  and we only need to validate the three actions that aren't available after two cards
-                        if (gameDoc.hands[message.user].Count > 2 && (action == Documents.BlackjackActionType.Double || action == Documents.BlackjackActionType.Split || action == Documents.BlackjackActionType.Surrender))
+                        if (gameDoc.hands[message.user].Count > 2 && (action == Documents2.BlackjackActionType.Double || action == Documents2.BlackjackActionType.Split || action == Documents2.BlackjackActionType.Surrender))
                             break;
                         await blackjackCollector.AddAsync(new Messages.ServiceBusBlackjack { type = Messages.BlackjackMessageType.GameAction, channel_id = message.channel, thread_ts = message.thread_ts, user_id = message.user, action = action });
                     }

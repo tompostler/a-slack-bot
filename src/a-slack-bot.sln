@@ -27,7 +27,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "upgrade.181008", "upgrade.1
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "upgrade.181202", "upgrade.181202\upgrade.181202.csproj", "{C1CFE636-1EE1-4C3F-AEF2-86574684C0A8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "upgrade.181206", "upgrade.181206\upgrade.181206.csproj", "{1E06A22E-6B89-4F01-B642-5C345A9CF2F2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "upgrade.181206", "upgrade.181206\upgrade.181206.csproj", "{1E06A22E-6B89-4F01-B642-5C345A9CF2F2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "upgrade.181208", "upgrade.181208\upgrade.181208.csproj", "{CD446B12-3DFB-4261-B514-57C42456C70E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -59,6 +61,10 @@ Global
 		{1E06A22E-6B89-4F01-B642-5C345A9CF2F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1E06A22E-6B89-4F01-B642-5C345A9CF2F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1E06A22E-6B89-4F01-B642-5C345A9CF2F2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CD446B12-3DFB-4261-B514-57C42456C70E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD446B12-3DFB-4261-B514-57C42456C70E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD446B12-3DFB-4261-B514-57C42456C70E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD446B12-3DFB-4261-B514-57C42456C70E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

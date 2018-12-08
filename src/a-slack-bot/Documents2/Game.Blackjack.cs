@@ -1,30 +1,30 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.Azure.Documents;
+using Microsoft.Azure.Documents.Client;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Generic;
 
-namespace a_slack_bot.Documents
+namespace a_slack_bot.Documents2
 {
-    public class BlackjackStandings : BaseDocument<Dictionary<string, long>>
+    public class BlackjackStandings : Resource
     {
         [JsonIgnore]
-        public static readonly Uri DocUri = Microsoft.Azure.Documents.Client.UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, nameof(Documents.BlackjackStandings));
+        public static readonly Uri DocUri = UriFactory.CreateDocumentUri(C.CDB2.DN, C.CDB2.Col.GamesBlackjack, nameof(BlackjackStandings));
+        [JsonIgnore]
+        public static readonly PartitionKey PK = new PartitionKey(null);
 
-        public override string Type => "Game";
-        public override string Subtype { get => nameof(Blackjack); set { } }
         public override string Id { get => nameof(BlackjackStandings); set { } }
+
+        public Dictionary<string, long> bals { get; set; }
     }
 
-    public class Blackjack : BaseDocument
+    public class Blackjack : Resource
     {
         [JsonIgnore]
-        public static readonly Uri DocColUri = Microsoft.Azure.Documents.Client.UriFactory.CreateDocumentCollectionUri(C.CDB.DN, C.CDB.CN);
-        [JsonIgnore]
-        public static readonly Microsoft.Azure.Documents.PartitionKey PartitionKey = new Microsoft.Azure.Documents.PartitionKey("Game|" + nameof(Blackjack));
+        public PartitionKey PK => new PartitionKey(this.channel_id);
 
-        public override string Id { get => $"{channel_id}|{thread_ts}"; set { var parts = value.Split('|'); channel_id = parts[0]; thread_ts = parts[1]; } }
-        public override string Type => "Game";
-        public override string Subtype { get => nameof(Blackjack); set { } }
+        public override string Id { get => this.thread_ts; set { } }
 
         public string user_start { get; set; }
         public string channel_id { get; set; }

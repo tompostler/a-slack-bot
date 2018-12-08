@@ -30,7 +30,6 @@ namespace a_slack_bot.Functions
         [FunctionName(nameof(SBReceiveSlash))]
         public static async Task SBReceiveSlash(
             [ServiceBusTrigger(C.SBQ.InputSlash)]Messages.ServiceBusInputSlash slashMessage,
-            [DocumentDB(C.CDB.DN, C.CDB.CN, ConnectionStringSetting = C.CDB.CSS, PartitionKey = C.CDB.P, CreateIfNotExists = true)]IAsyncCollector<Resource> documentCollector,
             [DocumentDB(ConnectionStringSetting = C.CDB2.CSS)]DocumentClient docClient,
             [ServiceBus(C.SBQ.Blackjack)]IAsyncCollector<BrokeredMessage> blackjackMessageCollector,
             [ServiceBus(C.SBQ.SendMessage)]IAsyncCollector<BrokeredMessage> messageCollector,
@@ -110,8 +109,11 @@ Syntax:
                     {
                         await Task.Delay(TimeSpan.FromSeconds(0.5));
                         var threadStart = await SBSend.SendMessage(new Slack.Events.Inner.message { channel = slashData.channel_id, text = $"<@{slashData.user_id}> wants to start a game of blackjack! Open this thread to play." }, logger);
-                        var game = new Documents.Blackjack { user_start = slashData.user_id, channel_id = slashData.channel_id, thread_ts = threadStart.message.ts, users = new List<string> { slashData.user_id }, hands = new Dictionary<string, List<Cards.Cards>> { [slashData.user_id] = new List<Cards.Cards>() } };
-                        await documentCollector.AddAsync(game);
+                        var game = new Documents2.Blackjack { user_start = slashData.user_id, channel_id = slashData.channel_id, thread_ts = threadStart.message.ts, users = new List<string> { slashData.user_id }, hands = new Dictionary<string, List<Cards.Cards>> { [slashData.user_id] = new List<Cards.Cards>() } };
+                        await docClient.UpsertDocumentAsync(
+                            C.CDB2.CUs[C.CDB2.Col.GamesBlackjack],
+                            game,
+                            new RequestOptions { PartitionKey = game.PK });
                         await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = slashData.channel_id, ts = threadStart.message.ts, text = $"Game id: {game.friendly_name}\n<@{slashData.user_id}> wants to start a game of blackjack! Open this thread to play." });
                         await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = threadStart.channel, text = "Type `join` to join or `start` when ready to play. Starting in 1 minute.", thread_ts = threadStart.message.ts });
                         await blackjackMessageCollector.AddAsync(

@@ -9,16 +9,6 @@ namespace a_slack_bot
         /// <summary>
         /// Cosmos DB
         /// </summary>
-        public static class CDB
-        {
-            public const string DN = "aslackbot";
-            public const string CN = "aslackbot";
-            public const string P = "/" + nameof(Documents.BaseDocument.TypeSubtype);
-            public const string CSS = nameof(Settings.CosmosDBConnection);
-        }
-        /// <summary>
-        /// Cosmos DB
-        /// </summary>
         public static class CDB2
         {
             public const string DN = "aslackbot2";
@@ -29,6 +19,7 @@ namespace a_slack_bot
             public static class Col
             {
                 public const string CustomResponses = "custom-responses";
+                public const string GamesBlackjack = "games-blackjack";
                 public const string IdMappings = "id-mappings";
                 public const string SlackEvents = "slack-events";
                 public const string SlackOAuthTokens = "slack-tokens";
@@ -38,6 +29,7 @@ namespace a_slack_bot
             public static readonly IReadOnlyDictionary<string, Uri> CUs = new Dictionary<string, Uri>
             {
                 [Col.CustomResponses] = UriFactory.CreateDocumentCollectionUri(DN, Col.CustomResponses),
+                [Col.GamesBlackjack] = UriFactory.CreateDocumentCollectionUri(DN, Col.GamesBlackjack),
                 [Col.IdMappings] = UriFactory.CreateDocumentCollectionUri(DN, Col.IdMappings),
                 [Col.SlackEvents] = UriFactory.CreateDocumentCollectionUri(DN, Col.SlackEvents),
                 [Col.SlackOAuthTokens] = UriFactory.CreateDocumentCollectionUri(DN, Col.SlackOAuthTokens),
@@ -47,6 +39,7 @@ namespace a_slack_bot
             public static readonly IReadOnlyDictionary<string, string> PKs = new Dictionary<string, string>
             {
                 [Col.CustomResponses] = nameof(Documents2.Response.key),
+                [Col.GamesBlackjack] = nameof(Documents2.Blackjack.channel_id),
                 [Col.IdMappings] = nameof(Documents2.IdMapping.name),
                 [Col.SlackEvents] = nameof(Documents2.Event.type),
                 [Col.SlackOAuthTokens] = nameof(Documents2.Event.type),

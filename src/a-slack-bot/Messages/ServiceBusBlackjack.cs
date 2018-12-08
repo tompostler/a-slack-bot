@@ -7,7 +7,7 @@
         public string thread_ts { get; set; }
         public string user_id { get; set; }
         public long amount { get; set; }
-        public Documents.BlackjackActionType action { get; set; }
+        public Documents2.BlackjackActionType action { get; set; }
     }
 
     public enum BlackjackMessageType

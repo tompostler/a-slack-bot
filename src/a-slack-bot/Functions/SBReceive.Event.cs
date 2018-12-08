@@ -11,7 +11,7 @@ namespace a_slack_bot.Functions
         [FunctionName(nameof(SBReceiveEvent))]
         public static async Task SBReceiveEvent(
             [ServiceBusTrigger(C.SBQ.InputEvent)]Messages.ServiceBusInputEvent eventMessage,
-            [DocumentDB(ConnectionStringSetting = C.CDB.CSS)]DocumentClient docClient,
+            [DocumentDB(ConnectionStringSetting = C.CDB2.CSS)]DocumentClient docClient,
             [DocumentDB(C.CDB2.DN, C.CDB2.Col.SlackEvents, ConnectionStringSetting = C.CDB2.CSS)]IAsyncCollector<Documents2.Event> documentCollector,
             [ServiceBus(C.SBQ.SendMessage)]IAsyncCollector<Slack.Events.Inner.message> messageCollector,
             [ServiceBus(C.SBQ.InputThread)]IAsyncCollector<Slack.Events.Inner.message> messageThreadCollector,
