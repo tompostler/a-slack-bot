@@ -28,7 +28,6 @@ namespace a_slack_bot.Functions
 
             await SR.Init(logger);
 
-            var gameDocUri = UriFactory.CreateDocumentUri(C.CDB2.DN, C.CDB2.Col.GamesBlackjack, inMessage.thread_ts);
             Documents2.BlackjackStandings gameBalancesDoc = null;
             try
             {
@@ -85,6 +84,7 @@ namespace a_slack_bot.Functions
             }
 
             // Get the game doc
+            var gameDocUri = UriFactory.CreateDocumentUri(C.CDB2.DN, C.CDB2.Col.GamesBlackjack, inMessage.thread_ts);
             Documents2.Blackjack gameDoc = await docClient.ReadDocumentAsync<Documents2.Blackjack>(gameDocUri, new RequestOptions { PartitionKey = new PartitionKey(inMessage.channel_id) });
             logger.LogInformation("Got game doc");
 
