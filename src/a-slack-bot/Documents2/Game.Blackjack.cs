@@ -12,9 +12,10 @@ namespace a_slack_bot.Documents2
         [JsonIgnore]
         public static readonly Uri DocUri = UriFactory.CreateDocumentUri(C.CDB2.DN, C.CDB2.Col.GamesBlackjack, nameof(BlackjackStandings));
         [JsonIgnore]
-        public static readonly PartitionKey PK = new PartitionKey(null);
+        public static readonly PartitionKey PK = new PartitionKey(nameof(BlackjackStandings));
 
         public override string Id { get => nameof(BlackjackStandings); set { } }
+        public string channel_id => nameof(BlackjackStandings);
 
         public Dictionary<string, long> bals { get; set; }
     }
