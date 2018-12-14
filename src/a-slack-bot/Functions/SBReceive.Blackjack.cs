@@ -446,8 +446,8 @@ namespace a_slack_bot.Functions
                             long amount = gameDoc.bets[gameDoc.users[i]];
                             if (finalScore.IsBlackjack)
                             {
-                                amount = amount * 3 / 2;
-                                sb.AppendFormat("{0} wins! (+ ¤{1:#,#})", SR.U.IdToName[gameDoc.users[i]], amount);
+                                amount = (long)Math.Ceiling(amount * 1.5);
+                                sb.AppendFormat("{0} got blackjack! (+ ¤{1:#,#})", SR.U.IdToName[gameDoc.users[i]], amount);
                                 sb.AppendLine();
                             }
                             else if (finalScore.IsBust)
