@@ -485,10 +485,34 @@ remove `key` id                 Remove a single response.
                 var losspct = SR.Rand.NextDouble() * 0.025;
                 logger.LogInformation("Loss percent {0} for {1}", losspct, slashData.user_id);
                 var loss = (long)Math.Max(losspct * balance, 1);
+                standings.bals[slashData.user_id] += loss;
                 await messageCollector.AddAsync(slashData, $"<@{slashData.user_id}> bet ¤{guess:#,#} which is more than their current balance of ¤{balance:#,#}. They lose ¤{loss:#,#} ({losspct:p}) as a penalty for trying to game the system.");
-
-                return;
             }
+            else
+            {
+                // Take 100 divided by the distance from guess plus one
+                long thinking = (long)(SR.Rand.NextDouble() * balance) + 1;
+                long closeness = Math.Abs(guess - thinking) + 1;
+                double amount = 100d / closeness;
+                long winnings = (long)Math.Ceiling(amount);
+                if (amount < 1)
+                    winnings = (long)Math.Ceiling(1d / amount);
+                standings.bals[slashData.user_id] += winnings;
+                await messageCollector.AddAsync(slashData, $"<@{slashData.user_id}> guessed {guess}, and I was thinking of {thinking:#,#}. They {(winnings >= 0 ? "win" : "lose")} ¤{winnings:#,#} for {(closeness == 0 ? "guessing correctly" : $"being {closeness:#,#} away.")}.");
+            }
+
+            // Make sure they still have some money...
+            if (standings.bals[slashData.user_id] <= 0)
+            {
+                standings.bals[slashData.user_id] = 1;
+                await messageCollector.AddAsync(slashData, $"However, <@{slashData.user_id}> is so poor their balance was forced to ¤1.");
+            }
+
+            await docClient.UpsertDocumentAsync(
+                C.CDB.DCUri,
+                standings,
+                new RequestOptions { PartitionKey = standings.PK },
+                disableAutomaticIdGeneration: true);
         }
     }
 }
