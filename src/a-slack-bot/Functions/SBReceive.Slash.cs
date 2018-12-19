@@ -24,7 +24,15 @@ namespace a_slack_bot.Functions
     {
         private static readonly HashSet<string> WhitelistableCommands = new HashSet<string>
         {
-            "/blackjack"
+            "/blackjack",
+            "/guess"
+        };
+
+        private static readonly HashSet<string> StandingsCommands = new HashSet<string>
+        {
+            "/balance",
+            "/balances",
+            "/guess"
         };
 
         [FunctionName(nameof(SBReceiveSlash))]
@@ -45,6 +53,24 @@ namespace a_slack_bot.Functions
             if (SR.T.ChatWriteUser.ContainsKey(slashData.user_id))
                 userToken = SR.T.ChatWriteUser[slashData.user_id];
 
+            // Grab the standings doc upfront when necessary
+            Documents.Standings standings = null;
+            if (StandingsCommands.Contains(slashData.command))
+                try
+                {
+                    standings = await docClient.ReadDocumentAsync<Documents.Standings>(Documents.Standings.DocUri, new RequestOptions { PartitionKey = new Documents.Standings().PK });
+                }
+                catch (DocumentClientException dce) when (dce.StatusCode == HttpStatusCode.NotFound)
+                {
+                    await docClient.CreateDocumentAsync(
+                        C.CDB.DCUri,
+                        new Documents.Standings(),
+                        new RequestOptions { PartitionKey = new Documents.Standings().PK });
+
+                    // Let SB retry us. Should only ever hit this once.
+                    throw;
+                }
+
             switch (slashData.command)
             {
                 case "/asb-response":
@@ -61,6 +87,7 @@ remove `key` id                 Remove a single response.
                     else
                         await HandleAsbResponseCommand(slashData, docClient, ephemeralMessageCollector, logger);
                     break;
+
 
                 case "/asb-send-as-me":
                     if (slashData.text == "help" || string.IsNullOrWhiteSpace(slashData.text))
@@ -84,25 +111,51 @@ remove `key` id                 Remove a single response.
                     }
                     break;
 
+
                 case "/asb-whitelist":
                     await HandleAsbWhitelistCommand(slashData, docClient, messageCollector, ephemeralMessageCollector, logger);
                     break;
 
+
+                case "/balance":
+                    long balance = 10_000;
+                    if (standings.bals.ContainsKey(slashData.user_id))
+                        balance = standings.bals[slashData.user_id];
+                    await messageCollector.AddAsync(slashData, $"<@{slashData.user_id}> has ¤{balance:#,#}");
+                    break;
+
+
+                case "/balances":
+                    var bals = new StringBuilder();
+                    bals.AppendLine("Balances for those that have played:");
+                    bals.AppendLine("```");
+                    var maxNamLength = Math.Max(SR.U.MaxNameLength, 8);
+                    var maxBalLength = Math.Max($"{(standings.bals.Values.Count == 0 ? 0 : standings.bals.Values.Max()):#,#}".Length, 7);
+                    bals.Append("USER".PadRight(SR.U.MaxNameLength));
+                    bals.Append("  ");
+                    bals.Append("BALANCE".PadLeft(maxBalLength));
+                    bals.AppendLine();
+                    foreach (var user in standings.bals)
+                    {
+                        if (SR.U.IdToName.ContainsKey(user.Key))
+                            bals.Append($"{SR.U.IdToName[user.Key].PadRight(maxNamLength)}  ");
+                        else
+                            bals.Append($"{user.Key.PadRight(maxNamLength)}  ");
+                        bals.AppendFormat($"{{0,{maxBalLength}:#,#}}", user.Value);
+                        bals.AppendLine();
+                    }
+                    bals.AppendLine("```");
+                    bals.AppendLine();
+                    bals.AppendFormat("Balances for those that have not played: ¤{0:#,#}", 10_000);
+                    await messageCollector.AddAsync(slashData, bals.ToString());
+                    break;
+
+
                 case "/blackjack":
-                    if (!SR.W.CommandsChannels.ContainsKey("/blackjack") || !SR.W.CommandsChannels["/blackjack"].Contains(slashData.channel_id))
+                    if (!SR.W.CommandsChannels.ContainsKey(slashData.command) || !SR.W.CommandsChannels[slashData.command].Contains(slashData.channel_id))
                         await ephemeralMessageCollector.AddEAsync(slashData, $"`{slashData.command}` is not whitelisted for this channel. See `/asb-whitelist` to add it.");
                     else if (slashData.text == "help")
-                        await ephemeralMessageCollector.AddEAsync(slashData, @"Start a game of blackjack with some overrides available.
-Syntax:
-```
-/blackjack          Start a game of blackjack.
-/blackjack balance  Get your balance.
-/blackjack balances Show all balances for all players.
-```");
-                    else if (slashData.text == "balance")
-                        await blackjackMessageCollector.AddAsync(new BrokeredMessage(new Messages.ServiceBusBlackjack { channel_id = slashData.channel_id, user_id = slashData.user_id, type = Messages.BlackjackMessageType.GetBalance }));
-                    else if (slashData.text == "balances")
-                        await blackjackMessageCollector.AddAsync(new BrokeredMessage(new Messages.ServiceBusBlackjack { channel_id = slashData.channel_id, type = Messages.BlackjackMessageType.GetBalances }));
+                        await messageCollector.AddAsync(slashData, "Start a game of blackjack by saying `/blackjack`.\nTo view your balances, use `/balance`.");
                     else if (!string.IsNullOrWhiteSpace(slashData.text))
                         await messageCollector.AddAsync(slashData, $"I don't know about '{slashData.text}'");
                     else
@@ -130,22 +183,36 @@ Syntax:
                     }
                     break;
 
+
                 case "/disapprove":
                     await SendUserResponse(slashData, "ಠ_ಠ", userToken, ephemeralMessageCollector, logger);
                     break;
+
 
                 case "/flip":
                     await SendUserResponse(slashData, slashData.text + " (╯°□°)╯︵ ┻━┻", userToken, ephemeralMessageCollector, logger);
                     break;
 
+
+                case "/guess":
+                    if (!SR.W.CommandsChannels.ContainsKey(slashData.command) || !SR.W.CommandsChannels[slashData.command].Contains(slashData.channel_id))
+                        await ephemeralMessageCollector.AddEAsync(slashData, $"`{slashData.command}` is not whitelisted for this channel. See `/asb-whitelist` to add it.");
+                    else if (slashData.text == "help")
+                        await messageCollector.AddAsync(slashData, "Guess a number in the interval `(0, balance]` (see `/balance`). Rewards guesses close to the number I'm thinking of, but be more than 100 away and you start losing!");
+                    else
+                        await HandleGuessCommand(slashData, standings, docClient, messageCollector, ephemeralMessageCollector, logger);
+                    break;
+
+
                 case "/spaces":
                     var text = slashData.text;
-                    StringBuilder sb = new StringBuilder(text.Length * 2);
+                    var sb = new StringBuilder(text.Length * 2);
                     var enumerator = StringInfo.GetTextElementEnumerator(text);
                     while (enumerator.MoveNext())
                         sb.Append(enumerator.GetTextElement()).Append(' ');
                     await SendUserResponse(slashData, sb.ToString(), userToken, ephemeralMessageCollector, logger);
                     break;
+
 
                 default:
                     await ephemeralMessageCollector.AddEAsync(slashData, "*NOT SUPPORTED*");
@@ -389,6 +456,38 @@ Syntax:
             else
             {
                 await ephemeralMessageCollector.AddEAsync(slashData, $"I don't know how to interpret `{slashData.text}`");
+            }
+        }
+
+        private static async Task HandleGuessCommand(
+            Slack.Slash slashData,
+            Documents.Standings standings,
+            DocumentClient docClient,
+            IAsyncCollector<BrokeredMessage> messageCollector,
+            IAsyncCollector<BrokeredMessage> ephemeralMessageCollector,
+            ILogger logger)
+        {
+            if (!long.TryParse(slashData.text, out long guess) || guess <= 0)
+            {
+                await messageCollector.AddAsync(slashData, $"`{slashData.text}` could not be parsed as a positive number.");
+                return;
+            }
+
+            long balance = 10_000;
+            if (standings.bals.ContainsKey(slashData.user_id))
+                balance = standings.bals[slashData.user_id];
+            else
+                standings.bals.Add(slashData.user_id, balance);
+
+            if (guess > balance)
+            {
+                // Lose at most 2.5% of total balance
+                var losspct = SR.Rand.NextDouble() * 0.025;
+                logger.LogInformation("Loss percent {0} for {1}", losspct, slashData.user_id);
+                var loss = (long)Math.Max(losspct * balance, 1);
+                await messageCollector.AddAsync(slashData, $"<@{slashData.user_id}> bet ¤{guess:#,#} which is more than their current balance of ¤{balance:#,#}. They lose ¤{loss:#,#} ({losspct:p}) as a penalty for trying to game the system.");
+
+                return;
             }
         }
     }

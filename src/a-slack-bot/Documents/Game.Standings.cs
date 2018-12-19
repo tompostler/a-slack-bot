@@ -13,6 +13,6 @@ namespace a_slack_bot.Documents
 
         public override string Id { get => nameof(Standings); set { } }
 
-        public Dictionary<string, long> bals { get; set; }
+        public Dictionary<string, long> bals { get; set; } = new Dictionary<string, long>();
     }
 }

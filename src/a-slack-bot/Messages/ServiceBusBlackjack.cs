@@ -12,8 +12,6 @@
 
     public enum BlackjackMessageType
     {
-        GetBalance,
-        GetBalances,
         UpdateBalance,
 
         Timer_Joining,

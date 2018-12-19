@@ -59,7 +59,9 @@ namespace a_slack_bot.Functions
         private static readonly HashSet<string> EchoableCommands = new HashSet<string>
         {
             "/asb-whitelist",
-            "/blackjack"
+            "/balance",
+            "/blackjack",
+            "/guess"
         };
         [FunctionName(nameof(ReceiveSlash))]
         public static async Task<HttpResponseMessage> ReceiveSlash(

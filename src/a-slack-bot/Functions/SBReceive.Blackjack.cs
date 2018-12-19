@@ -39,48 +39,11 @@ namespace a_slack_bot.Functions
             {
                 await docClient.CreateDocumentAsync(
                     C.CDB.DCUri,
-                    new Documents.Standings { bals = new Dictionary<string, long>() },
+                    new Documents.Standings(),
                     new RequestOptions { PartitionKey = new Documents.Standings().PK });
 
                 // Let SB retry us. Should only ever hit this once.
                 throw;
-            }
-
-            // Handle a balance request
-            if (inMessage.type == Messages.BlackjackMessageType.GetBalance || inMessage.type == Messages.BlackjackMessageType.GetBalances)
-            {
-                if (inMessage.type == Messages.BlackjackMessageType.GetBalance)
-                    if (standingsDoc.bals.ContainsKey(inMessage.user_id))
-                        await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = inMessage.channel_id, text = $"<@{inMessage.user_id}>: ¤{standingsDoc.bals[inMessage.user_id]:#,#}" });
-                    else
-                        await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = inMessage.channel_id, text = $"<@{inMessage.user_id}>: ¤{10_000:#,#}" });
-                else
-                {
-                    // all balances
-                    var sb = new StringBuilder();
-                    sb.AppendLine("Balances for those that have played:");
-                    sb.AppendLine("```");
-                    var maxNamLength = Math.Max(SR.U.MaxNameLength, 8);
-                    var maxBalLength = Math.Max($"{(standingsDoc.bals.Values.Count == 0 ? 0 : standingsDoc.bals.Values.Max()):#,#}".Length, 7);
-                    sb.Append("USER".PadRight(SR.U.MaxNameLength));
-                    sb.Append("  ");
-                    sb.Append("BALANCE".PadLeft(maxBalLength));
-                    sb.AppendLine();
-                    foreach (var user in standingsDoc.bals)
-                    {
-                        if (SR.U.IdToName.ContainsKey(user.Key))
-                            sb.Append($"{SR.U.IdToName[user.Key].PadRight(maxNamLength)}  ");
-                        else
-                            sb.Append($"{user.Key.PadRight(maxNamLength)}  ");
-                        sb.AppendFormat($"{{0,{maxBalLength}:#,#}}", user.Value);
-                        sb.AppendLine();
-                    }
-                    sb.AppendLine("```");
-                    sb.AppendLine();
-                    sb.AppendFormat("Balances for those that have not played: ¤{0:#,#}", 10_000);
-                    await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = inMessage.channel_id, text = sb.ToString() });
-                }
-                return;
             }
 
             // Get the game doc
