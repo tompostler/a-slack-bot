@@ -60,6 +60,7 @@ namespace a_slack_bot.Functions
         {
             "/asb-whitelist",
             "/balance",
+            "/balances",
             "/blackjack",
             "/guess"
         };
