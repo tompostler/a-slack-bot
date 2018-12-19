@@ -485,7 +485,7 @@ remove `key` id                 Remove a single response.
                 var losspct = SR.Rand.NextDouble() * 0.025;
                 logger.LogInformation("Loss percent {0} for {1}", losspct, slashData.user_id);
                 var loss = (long)Math.Max(losspct * balance, 1);
-                standings.bals[slashData.user_id] += loss;
+                standings.bals[slashData.user_id] -= loss;
                 await messageCollector.AddAsync(slashData, $"<@{slashData.user_id}> bet ¤{guess:#,#} which is more than their current balance of ¤{balance:#,#}. They lose ¤{loss:#,#} ({losspct:p}) as a penalty for trying to game the system.");
             }
             else
