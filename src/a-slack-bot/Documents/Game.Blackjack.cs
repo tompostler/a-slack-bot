@@ -1,29 +1,13 @@
-﻿using Microsoft.Azure.Documents;
-using Microsoft.Azure.Documents.Client;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Generic;
 
-namespace a_slack_bot.Documents2
+namespace a_slack_bot.Documents
 {
-    public class BlackjackStandings : Resource
+    public class Blackjack : Base
     {
-        [JsonIgnore]
-        public static readonly Uri DocUri = UriFactory.CreateDocumentUri(C.CDB2.DN, C.CDB2.Col.GamesBlackjack, nameof(BlackjackStandings));
-        [JsonIgnore]
-        public static readonly PartitionKey PK = new PartitionKey(nameof(BlackjackStandings));
-
-        public override string Id { get => nameof(BlackjackStandings); set { } }
-        public string channel_id => nameof(BlackjackStandings);
-
-        public Dictionary<string, long> bals { get; set; }
-    }
-
-    public class Blackjack : Resource
-    {
-        [JsonIgnore]
-        public PartitionKey PK => new PartitionKey(this.channel_id);
+        public override string doctype => nameof(Blackjack);
 
         public override string Id { get => this.thread_ts; set { } }
 

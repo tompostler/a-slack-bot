@@ -30,7 +30,7 @@ namespace a_slack_bot.Functions
         [FunctionName(nameof(SBReceiveSlash))]
         public static async Task SBReceiveSlash(
             [ServiceBusTrigger(C.SBQ.InputSlash)]Messages.ServiceBusInputSlash slashMessage,
-            [DocumentDB(ConnectionStringSetting = C.CDB2.CSS)]DocumentClient docClient,
+            [DocumentDB(ConnectionStringSetting = C.CDB.CSS)]DocumentClient docClient,
             [ServiceBus(C.SBQ.Blackjack)]IAsyncCollector<BrokeredMessage> blackjackMessageCollector,
             [ServiceBus(C.SBQ.SendMessage)]IAsyncCollector<BrokeredMessage> messageCollector,
             [ServiceBus(C.SBQ.SendMessageEphemeral)]IAsyncCollector<BrokeredMessage> ephemeralMessageCollector,
@@ -67,15 +67,15 @@ remove `key` id                 Remove a single response.
                         await ephemeralMessageCollector.AddEAsync(slashData, "Visit https://api.slack.com/custom-integrations/legacy-tokens to generate a token, or send `clear` to remove your existing token.");
                     else if (slashData.text == "clear")
                     {
-                        await docClient.DeleteDocumentAsync(UriFactory.CreateDocumentUri(C.CDB2.DN, C.CDB2.Col.SlackOAuthTokens, slashData.user_id), new RequestOptions { PartitionKey = new PartitionKey(null) });
+                        await docClient.DeleteDocumentAsync(UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, slashData.user_id), new RequestOptions { PartitionKey = new PartitionKey(null) });
                         await ephemeralMessageCollector.AddEAsync(slashData, "token cleared :thumbsup:");
                         SR.Deit();
                     }
                     else
                     {
-                        var tokDoc = new Documents2.OAuthToken { Id = slashData.user_id, type = "user", token = slashData.text };
+                        var tokDoc = new Documents.OAuthUserToken { Id = slashData.user_id, token = slashData.text };
                         await docClient.UpsertDocumentAsync(
-                            C.CDB2.CUs[C.CDB2.Col.Whitelists],
+                            C.CDB.DCUri,
                             tokDoc,
                             new RequestOptions { PartitionKey = tokDoc.PK },
                             disableAutomaticIdGeneration: true);
@@ -89,7 +89,7 @@ remove `key` id                 Remove a single response.
                     break;
 
                 case "/blackjack":
-                    if (!SR.W.CommandsChannels.ContainsKey("blackjack") || !SR.W.CommandsChannels["blackjack"].Contains(slashData.channel_id))
+                    if (!SR.W.CommandsChannels.ContainsKey("/blackjack") || !SR.W.CommandsChannels["/blackjack"].Contains(slashData.channel_id))
                         await ephemeralMessageCollector.AddEAsync(slashData, $"`{slashData.command}` is not whitelisted for this channel. See `/asb-whitelist` to add it.");
                     else if (slashData.text == "help")
                         await ephemeralMessageCollector.AddEAsync(slashData, @"Start a game of blackjack with some overrides available.
@@ -109,9 +109,9 @@ Syntax:
                     {
                         await Task.Delay(TimeSpan.FromSeconds(0.5));
                         var threadStart = await SBSend.SendMessage(new Slack.Events.Inner.message { channel = slashData.channel_id, text = $"<@{slashData.user_id}> wants to start a game of blackjack! Open this thread to play." }, logger);
-                        var game = new Documents2.Blackjack { user_start = slashData.user_id, channel_id = slashData.channel_id, thread_ts = threadStart.message.ts, users = new List<string> { slashData.user_id }, hands = new Dictionary<string, List<Cards.Cards>> { [slashData.user_id] = new List<Cards.Cards>() } };
+                        var game = new Documents.Blackjack { user_start = slashData.user_id, channel_id = slashData.channel_id, thread_ts = threadStart.message.ts, users = new List<string> { slashData.user_id }, hands = new Dictionary<string, List<Cards.Cards>> { [slashData.user_id] = new List<Cards.Cards>() } };
                         await docClient.UpsertDocumentAsync(
-                            C.CDB2.CUs[C.CDB2.Col.GamesBlackjack],
+                            C.CDB.DCUri,
                             game,
                             new RequestOptions { PartitionKey = game.PK });
                         await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = slashData.channel_id, ts = threadStart.message.ts, text = $"Game id: {game.friendly_name}\n<@{slashData.user_id}> wants to start a game of blackjack! Open this thread to play." });
@@ -195,8 +195,8 @@ Syntax:
             {
                 logger.LogInformation("Retrieving list of all custom response keys...");
                 var query = docClient.CreateDocumentQuery<string>(
-                    C.CDB2.CUs[C.CDB2.Col.CustomResponses],
-                    $"SELECT DISTINCT VALUE r.{nameof(Documents2.Response.key)} FROM r",
+                    C.CDB.DCUri,
+                    $"SELECT DISTINCT VALUE r.{nameof(Documents.Response.key)} FROM r WHERE STARTSWITH(r.{nameof(Documents.Base.doctype)}, '{nameof(Documents.Response)}|')",
                     new FeedOptions { EnableCrossPartitionQuery = true })
                     .AsDocumentQuery();
                 var results = (await query.GetAllResults(logger)).ToList();
@@ -227,7 +227,7 @@ Syntax:
                 case "add":
                     logger.LogInformation("Attempting to add new custom response...");
                     value = await ReplaceImageURIs(key, value, logger);
-                    var resp = new Documents2.Response
+                    var resp = new Documents.Response
                     {
                         Id = Guid.NewGuid().ToString().Split('-')[0],
                         key = key,
@@ -235,7 +235,7 @@ Syntax:
                         user_id = slashData.user_id
                     };
                     var doc = await docClient.CreateDocumentAsync(
-                        C.CDB2.CUs[C.CDB2.Col.CustomResponses],
+                        C.CDB.DCUri,
                         resp,
                         new RequestOptions { PartitionKey = resp.PK },
                         disableAutomaticIdGeneration: true);
@@ -248,7 +248,7 @@ Syntax:
                     foreach (var valueb in value.Split(new string[] { "||" }, StringSplitOptions.RemoveEmptyEntries).Select(_ => _.Trim()))
                     {
                         var valuec = await ReplaceImageURIs(key, valueb, logger);
-                        resp = new Documents2.Response
+                        resp = new Documents.Response
                         {
                             Id = Guid.NewGuid().ToString().Split('-')[0],
                             key = key,
@@ -256,7 +256,7 @@ Syntax:
                             user_id = slashData.user_id
                         };
                         doc = await docClient.CreateDocumentAsync(
-                            C.CDB2.CUs[C.CDB2.Col.CustomResponses],
+                            C.CDB.DCUri,
                             resp,
                             new RequestOptions { PartitionKey = resp.PK },
                             disableAutomaticIdGeneration: true);
@@ -267,10 +267,10 @@ Syntax:
 
                 case "list":
                     logger.LogInformation("Retrieving list of all custom responses for specified key...");
-                    var query = docClient.CreateDocumentQuery<Documents2.Response>(
-                        C.CDB2.CUs[C.CDB2.Col.CustomResponses],
+                    var query = docClient.CreateDocumentQuery<Documents.Response>(
+                        C.CDB.DCUri,
                         "SELECT * FROM r",
-                        new FeedOptions { PartitionKey = new PartitionKey(key) })
+                        new FeedOptions { PartitionKey = new PartitionKey($"{nameof(Documents.Response)}|{key}") })
                         .AsDocumentQuery();
                     var results = (await query.GetAllResults(logger)).ToList();
                     results.Sort((r1, r2) => r1.Id.CompareTo(r2.Id));
@@ -281,7 +281,7 @@ Syntax:
                     try
                     {
                         logger.LogInformation("Attempting to remove existing record...");
-                        await docClient.DeleteDocumentAsync(UriFactory.CreateDocumentUri(C.CDB2.DN, C.CDB2.Col.CustomResponses, value), new RequestOptions { PartitionKey = new PartitionKey(key) });
+                        await docClient.DeleteDocumentAsync(UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, value), new RequestOptions { PartitionKey = new PartitionKey($"{nameof(Documents.Response)}|{key}") });
                         await ephemeralMessageCollector.AddEAsync(slashData, $"Removed `{key}`: {value}");
                         SR.Deit();
                     }
@@ -344,24 +344,26 @@ Syntax:
             }
 
             var whitelistBits = slashData.text.Split(' ')[1];
-            Documents2.Whitelist doc = null;
+            Documents.Whitelist doc = null;
             try
             {
                 logger.LogInformation("Attempting to get existing record...");
-                doc = await docClient.ReadDocumentAsync<Documents2.Whitelist>(UriFactory.CreateDocumentUri(C.CDB2.DN, C.CDB2.Col.Whitelists, whitelistBits.Substring(1)), new RequestOptions { PartitionKey = new PartitionKey("command") });
+                doc = await docClient.ReadDocumentAsync<Documents.Whitelist>(UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, "command"), new RequestOptions { PartitionKey = new Documents.Whitelist().PK });
                 logger.LogInformation("Existing record found.");
             }
             catch (DocumentClientException dce) when (dce.StatusCode == HttpStatusCode.NotFound)
             {
                 logger.LogInformation("Existing record not found.");
-                doc = new Documents2.Whitelist { type = "command", Id = whitelistBits.Substring(1), values = new HashSet<string>() };
+                doc = new Documents.Whitelist { Id = "command", values = new Dictionary<string, HashSet<string>>() };
             }
 
             if (slashData.text.StartsWith("add"))
             {
-                doc.values.Add(slashData.channel_id);
+                if (!doc.values.ContainsKey(whitelistBits))
+                    doc.values.Add(whitelistBits, new HashSet<string>());
+                doc.values[whitelistBits].Add(slashData.channel_id);
                 await docClient.UpsertDocumentAsync(
-                    C.CDB2.CUs[C.CDB2.Col.Whitelists],
+                    C.CDB.DCUri,
                     doc,
                     new RequestOptions { PartitionKey = doc.PK },
                     disableAutomaticIdGeneration: true);
@@ -370,13 +372,13 @@ Syntax:
             }
             else if (slashData.text.StartsWith("remove"))
             {
-                if (!doc.values.Contains(slashData.channel_id))
+                if (doc == null || !doc.values.ContainsKey(whitelistBits) || !doc.values[whitelistBits].Contains(slashData.channel_id))
                     await ephemeralMessageCollector.AddEAsync(slashData, $"`{whitelistBits}` wasn't on the whitelist for this channel :facepalm:");
                 else
                 {
-                    doc.values.Remove(slashData.channel_id);
+                    doc.values[whitelistBits].Remove(slashData.channel_id);
                     await docClient.UpsertDocumentAsync(
-                        C.CDB2.CUs[C.CDB2.Col.Whitelists],
+                        C.CDB.DCUri,
                         doc,
                         new RequestOptions { PartitionKey = doc.PK },
                         disableAutomaticIdGeneration: true);

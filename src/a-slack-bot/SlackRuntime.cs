@@ -73,25 +73,22 @@ namespace a_slack_bot
         }
         private static async Task InnerOneTimeInit(ILogger logger, DocumentClient docClient)
         {
-            var dbResponse = await docClient.CreateDatabaseIfNotExistsAsync(new Database { Id = a_slack_bot.C.CDB2.DN }, new RequestOptions { OfferThroughput = 400 });
+            var dbResponse = await docClient.CreateDatabaseIfNotExistsAsync(new Database { Id = a_slack_bot.C.CDB.DN }, new RequestOptions { OfferThroughput = 400 });
             logger.LogInformation("DB: {0}", dbResponse.StatusCode);
-            foreach (var pk in a_slack_bot.C.CDB2.PKs)
-            {
-                var colResponse = await docClient.CreateDocumentCollectionIfNotExistsAsync(
-                    dbResponse.Resource.SelfLink,
-                    new DocumentCollection
+            var colResponse = await docClient.CreateDocumentCollectionIfNotExistsAsync(
+                dbResponse.Resource.SelfLink,
+                new DocumentCollection
+                {
+                    Id = a_slack_bot.C.CDB.CN,
+                    PartitionKey = new PartitionKeyDefinition
                     {
-                        Id = pk.Key,
-                        PartitionKey = new PartitionKeyDefinition
+                        Paths = new System.Collections.ObjectModel.Collection<string>
                         {
-                            Paths = new System.Collections.ObjectModel.Collection<string>
-                            {
-                                "/" + pk.Value
-                            }
+                            "/" + nameof(Documents.Base.doctype)
                         }
-                    });
-                logger.LogInformation("Col {0}: {1}", pk.Key, colResponse.StatusCode);
-            }
+                    }
+                });
+            logger.LogInformation("Col {0}: {1}", a_slack_bot.C.CDB.CN, colResponse.StatusCode);
         }
         public static void Deit() => Initialized = false;
 
@@ -152,13 +149,13 @@ namespace a_slack_bot
                 this.LowerNameToId = this.IdToName.ToDictionary(u => u.Value.ToLower(), u => u.Key);
                 this.MaxNameLength = this.IdToName.Values.Max(un => un.Length);
 
-                var converationMapDoc = new Documents2.IdMapping
+                var converationMapDoc = new Documents.IdMapping
                 {
-                    name = nameof(SlackConversations),
+                    Id = nameof(SlackConversations),
                     mapping = idToNameDict
                 };
                 await docClient.UpsertDocumentAsync(
-                    a_slack_bot.C.CDB2.CUs[a_slack_bot.C.CDB2.Col.IdMappings],
+                    a_slack_bot.C.CDB.DCUri,
                     converationMapDoc,
                     new RequestOptions { PartitionKey = converationMapDoc.PK },
                     disableAutomaticIdGeneration: true);
@@ -172,9 +169,9 @@ namespace a_slack_bot
 
             public async Task Init(ILogger logger, DocumentClient docClient)
             {
-                var docQuery = docClient.CreateDocumentQuery<Documents2.Response>(
-                    a_slack_bot.C.CDB2.CUs[a_slack_bot.C.CDB2.Col.CustomResponses],
-                    "SELECT * FROM r",
+                var docQuery = docClient.CreateDocumentQuery<Documents.Response>(
+                    a_slack_bot.C.CDB.DCUri,
+                    $"SELECT * FROM r WHERE STARTSWITH(r.{nameof(Documents.Base.doctype)}, '{nameof(Documents.Response)}|')",
                     new FeedOptions { EnableCrossPartitionQuery = true })
                     .AsDocumentQuery();
 
@@ -197,9 +194,9 @@ namespace a_slack_bot
 
             public async Task Init(ILogger logger, DocumentClient docClient)
             {
-                var docQuery = docClient.CreateDocumentQuery<Documents2.OAuthToken>(
-                    a_slack_bot.C.CDB2.CUs[a_slack_bot.C.CDB2.Col.SlackOAuthTokens],
-                    new FeedOptions { PartitionKey = new PartitionKey("user") })
+                var docQuery = docClient.CreateDocumentQuery<Documents.OAuthUserToken>(
+                    a_slack_bot.C.CDB.DCUri,
+                    new FeedOptions { PartitionKey = new Documents.OAuthUserToken().PK })
                     .AsDocumentQuery();
 
                 var tokens = await docQuery.GetAllResults(logger);
@@ -241,13 +238,13 @@ namespace a_slack_bot
                 this.LowerNameToId = this.IdToName.ToDictionary(u => u.Value.ToLower(), u => u.Key);
                 this.MaxNameLength = this.IdToName.Values.Max(un => un.Length);
 
-                var userMapDoc = new Documents2.IdMapping
+                var userMapDoc = new Documents.IdMapping
                 {
-                    name = nameof(SlackUsers),
+                    Id = nameof(SlackUsers),
                     mapping = idToNameDict
                 };
                 await docClient.UpsertDocumentAsync(
-                    a_slack_bot.C.CDB2.CUs[a_slack_bot.C.CDB2.Col.IdMappings],
+                    a_slack_bot.C.CDB.DCUri,
                     userMapDoc,
                     new RequestOptions { PartitionKey = userMapDoc.PK },
                     disableAutomaticIdGeneration: true);
@@ -260,14 +257,14 @@ namespace a_slack_bot
 
             public async Task Init(ILogger logger, DocumentClient docClient)
             {
-                var docQuery = docClient.CreateDocumentQuery<Documents2.Whitelist>(
-                    a_slack_bot.C.CDB2.CUs[a_slack_bot.C.CDB2.Col.Whitelists],
-                    new FeedOptions { PartitionKey = new PartitionKey("command") })
+                var docQuery = docClient.CreateDocumentQuery<Documents.Whitelist>(
+                    a_slack_bot.C.CDB.DCUri,
+                    new FeedOptions { PartitionKey = new Documents.Whitelist().PK })
                     .AsDocumentQuery();
 
-                var tokens = await docQuery.GetAllResults(logger);
+                var whitelists = await docQuery.GetAllResults(logger);
 
-                this.CommandsChannels = tokens.ToDictionary(t => t.Id, t => t.values);
+                this.CommandsChannels = whitelists.FirstOrDefault(w => w.Id == "command")?.values ?? new Dictionary<string, HashSet<string>>();
             }
         }
 

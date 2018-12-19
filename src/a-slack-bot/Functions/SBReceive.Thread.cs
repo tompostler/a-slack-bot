@@ -14,7 +14,7 @@ namespace a_slack_bot.Functions
         public static async Task SBReceiveThread(
             [ServiceBusTrigger(C.SBQ.InputThread)]Slack.Events.Inner.message eventMessage,
             [ServiceBus(C.SBQ.Blackjack)]IAsyncCollector<Messages.ServiceBusBlackjack> messageCollector,
-            [DocumentDB(ConnectionStringSetting = C.CDB2.CSS)]DocumentClient docClient,
+            [DocumentDB(ConnectionStringSetting = C.CDB.CSS)]DocumentClient docClient,
             ILogger logger)
         {
             if (Settings.Debug)
@@ -28,12 +28,12 @@ namespace a_slack_bot.Functions
             }
 
             // First, see if there's any matching documents
-            Documents2.Blackjack gameDoc = null;
+            Documents.Blackjack gameDoc = null;
             try
             {
-                gameDoc = await docClient.ReadDocumentAsync<Documents2.Blackjack>(
-                    UriFactory.CreateDocumentUri(C.CDB2.DN, C.CDB2.Col.GamesBlackjack, eventMessage.thread_ts),
-                    new RequestOptions { PartitionKey = new PartitionKey(eventMessage.channel) });
+                gameDoc = await docClient.ReadDocumentAsync<Documents.Blackjack>(
+                    UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, eventMessage.thread_ts),
+                    new RequestOptions { PartitionKey = new Documents.Blackjack().PK });
                 logger.LogInformation("Got game doc");
             }
             catch (DocumentClientException dce) when (dce.StatusCode == HttpStatusCode.NotFound)

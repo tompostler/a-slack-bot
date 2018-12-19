@@ -58,6 +58,7 @@ namespace a_slack_bot.Functions
                 return;
 
             logger.LogInformation("Found a custom response match with key '{0}'", matchedKey);
+            var pk = new PartitionKey($"{nameof(Documents.Response)}|{matchedKey}");
 
             // Check for optimized case of only one response, but still get and upsert the doc to keep track of the count
             // TODO: Consider a sproc for this operation
@@ -66,14 +67,14 @@ namespace a_slack_bot.Functions
                 async Task upsertWithCountIncreased()
                 {
                     var sracr = SR.R.AllResponses[matchedKey].Single();
-                    var doc = (await docClient.ReadDocumentAsync<Documents2.Response>(
-                        UriFactory.CreateDocumentUri(C.CDB2.DN, C.CDB2.Col.CustomResponses, sracr.Key),
-                        new RequestOptions { PartitionKey = new PartitionKey(matchedKey) })).Document;
+                    var doc = (await docClient.ReadDocumentAsync<Documents.Response>(
+                        UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, sracr.Key),
+                        new RequestOptions { PartitionKey = pk })).Document;
                     doc.count++;
                     await docClient.UpsertDocumentAsync(
-                        C.CDB2.CUs[C.CDB2.Col.CustomResponses],
+                        C.CDB.DCUri,
                         doc,
-                        new RequestOptions { PartitionKey = new PartitionKey(matchedKey) },
+                        new RequestOptions { PartitionKey = pk },
                         disableAutomaticIdGeneration: true);
                 }
                 await Task.WhenAll(new[] {
@@ -85,16 +86,16 @@ namespace a_slack_bot.Functions
 
             // Get the minimum display count
             var count = docClient.CreateDocumentQuery<int>(
-                C.CDB2.CUs[C.CDB2.Col.CustomResponses],
-                $"SELECT VALUE MIN(r.{nameof(Documents2.Response.count)}) FROM r",
-                new FeedOptions { PartitionKey = new PartitionKey(matchedKey) })
+                C.CDB.DCUri,
+                $"SELECT VALUE MIN(r.{nameof(Documents.Response.count)}) FROM r",
+                new FeedOptions { PartitionKey = pk })
                 .AsEnumerable().FirstOrDefault();
 
             // Pick one
-            var response = docClient.CreateDocumentQuery<Documents2.Response>(
-                C.CDB2.CUs[C.CDB2.Col.CustomResponses],
-                $"SELECT TOP 1 * FROM r WHERE r.{nameof(Documents2.Response.count)} = {count} ORDER BY r.{nameof(Documents2.Response.random)}",
-                new FeedOptions { PartitionKey = new PartitionKey(matchedKey) })
+            var response = docClient.CreateDocumentQuery<Documents.Response>(
+                C.CDB.DCUri,
+                $"SELECT TOP 1 * FROM r WHERE r.{nameof(Documents.Response.count)} = {count} ORDER BY r.{nameof(Documents.Response.random)}",
+                new FeedOptions { PartitionKey = pk })
                 .AsEnumerable().FirstOrDefault();
 
             response.count++;
@@ -104,9 +105,9 @@ namespace a_slack_bot.Functions
             await Task.WhenAll(new[]
             {
                 docClient.UpsertDocumentAsync(
-                    C.CDB2.CUs[C.CDB2.Col.CustomResponses],
+                    C.CDB.DCUri,
                     response,
-                    new RequestOptions { PartitionKey = new PartitionKey(matchedKey) },
+                    new RequestOptions { PartitionKey = pk },
                     disableAutomaticIdGeneration: true),
                 messageCollector.AddAsync(new Slack.Events.Inner.message{channel = message.channel, text = response.value})
             });

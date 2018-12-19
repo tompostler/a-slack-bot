@@ -20,7 +20,7 @@ namespace a_slack_bot.Functions
             [ServiceBusTrigger(C.SBQ.Blackjack)]Messages.ServiceBusBlackjack inMessage,
             [ServiceBus(C.SBQ.SendMessage)]IAsyncCollector<BrokeredMessage> messageCollector,
             [ServiceBus(C.SBQ.Blackjack)]IAsyncCollector<BrokeredMessage> messageStateCollector,
-            [DocumentDB(ConnectionStringSetting = C.CDB2.CSS)]DocumentClient docClient,
+            [DocumentDB(ConnectionStringSetting = C.CDB.CSS)]DocumentClient docClient,
             ILogger logger)
         {
             if (Settings.Debug)
@@ -28,19 +28,19 @@ namespace a_slack_bot.Functions
 
             await SR.Init(logger);
 
-            Documents2.BlackjackStandings gameBalancesDoc = null;
+            Documents.Standings standingsDoc = null;
             try
             {
-                gameBalancesDoc = await docClient.ReadDocumentAsync<Documents2.BlackjackStandings>(
-                    Documents2.BlackjackStandings.DocUri,
-                    new RequestOptions { PartitionKey = Documents2.BlackjackStandings.PK });
+                standingsDoc = await docClient.ReadDocumentAsync<Documents.Standings>(
+                    Documents.Standings.DocUri,
+                    new RequestOptions { PartitionKey = new Documents.Standings().PK });
             }
             catch (DocumentClientException dce) when (dce.StatusCode == HttpStatusCode.NotFound)
             {
                 await docClient.CreateDocumentAsync(
-                    C.CDB2.CUs[C.CDB2.Col.GamesBlackjack],
-                    new Documents2.BlackjackStandings { bals = new Dictionary<string, long>() },
-                    new RequestOptions { PartitionKey = Documents2.BlackjackStandings.PK });
+                    C.CDB.DCUri,
+                    new Documents.Standings { bals = new Dictionary<string, long>() },
+                    new RequestOptions { PartitionKey = new Documents.Standings().PK });
 
                 // Let SB retry us. Should only ever hit this once.
                 throw;
@@ -50,8 +50,8 @@ namespace a_slack_bot.Functions
             if (inMessage.type == Messages.BlackjackMessageType.GetBalance || inMessage.type == Messages.BlackjackMessageType.GetBalances)
             {
                 if (inMessage.type == Messages.BlackjackMessageType.GetBalance)
-                    if (gameBalancesDoc.bals.ContainsKey(inMessage.user_id))
-                        await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = inMessage.channel_id, text = $"<@{inMessage.user_id}>: ¤{gameBalancesDoc.bals[inMessage.user_id]:#,#}" });
+                    if (standingsDoc.bals.ContainsKey(inMessage.user_id))
+                        await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = inMessage.channel_id, text = $"<@{inMessage.user_id}>: ¤{standingsDoc.bals[inMessage.user_id]:#,#}" });
                     else
                         await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = inMessage.channel_id, text = $"<@{inMessage.user_id}>: ¤{10_000:#,#}" });
                 else
@@ -61,12 +61,12 @@ namespace a_slack_bot.Functions
                     sb.AppendLine("Balances for those that have played:");
                     sb.AppendLine("```");
                     var maxNamLength = Math.Max(SR.U.MaxNameLength, 8);
-                    var maxBalLength = Math.Max($"{(gameBalancesDoc.bals.Values.Count == 0 ? 0 : gameBalancesDoc.bals.Values.Max()):#,#}".Length, 7);
+                    var maxBalLength = Math.Max($"{(standingsDoc.bals.Values.Count == 0 ? 0 : standingsDoc.bals.Values.Max()):#,#}".Length, 7);
                     sb.Append("USER".PadRight(SR.U.MaxNameLength));
                     sb.Append("  ");
                     sb.Append("BALANCE".PadLeft(maxBalLength));
                     sb.AppendLine();
-                    foreach (var user in gameBalancesDoc.bals)
+                    foreach (var user in standingsDoc.bals)
                     {
                         if (SR.U.IdToName.ContainsKey(user.Key))
                             sb.Append($"{SR.U.IdToName[user.Key].PadRight(maxNamLength)}  ");
@@ -84,14 +84,14 @@ namespace a_slack_bot.Functions
             }
 
             // Get the game doc
-            var gameDocUri = UriFactory.CreateDocumentUri(C.CDB2.DN, C.CDB2.Col.GamesBlackjack, inMessage.thread_ts);
-            Documents2.Blackjack gameDoc = await docClient.ReadDocumentAsync<Documents2.Blackjack>(gameDocUri, new RequestOptions { PartitionKey = new PartitionKey(inMessage.channel_id) });
+            var gameDocUri = UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, inMessage.thread_ts);
+            Documents.Blackjack gameDoc = await docClient.ReadDocumentAsync<Documents.Blackjack>(gameDocUri, new RequestOptions { PartitionKey = new Documents.Blackjack().PK });
             logger.LogInformation("Got game doc");
 
             switch (inMessage.type)
             {
                 case Messages.BlackjackMessageType.UpdateBalance:
-                    var bals = gameBalancesDoc.bals;
+                    var bals = standingsDoc.bals;
                     if (!bals.ContainsKey(inMessage.user_id))
                     {
                         bals[inMessage.user_id] = 10_000;
@@ -104,23 +104,23 @@ namespace a_slack_bot.Functions
                         await messageCollector.AddAsync(inMessage, $"<@{inMessage.user_id}> is so poor their balance was forced to ¤1.");
                     }
                     await docClient.UpsertDocumentAsync(
-                        C.CDB2.CUs[C.CDB2.Col.GamesBlackjack],
-                        gameBalancesDoc,
+                        C.CDB.DCUri,
+                        standingsDoc,
                         new RequestOptions
                         {
                             AccessCondition = new AccessCondition
                             {
-                                Condition = gameBalancesDoc.ETag,
+                                Condition = standingsDoc.ETag,
                                 Type = AccessConditionType.IfMatch
                             },
-                            PartitionKey = Documents2.BlackjackStandings.PK
+                            PartitionKey = standingsDoc.PK
                         },
                         disableAutomaticIdGeneration: true);
                     break;
 
 
                 case Messages.BlackjackMessageType.Timer_Joining:
-                    if (gameDoc.state == Documents2.BlackjackGameState.Joining)
+                    if (gameDoc.state == Documents.BlackjackGameState.Joining)
                     {
                         await messageCollector.AddAsync(inMessage, "Joining timed out.");
                         goto case Messages.BlackjackMessageType.ToCollectingBets;
@@ -130,7 +130,7 @@ namespace a_slack_bot.Functions
 
 
                 case Messages.BlackjackMessageType.Timer_CollectingBets:
-                    if (gameDoc.state == Documents2.BlackjackGameState.CollectingBets)
+                    if (gameDoc.state == Documents.BlackjackGameState.CollectingBets)
                     {
                         // users are only added to bets if they bet
                         if (gameDoc.bets.Count != gameDoc.users.Count)
@@ -141,15 +141,15 @@ namespace a_slack_bot.Functions
                             {
                                 var chuckleHead = chuckleHeads[i];
                                 long balance = 10_000;
-                                if (gameBalancesDoc.bals.ContainsKey(chuckleHead))
-                                    balance = gameBalancesDoc.bals[chuckleHead];
+                                if (standingsDoc.bals.ContainsKey(chuckleHead))
+                                    balance = standingsDoc.bals[chuckleHead];
                                 // Lose at most 2.5% of total balance
                                 var losspct = SR.Rand.NextDouble() * 0.025;
                                 logger.LogInformation("Loss percent {0} for {1}", losspct, chuckleHead);
                                 var loss = (long)Math.Max(losspct * balance, 1);
                                 gameDoc.users.Remove(chuckleHead);
                                 gameDoc.hands.Remove(chuckleHead);
-                                gameDoc.actions.Add(new Documents2.BlackjackAction { type = Documents2.BlackjackActionType.BalanceChange, user_id = chuckleHead, amount = -loss });
+                                gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.BalanceChange, user_id = chuckleHead, amount = -loss });
                                 gameDoc = await UpsertGameDocument(docClient, gameDoc);
                                 await messageCollector.AddAsync(inMessage, $"Betting timed out. Dropped <@{chuckleHead}> who loses ¤{loss:#,#} ({losspct:p}) as a penalty for not betting.");
                                 var chuckleMessage = new BrokeredMessage(new Messages.ServiceBusBlackjack { type = Messages.BlackjackMessageType.UpdateBalance, channel_id = inMessage.channel_id, thread_ts = inMessage.thread_ts, user_id = chuckleHead, amount = -loss })
@@ -170,11 +170,11 @@ namespace a_slack_bot.Functions
 
 
                 case Messages.BlackjackMessageType.Timer_Running:
-                    if (gameDoc.state == Documents2.BlackjackGameState.Running && gameDoc.user_active < gameDoc.users.Count && gameDoc.users[gameDoc.user_active] == inMessage.user_id)
+                    if (gameDoc.state == Documents.BlackjackGameState.Running && gameDoc.user_active < gameDoc.users.Count && gameDoc.users[gameDoc.user_active] == inMessage.user_id)
                     {
                         await AddAsync(messageCollector, inMessage, $"<@{inMessage.user_id}> loses ¤{gameDoc.bets[inMessage.user_id] * 2:#,#} for not completing their game in time.");
                         await messageStateCollector.AddAsync(new BrokeredMessage(new Messages.ServiceBusBlackjack { type = Messages.BlackjackMessageType.UpdateBalance, channel_id = inMessage.channel_id, thread_ts = inMessage.thread_ts, user_id = inMessage.user_id, amount = -(gameDoc.bets[inMessage.user_id] * 2) }));
-                        gameDoc.actions.Add(new Documents2.BlackjackAction { type = Documents2.BlackjackActionType.BalanceChange, user_id = inMessage.user_id, amount = -(gameDoc.bets[inMessage.user_id] * 2) });
+                        gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.BalanceChange, user_id = inMessage.user_id, amount = -(gameDoc.bets[inMessage.user_id] * 2) });
                         gameDoc.users.Remove(inMessage.user_id);
                         gameDoc.user_active--;
                         gameDoc = await UpsertGameDocument(docClient, gameDoc);
@@ -185,9 +185,9 @@ namespace a_slack_bot.Functions
 
 
                 case Messages.BlackjackMessageType.JoinGame:
-                    if (!gameDoc.users.Contains(inMessage.user_id) && gameDoc.state == Documents2.BlackjackGameState.Joining)
+                    if (!gameDoc.users.Contains(inMessage.user_id) && gameDoc.state == Documents.BlackjackGameState.Joining)
                     {
-                        gameDoc.actions.Add(new Documents2.BlackjackAction { type = Documents2.BlackjackActionType.Join, user_id = inMessage.user_id });
+                        gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.Join, user_id = inMessage.user_id });
                         gameDoc.users.Add(inMessage.user_id);
                         gameDoc.hands.Add(inMessage.user_id, new List<Cards.Cards>());
                         await messageCollector.AddAsync(inMessage, $"Thanks for joining, {SR.U.IdToName[inMessage.user_id]}.");
@@ -197,8 +197,8 @@ namespace a_slack_bot.Functions
 
 
                 case Messages.BlackjackMessageType.ToCollectingBets:
-                    gameDoc.actions.Add(new Documents2.BlackjackAction { type = Documents2.BlackjackActionType.StateChange, user_id = inMessage.user_id, to_state = Documents2.BlackjackGameState.CollectingBets });
-                    gameDoc.state = Documents2.BlackjackGameState.CollectingBets;
+                    gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.StateChange, user_id = inMessage.user_id, to_state = Documents.BlackjackGameState.CollectingBets });
+                    gameDoc.state = Documents.BlackjackGameState.CollectingBets;
                     gameDoc = await UpsertGameDocument(docClient, gameDoc);
                     await messageCollector.AddAsync(inMessage, "Collecting bets! Pays 1:1 or 3:2 on blackjack. Timing out in 1 minute.");
                     await messageStateCollector.AddAsync(
@@ -217,9 +217,9 @@ namespace a_slack_bot.Functions
 
 
                 case Messages.BlackjackMessageType.PlaceBet:
-                    if (!gameDoc.bets.ContainsKey(inMessage.user_id) && gameDoc.state == Documents2.BlackjackGameState.CollectingBets)
+                    if (!gameDoc.bets.ContainsKey(inMessage.user_id) && gameDoc.state == Documents.BlackjackGameState.CollectingBets)
                     {
-                        gameDoc.actions.Add(new Documents2.BlackjackAction { type = Documents2.BlackjackActionType.Bet, user_id = inMessage.user_id, amount = inMessage.amount });
+                        gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.Bet, user_id = inMessage.user_id, amount = inMessage.amount });
                         gameDoc.bets.Add(inMessage.user_id, inMessage.amount);
                         gameDoc = await UpsertGameDocument(docClient, gameDoc);
                         await messageCollector.AddAsync(inMessage, $"{SR.U.IdToName[inMessage.user_id]} bets ¤{inMessage.amount:#,#}");
@@ -233,8 +233,8 @@ namespace a_slack_bot.Functions
 
                 case Messages.BlackjackMessageType.ToGame:
                     // Update to running game
-                    gameDoc.actions.Add(new Documents2.BlackjackAction { type = Documents2.BlackjackActionType.StateChange, to_state = Documents2.BlackjackGameState.Running });
-                    gameDoc.state = Documents2.BlackjackGameState.Running;
+                    gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.StateChange, to_state = Documents.BlackjackGameState.Running });
+                    gameDoc.state = Documents.BlackjackGameState.Running;
                     gameDoc = await UpsertGameDocument(docClient, gameDoc);
                     await messageCollector.AddAsync(inMessage, "Running a game is currently experimental. Good luck!");
                     logger.LogInformation("Updated game state to running.");
@@ -243,15 +243,15 @@ namespace a_slack_bot.Functions
                     Cards.Deck deck = new Cards.Deck(numDecks: 8);
                     foreach (var hand in gameDoc.hands)
                     {
-                        gameDoc.actions.Add(new Documents2.BlackjackAction { type = Documents2.BlackjackActionType.Deal, user_id = hand.Key, card = deck.Deal() });
+                        gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.Deal, user_id = hand.Key, card = deck.Deal() });
                         hand.Value.Add(gameDoc.actions.Last().card.Value);
-                        gameDoc.actions.Add(new Documents2.BlackjackAction { type = Documents2.BlackjackActionType.Deal, user_id = hand.Key, card = deck.Deal() });
+                        gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.Deal, user_id = hand.Key, card = deck.Deal() });
                         hand.Value.Add(gameDoc.actions.Last().card.Value);
                     }
                     gameDoc.hands.Add("dealer", new List<Cards.Cards>());
-                    gameDoc.actions.Add(new Documents2.BlackjackAction { type = Documents2.BlackjackActionType.Deal, user_id = "dealer", card = deck.Deal() });
+                    gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.Deal, user_id = "dealer", card = deck.Deal() });
                     gameDoc.hands["dealer"].Add(gameDoc.actions.Last().card.Value);
-                    gameDoc.actions.Add(new Documents2.BlackjackAction { type = Documents2.BlackjackActionType.Deal, user_id = "dealer", card = deck.Deal() });
+                    gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.Deal, user_id = "dealer", card = deck.Deal() });
                     gameDoc.hands["dealer"].Add(gameDoc.actions.Last().card.Value);
                     gameDoc.deck = deck;
                     gameDoc = await UpsertGameDocument(docClient, gameDoc);
@@ -268,7 +268,7 @@ namespace a_slack_bot.Functions
                         type = Messages.BlackjackMessageType.GameAction,
                         channel_id = inMessage.channel_id,
                         thread_ts = inMessage.thread_ts,
-                        action = Documents2.BlackjackActionType.Prompt,
+                        action = Documents.BlackjackActionType.Prompt,
                         user_id = gameDoc.users[0]
                     }));
 
@@ -276,13 +276,13 @@ namespace a_slack_bot.Functions
 
 
                 case Messages.BlackjackMessageType.GameAction:
-                    gameDoc.actions.Add(new Documents2.BlackjackAction { type = inMessage.action, user_id = inMessage.user_id });
+                    gameDoc.actions.Add(new Documents.BlackjackAction { type = inMessage.action, user_id = inMessage.user_id });
                     Cards.Deck gameDeck = gameDoc.deck;
                     Cards.CardHelpers.BlackjackScore score = Cards.CardHelpers.GetBlackjackScore(gameDoc.hands[inMessage.user_id]);
                     var sb = new StringBuilder();
                     switch (inMessage.action)
                     {
-                        case Documents2.BlackjackActionType.Prompt:
+                        case Documents.BlackjackActionType.Prompt:
                             if (score.IsBlackjack)
                             {
                                 sb.AppendFormat("<@{0}> blackjack!", inMessage.user_id);
@@ -307,8 +307,8 @@ namespace a_slack_bot.Functions
                                 });
                             break;
 
-                        case Documents2.BlackjackActionType.Hit:
-                            gameDoc.actions.Add(new Documents2.BlackjackAction { type = Documents2.BlackjackActionType.Deal, user_id = inMessage.user_id, card = gameDeck.Deal() });
+                        case Documents.BlackjackActionType.Hit:
+                            gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.Deal, user_id = inMessage.user_id, card = gameDeck.Deal() });
                             gameDoc.hands[inMessage.user_id].Add(gameDoc.actions.Last().card.Value);
                             score = Cards.CardHelpers.GetBlackjackScore(gameDoc.hands[inMessage.user_id]);
                             AddHandToGameState(sb, gameDoc.hands[inMessage.user_id]);
@@ -322,15 +322,15 @@ namespace a_slack_bot.Functions
                                 sb.AppendLine("Pick: `hit` `stand`");
                             break;
 
-                        case Documents2.BlackjackActionType.Stand:
+                        case Documents.BlackjackActionType.Stand:
                             await QueueNextPlayer(inMessage, gameDoc, messageStateCollector);
                             break;
 
-                        case Documents2.BlackjackActionType.Double:
+                        case Documents.BlackjackActionType.Double:
                             gameDoc.bets[inMessage.user_id] *= 2;
                             sb.AppendFormat("{0}'s bet doubled to ¤{1:#,#}", SR.U.IdToName[inMessage.user_id], gameDoc.bets[inMessage.user_id]);
                             sb.AppendLine();
-                            gameDoc.actions.Add(new Documents2.BlackjackAction { type = Documents2.BlackjackActionType.Deal, user_id = inMessage.user_id, card = gameDeck.Deal() });
+                            gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.Deal, user_id = inMessage.user_id, card = gameDeck.Deal() });
                             gameDoc.hands[inMessage.user_id].Add(gameDoc.actions.Last().card.Value);
                             score = Cards.CardHelpers.GetBlackjackScore(gameDoc.hands[inMessage.user_id]);
                             AddHandToGameState(sb, gameDoc.hands[inMessage.user_id]);
@@ -342,11 +342,11 @@ namespace a_slack_bot.Functions
                             await QueueNextPlayer(inMessage, gameDoc, messageStateCollector);
                             break;
 
-                        case Documents2.BlackjackActionType.Split:
+                        case Documents.BlackjackActionType.Split:
                             sb.Append("`split` not supported yet.");
                             break;
 
-                        case Documents2.BlackjackActionType.Surrender:
+                        case Documents.BlackjackActionType.Surrender:
                             gameDoc.bets[inMessage.user_id] = (long)Math.Ceiling(gameDoc.bets[inMessage.user_id] / 2f);
                             sb.AppendFormat("{0} surrenders ¤{1:#,#}", SR.U.IdToName[inMessage.user_id], gameDoc.bets[inMessage.user_id]);
                             gameDoc.bets[inMessage.user_id] *= -1;
@@ -376,7 +376,7 @@ namespace a_slack_bot.Functions
                     while (score.Value < 17 || (score.Value == 17 && score.IsSoft))
                     {
                         sb.AppendLine("_hit_");
-                        gameDoc.actions.Add(new Documents2.BlackjackAction { type = Documents2.BlackjackActionType.Deal, user_id = "dealer", card = gameDeck.Deal() });
+                        gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.Deal, user_id = "dealer", card = gameDeck.Deal() });
                         gameDoc.hands["dealer"].Add(gameDoc.actions.Last().card.Value);
                         AddHandToGameState(sb, gameDoc.hands["dealer"]);
                         score = Cards.CardHelpers.GetBlackjackScore(gameDoc.hands["dealer"]);
@@ -392,8 +392,8 @@ namespace a_slack_bot.Functions
 
 
                 case Messages.BlackjackMessageType.ToFinish:
-                    gameDoc.actions.Add(new Documents2.BlackjackAction { type = Documents2.BlackjackActionType.StateChange, to_state = Documents2.BlackjackGameState.Finished });
-                    gameDoc.state = Documents2.BlackjackGameState.Finished;
+                    gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.StateChange, to_state = Documents.BlackjackGameState.Finished });
+                    gameDoc.state = Documents.BlackjackGameState.Finished;
                     if (gameDoc.hands.ContainsKey("dealer"))
                         dealerScore = Cards.CardHelpers.GetBlackjackScore(gameDoc.hands["dealer"]);
                     else
@@ -420,7 +420,7 @@ namespace a_slack_bot.Functions
                                 sb.AppendFormat("{0} loses ¤{1:#,#}", SR.U.IdToName[gameDoc.users[i]], amount);
                                 sb.AppendLine();
                             }
-                            gameDoc.actions.Add(new Documents2.BlackjackAction { type = Documents2.BlackjackActionType.BalanceChange, user_id = gameDoc.users[i], amount = -amount });
+                            gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.BalanceChange, user_id = gameDoc.users[i], amount = -amount });
                             await messageStateCollector.AddAsync(
                                 new BrokeredMessage(
                                     new Messages.ServiceBusBlackjack
@@ -476,7 +476,7 @@ namespace a_slack_bot.Functions
                                     amount *= -1;
                                 }
                             }
-                            gameDoc.actions.Add(new Documents2.BlackjackAction { type = Documents2.BlackjackActionType.BalanceChange, user_id = gameDoc.users[i], amount = amount });
+                            gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.BalanceChange, user_id = gameDoc.users[i], amount = amount });
                             await messageStateCollector.AddAsync(
                                 new BrokeredMessage(
                                     new Messages.ServiceBusBlackjack
@@ -506,7 +506,7 @@ namespace a_slack_bot.Functions
             }
         }
 
-        private static async Task QueueNextPlayer(Messages.ServiceBusBlackjack inMessage, Documents2.Blackjack gameDoc, IAsyncCollector<BrokeredMessage> messageStateCollector)
+        private static async Task QueueNextPlayer(Messages.ServiceBusBlackjack inMessage, Documents.Blackjack gameDoc, IAsyncCollector<BrokeredMessage> messageStateCollector)
         {
             if (++gameDoc.user_active >= gameDoc.users.Count)
                 await messageStateCollector.AddAsync(
@@ -528,7 +528,7 @@ namespace a_slack_bot.Functions
                             type = Messages.BlackjackMessageType.GameAction,
                             channel_id = inMessage.channel_id,
                             thread_ts = inMessage.thread_ts,
-                            action = Documents2.BlackjackActionType.Prompt,
+                            action = Documents.BlackjackActionType.Prompt,
                             user_id = gameDoc.users[gameDoc.user_active]
                         })
                     {
@@ -536,10 +536,10 @@ namespace a_slack_bot.Functions
                     });
         }
 
-        private static async Task<Documents2.Blackjack> UpsertGameDocument(DocumentClient docClient, Documents2.Blackjack gameDoc)
+        private static async Task<Documents.Blackjack> UpsertGameDocument(DocumentClient docClient, Documents.Blackjack gameDoc)
         {
-            return (Documents2.Blackjack)(dynamic)(await docClient.UpsertDocumentAsync(
-                C.CDB2.CUs[C.CDB2.Col.GamesBlackjack],
+            return (Documents.Blackjack)(dynamic)(await docClient.UpsertDocumentAsync(
+                C.CDB.DCUri,
                 gameDoc,
                 new RequestOptions
                 {
@@ -553,7 +553,7 @@ namespace a_slack_bot.Functions
                 disableAutomaticIdGeneration: true)).Resource;
         }
 
-        private static Task ShowGameState(IAsyncCollector<BrokeredMessage> messageCollector, Messages.ServiceBusBlackjack inMessage, Documents2.Blackjack gameDoc, bool showDealer = false)
+        private static Task ShowGameState(IAsyncCollector<BrokeredMessage> messageCollector, Messages.ServiceBusBlackjack inMessage, Documents.Blackjack gameDoc, bool showDealer = false)
         {
             var sb = new StringBuilder();
             sb.AppendLine("Dealt cards:");
