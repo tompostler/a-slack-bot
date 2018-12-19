@@ -492,13 +492,13 @@ remove `key` id                 Remove a single response.
             {
                 // Take 100 divided by the distance from guess plus one
                 long thinking = (long)(SR.Rand.NextDouble() * balance) + 1;
-                long closeness = Math.Abs(guess - thinking) + 1;
-                double amount = 100d / closeness;
+                long closeness = Math.Abs(guess - thinking);
+                double amount = 100d / (closeness + 1);
                 long winnings = (long)Math.Ceiling(amount);
                 if (amount < 1)
                     winnings = (long)Math.Ceiling(1d / amount);
                 standings.bals[slashData.user_id] += winnings;
-                await messageCollector.AddAsync(slashData, $"<@{slashData.user_id}> guessed {guess}, and I was thinking of {thinking:#,#}. They {(winnings >= 0 ? "win" : "lose")} ¤{winnings:#,#} for {(closeness == 0 ? "guessing correctly" : $"being {closeness:#,#} away.")}.");
+                await messageCollector.AddAsync(slashData, $"<@{slashData.user_id}> guessed {guess}, and I was thinking of {thinking:#,#}. They {(winnings >= 0 ? "win" : "lose")} ¤{winnings:#,#} for {(closeness == 0 ? "guessing correctly" : $"being {closeness:#,#} off")} and are now at ¤{standings.bals[slashData.user_id]:#,#}.");
             }
 
             // Make sure they still have some money...
