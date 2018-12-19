@@ -40,7 +40,6 @@ Code, build, and release: https://tompostler.visualstudio.com/public/_git/a-slac
 
 The following are slash commands that can be triggered by the app:
 
-    /guid               Generate a guid
     /asb-help           This helptext
     /asb-response (add|list|remove) ['key' [value]]
                         Add, list or remove custom message responses. Sending the command with no
@@ -50,13 +49,20 @@ The following are slash commands that can be triggered by the app:
                         to deal with the proper OAuth 2.0 Slack flow. If you wish to remove token,
                         pass 'clear' for the token value. Visit
                         https://api.slack.com/custom-integrations/legacy-tokens to generate a token
+    /asb-version        Shows the version of the bot.
     /asb-whitelist (add|remove) 'thing-to-whitelist'
                         Based on the thing-to-whitelist, will update whatever is necessary to make
                         it happen. An example right now is needing to whitelist the /blackjack
                         command in a channel.
-    /blackjack          Starts a threaded game of blackjack. Needs to be whitelist in a channel.
+    /balance            Shows you your current ¤ balance.
+    /balances           Shows all everyone's ¤ balance.
+    /blackjack          Starts a threaded game of blackjack. Needs to be whitelisted in a channel.
     /disapprove         Sends ಠ_ಠ to the channel
     /flip [text]        Echoes your message, followed by (╯°□°)╯︵ ┻━┻
+    /guess [num]        Play a single-number guessing game where the number has to be in the
+                        interval (0, balance]. Often rewards those whose balance is less than 100.
+                        Needs to be whitelisted in a channel.
+    /guid               Generate a guid
     /spaces [text]      Echoes your message, with spaces inserted betwix letters
 " +
 ////////////////////////////////////////////////////////////////////////////////////////////////////
