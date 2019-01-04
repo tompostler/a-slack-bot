@@ -384,8 +384,14 @@ remove `key` id                 Remove a single response.
                     text = text.Replace(matchUri, blob.Uri.AbsoluteUri);
                     logger.LogInformation("Replaced with {0}", blob.Uri.AbsoluteUri);
                 }
-                catch (OutOfMemoryException)
-                { }
+                catch (OutOfMemoryException oome)
+                {
+                    logger.LogInformation("Was invalid: {0}", oome);
+                }
+                catch (ArgumentException ae)
+                {
+                    logger.LogInformation("Was invalid: {0}", ae);
+                }
                 GC.Collect();
             }
             return text;
