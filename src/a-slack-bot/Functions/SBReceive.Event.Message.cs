@@ -78,7 +78,7 @@ namespace a_slack_bot.Functions
                         disableAutomaticIdGeneration: true);
                 }
                 await Task.WhenAll(new[] {
-                    messageCollector.AddAsync(new Slack.Events.Inner.message { channel = message.channel, text = SR.R.AllResponses[matchedKey].Single().Value }),
+                    messageCollector.AddAsync(new Slack.Events.Inner.message { channel = message.channel, thread_ts = message.thread_ts, text = SR.R.AllResponses[matchedKey].Single().Value }),
                     upsertWithCountIncreased()
                 });
                 return;
@@ -109,7 +109,7 @@ namespace a_slack_bot.Functions
                     response,
                     new RequestOptions { PartitionKey = pk },
                     disableAutomaticIdGeneration: true),
-                messageCollector.AddAsync(new Slack.Events.Inner.message{channel = message.channel, text = response.value})
+                messageCollector.AddAsync(new Slack.Events.Inner.message{channel = message.channel, thread_ts = message.thread_ts, text = response.value})
             });
         }
     }
