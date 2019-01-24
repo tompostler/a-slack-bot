@@ -131,7 +131,7 @@ namespace a_slack_bot
 
             public async Task Init(ILogger logger, DocumentClient docClient)
             {
-                var response = await httpClient.GetAsync("https://slack.com/api/conversations.list");
+                var response = await httpClient.GetAsync("https://slack.com/api/conversations.list?types=public_channel,private_channel,mpim,im");
                 var conversationResponse = await response.Content.ReadAsAsync<Slack.WebAPIResponse>();
                 if (!conversationResponse.ok)
                 {
@@ -144,7 +144,7 @@ namespace a_slack_bot
                 if (Settings.Debug)
                     logger.LogInformation("Display names: '{0}'", string.Join("','", this.conversations.Values.Select(u => u.name)));
 
-                var idToNameDict = this.conversations.Values.ToDictionary(u => u.id, u => u.name);
+                var idToNameDict = this.conversations.Values.ToDictionary(u => u.id, u => u.name ?? u.user);
                 this.IdToName = idToNameDict;
                 this.LowerNameToId = this.IdToName.ToDictionary(u => u.Value.ToLower(), u => u.Key);
                 this.MaxNameLength = this.IdToName.Values.Max(un => un.Length);

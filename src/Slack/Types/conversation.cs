@@ -136,5 +136,7 @@ namespace Slack.Types
         public int num_members { get; set; }
 
         public string locale { get; set; }
+
+        public string user { get; set; }
     }
 }

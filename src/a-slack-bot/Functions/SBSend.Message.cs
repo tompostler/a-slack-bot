@@ -64,7 +64,7 @@ namespace a_slack_bot.Functions
             ILogger logger)
         {
             await SR.Init(logger);
-            if (SR.C.IdToConversation.ContainsKey(messageData.channel) && SR.C.IdToConversation[messageData.channel].is_private)
+            if (SR.C.IdToConversation.ContainsKey(messageData.channel) && (SR.C.IdToConversation[messageData.channel].is_mpim || SR.C.IdToConversation[messageData.channel].is_im))
             {
                 logger.LogInformation("Message is in a private channel. Posting as regular message instead.");
                 messageData.user = null;
