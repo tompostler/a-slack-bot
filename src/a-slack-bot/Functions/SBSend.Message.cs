@@ -60,8 +60,18 @@ namespace a_slack_bot.Functions
         [FunctionName(nameof(SBSendMessageEphemeral))]
         public static async Task SBSendMessageEphemeral(
             [ServiceBusTrigger(C.SBQ.SendMessageEphemeral)]Slack.Events.Inner.message messageData,
+            [ServiceBus(C.SBQ.SendMessage)]IAsyncCollector<Slack.Events.Inner.message> messageCollector,
             ILogger logger)
         {
+            await SR.Init(logger);
+            if (SR.C.IdToConversation.ContainsKey(messageData.channel) && SR.C.IdToConversation[messageData.channel].is_private)
+            {
+                logger.LogInformation("Message is in a private channel. Posting as regular message instead.");
+                messageData.user = null;
+                await messageCollector.AddAsync(messageData);
+                return;
+            }
+
             var response = await httpClient.PostAsJsonAsync("https://slack.com/api/chat.postEphemeral", messageData);
             logger.LogInformation("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
 
