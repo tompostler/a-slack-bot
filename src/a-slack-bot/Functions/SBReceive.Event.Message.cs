@@ -28,7 +28,42 @@ namespace a_slack_bot.Functions
             var textDL = textD.ToLower();
             logger.LogInformation("{0}: {1}", nameof(textDL), textDL);
 
-            await SBReceiveEventMessageCustomResponse(message, textDL, docClient, messageCollector, logger);
+            try
+            {
+                await Task.WhenAll(new[] {
+                    SBReceiveEventMessageCustomResponse(message, textDL, docClient, messageCollector, logger),
+                    SBReceiveEventMessageRelativeDateTime(message, textDL, messageCollector, logger)
+                });
+            }
+            catch (Exception ex)
+            {
+                logger.LogError("Failed to do something, but don't want to try again: {0}", ex.ToString());
+            }
+        }
+
+        private static async Task SBReceiveEventMessageRelativeDateTime(
+            Slack.Events.Inner.message message,
+            string textDL,
+            IAsyncCollector<Slack.Events.Inner.message> messageCollector,
+            ILogger logger)
+        {
+            // Check for brackets, possibly implying a datetime to parse
+            int bis = textDL.IndexOf('[');
+            if (bis >= 0 && textDL.IndexOf(']', bis) >= 1)
+            {
+                int bie = textDL.IndexOf(']', bis);
+                while (bis >= 0 && bie >= 1)
+                {
+                    string dateToParse = textDL.Substring(bis + 1, bie - bis - 1);
+                    string parsed = RelativeDateTimeParsing.ToHumanReadble(dateToParse);
+                    if (!string.IsNullOrWhiteSpace(parsed))
+                        await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = message.channel, thread_ts = message.thread_ts, text = parsed });
+
+                    bis = textDL.IndexOf('[', bie);
+                    if (bis >= 0)
+                        bie = textDL.IndexOf(']', bis);
+                }
+            }
         }
 
         private static async Task SBReceiveEventMessageCustomResponse(
