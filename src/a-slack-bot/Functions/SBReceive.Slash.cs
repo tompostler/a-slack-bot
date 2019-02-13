@@ -204,6 +204,21 @@ remove `key` id                 Remove a single response.
                     break;
 
 
+                case "/password":
+                    if (slashData.text == "help")
+                        await messageCollector.AddAsync(slashData, "Generates a secure random password. You may optionally specify a length in (0,256); default is 32.");
+                    if (!int.TryParse(slashData.text, out int length) || length <= 0 || length > 256)
+                        length = 32;
+                    const string validChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~!@#$%^*()_+-=[]{}\\|;:'\",./? ";
+                    var psb = new StringBuilder(length);
+                    var bytes = new byte[length];
+                    SR.RNGCSP.GetBytes(bytes);
+                    foreach (var @byte in bytes)
+                        psb.Append(validChars[@byte % validChars.Length]);
+                    await messageCollector.AddAsync(slashData, $"`{psb.ToString()}`");
+                    break;
+
+
                 case "/spaces":
                     var text = slashData.text;
                     var sb = new StringBuilder(text.Length * 2);

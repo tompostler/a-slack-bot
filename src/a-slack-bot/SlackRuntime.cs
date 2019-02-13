@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -103,6 +104,11 @@ namespace a_slack_bot
         /// Shared static random.
         /// </summary>
         public static Random Rand { get; } = new Random();
+
+        /// <summary>
+        /// Shared static secure random.
+        /// </summary>
+        public static RNGCryptoServiceProvider RNGCSP { get; } = new RNGCryptoServiceProvider();
 
         /// <summary>
         /// Tokens

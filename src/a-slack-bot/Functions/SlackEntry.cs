@@ -62,7 +62,8 @@ namespace a_slack_bot.Functions
             "/balance",
             "/balances",
             "/blackjack",
-            "/guess"
+            "/guess",
+            "/password"
         };
         [FunctionName(nameof(ReceiveSlash))]
         public static async Task<HttpResponseMessage> ReceiveSlash(
