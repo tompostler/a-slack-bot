@@ -135,7 +135,9 @@ remove `key` id                 Remove a single response.
                     bals.Append("  ");
                     bals.Append("BALANCE".PadLeft(maxBalLength));
                     bals.AppendLine();
-                    foreach (var user in standings.bals)
+                    var sortedBals = standings.bals.Select(kvp => kvp).ToList();
+                    sortedBals.Sort((t1, t2) => t2.Value.CompareTo(t1.Value));
+                    foreach (var user in sortedBals)
                     {
                         if (SR.U.IdToName.ContainsKey(user.Key))
                             bals.Append($"{SR.U.IdToName[user.Key].PadRight(maxNamLength)}  ");
