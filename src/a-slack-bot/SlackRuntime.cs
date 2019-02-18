@@ -20,11 +20,14 @@ namespace a_slack_bot
     /// </summary>
     public static class SR
     {
-        private static HttpClient httpClient = new HttpClient();
+        private static HttpClient appHttpClient = new HttpClient();
+        private static HttpClient botHttpClient = new HttpClient();
         static SR()
         {
+            if (!string.IsNullOrWhiteSpace(Settings.SlackOauthToken))
+                appHttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Settings.SlackOauthToken);
             if (!string.IsNullOrWhiteSpace(Settings.SlackOauthBotToken))
-                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Settings.SlackOauthBotToken);
+                botHttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Settings.SlackOauthBotToken);
 
             // This would change to a setting on the DocumentClient in DocumentDB SDK 1.15+
             // This change _shouldn't_ break anything.
@@ -51,7 +54,9 @@ namespace a_slack_bot
         private static async Task InnerInit(ILogger logger)
         {
             C = new SlackConversations();
-            R = new SlackResponses();
+            E = new SlackEmojis();
+            Ra = new SlackReactions();
+            Re = new SlackResponses();
             T = new SlackTokens();
             U = new SlackUsers();
             W = new SlackWhitelist();
@@ -63,7 +68,9 @@ namespace a_slack_bot
             }
             await Task.WhenAll(new[] {
                 C.Init(logger, docClient),
-                R.Init(logger, docClient),
+                E.Init(logger),
+                Ra.Init(logger, docClient),
+                Re.Init(logger, docClient),
                 T.Init(logger, docClient),
                 U.Init(logger, docClient),
                 W.Init(logger, docClient),
@@ -93,12 +100,25 @@ namespace a_slack_bot
         }
         public static void Deit() => Initialized = false;
 
+        /// <summary>
+        /// Conversations
+        /// </summary>
         public static SlackConversations C { get; private set; }
+
+        /// <summary>
+        /// Emoji
+        /// </summary>
+        public static SlackEmojis E { get; private set; }
+
+        /// <summary>
+        /// Reactions
+        /// </summary>
+        public static SlackReactions Ra { get; private set; }
 
         /// <summary>
         /// Responses
         /// </summary>
-        public static SlackResponses R { get; private set; }
+        public static SlackResponses Re { get; private set; }
 
         /// <summary>
         /// Shared static random.
@@ -137,11 +157,11 @@ namespace a_slack_bot
 
             public async Task Init(ILogger logger, DocumentClient docClient)
             {
-                var response = await httpClient.GetAsync("https://slack.com/api/conversations.list?types=public_channel,private_channel,mpim,im");
+                var response = await botHttpClient.GetAsync("https://slack.com/api/conversations.list?types=public_channel,private_channel,mpim,im");
                 var conversationResponse = await response.Content.ReadAsAsync<Slack.WebAPIResponse>();
                 if (!conversationResponse.ok)
                 {
-                    logger.LogError("Not ok when trying to fetch users! Warning:'{0}' Error:'{1}'", conversationResponse.warning, conversationResponse.error);
+                    logger.LogError("Not ok when trying to fetch conversations! Warning:'{0}' Error:'{1}'", conversationResponse.warning, conversationResponse.error);
                     throw new Exception($"Bad {nameof(SlackConversations)}.{nameof(Init)}");
                 }
 
@@ -165,6 +185,51 @@ namespace a_slack_bot
                     converationMapDoc,
                     new RequestOptions { PartitionKey = converationMapDoc.PK },
                     disableAutomaticIdGeneration: true);
+            }
+        }
+
+        public class SlackEmojis
+        {
+            public HashSet<string> All { get; private set; }
+
+            public async Task Init(ILogger logger)
+            {
+                var response = await appHttpClient.GetAsync("https://slack.com/api/emoji.list");
+                var emojiResponse = await response.Content.ReadAsAsync<Slack.WebAPIResponse>();
+                if (!emojiResponse.ok)
+                {
+                    logger.LogError("Not ok when trying to fetch emoji! Warning:'{0}' Error:'{1}'", emojiResponse.warning, emojiResponse.error);
+                    throw new Exception($"Bad {nameof(SlackEmojis)}.{nameof(Init)}");
+                }
+
+                this.All = new HashSet<string>(emojiResponse.emoji.Keys.Union(a_slack_bot.C.Slack.SpaceSeparatedDefaultEmoji.Split(' ')));
+                logger.LogInformation("Populated {0} emojis, {1} of which are custom.", this.All.Count, emojiResponse.emoji.Count);
+            }
+        }
+
+        public class SlackReactions
+        {
+            public HashSet<string> Keys { get; private set; }
+            public Dictionary<string, Dictionary<string, string>> AllReactions { get; private set; }
+
+            public async Task Init(ILogger logger, DocumentClient docClient)
+            {
+                var docQuery = docClient.CreateDocumentQuery<Documents.Reaction>(
+                    a_slack_bot.C.CDB.DCUri,
+                    $"SELECT * FROM r WHERE STARTSWITH(r.{nameof(Documents.Base.doctype)}, '{nameof(Documents.Reaction)}|')",
+                    new FeedOptions { EnableCrossPartitionQuery = true })
+                    .AsDocumentQuery();
+
+                var reactions = await docQuery.GetAllResults(logger);
+
+                this.AllReactions = new Dictionary<string, Dictionary<string, string>>();
+                foreach (var reaction in reactions)
+                {
+                    if (!this.AllReactions.ContainsKey(reaction.key))
+                        this.AllReactions.Add(reaction.key, new Dictionary<string, string>());
+                    this.AllReactions[reaction.key].Add(reaction.Id, reaction.value);
+                }
+                this.Keys = new HashSet<string>(this.AllReactions.Keys);
             }
         }
 
@@ -224,7 +289,7 @@ namespace a_slack_bot
 
             public async Task Init(ILogger logger, DocumentClient docClient)
             {
-                var response = await httpClient.GetAsync("https://slack.com/api/users.list");
+                var response = await botHttpClient.GetAsync("https://slack.com/api/users.list");
                 var userResponse = await response.Content.ReadAsAsync<Slack.WebAPIResponse>();
                 if (!userResponse.ok)
                 {

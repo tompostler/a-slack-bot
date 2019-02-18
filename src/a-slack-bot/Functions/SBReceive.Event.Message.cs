@@ -3,6 +3,7 @@ using Microsoft.Azure.Documents.Client;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -13,6 +14,7 @@ namespace a_slack_bot.Functions
         public static async Task SBReceiveEventMessage(
             Slack.Events.Inner.message message,
             DocumentClient docClient,
+            IAsyncCollector<Messages.ServiceBusReactionAdd> reactionCollector,
             IAsyncCollector<Slack.Events.Inner.message> messageCollector,
             ILogger logger)
         {
@@ -31,7 +33,8 @@ namespace a_slack_bot.Functions
             try
             {
                 await Task.WhenAll(new[] {
-                    SBReceiveEventMessageCustomResponse(message, textDL, docClient, messageCollector, logger),
+                    SBReceiveEventMessageCustomReThing<Documents.Reaction>(message, textDL, SR.Ra.AllReactions, docClient, reactionCollector, messageCollector, logger),
+                    SBReceiveEventMessageCustomReThing<Documents.Response>(message, textDL, SR.Re.AllResponses, docClient, reactionCollector, messageCollector, logger),
                     SBReceiveEventMessageRelativeDateTime(message, textDL, messageCollector, logger)
                 });
             }
@@ -66,15 +69,16 @@ namespace a_slack_bot.Functions
             }
         }
 
-        private static async Task SBReceiveEventMessageCustomResponse(
+        private static async Task SBReceiveEventMessageCustomReThing<T>(
             Slack.Events.Inner.message message,
             string textDL,
+            Dictionary<string, Dictionary<string, string>> SrPiece,
             DocumentClient docClient,
+            IAsyncCollector<Messages.ServiceBusReactionAdd> reactionCollector,
             IAsyncCollector<Slack.Events.Inner.message> messageCollector,
             ILogger logger)
+            where T : Documents.ReThings, new()
         {
-            await SR.Init(logger);
-
             if (message.bot_id == SR.U.BotUser.profile.bot_id)
             {
                 logger.LogInformation("Detected message from self. Not responding.");
@@ -82,7 +86,7 @@ namespace a_slack_bot.Functions
             }
 
             string matchedKey = null;
-            foreach (var key in SR.R.Keys)
+            foreach (var key in SrPiece.Keys)
                 if (textDL.Contains(key))
                 {
                     matchedKey = key;
@@ -92,17 +96,17 @@ namespace a_slack_bot.Functions
             if (matchedKey == null)
                 return;
 
-            logger.LogInformation("Found a custom response match with key '{0}'", matchedKey);
-            var pk = new PartitionKey($"{nameof(Documents.Response)}|{matchedKey}");
+            logger.LogInformation("Found a custom {0} match with key '{1}'", typeof(T).Name, matchedKey);
+            var pk = new PartitionKey($"{typeof(T).Name}|{matchedKey}");
 
-            // Check for optimized case of only one response, but still get and upsert the doc to keep track of the count
+            // Check for optimized case of only one re*, but still get and upsert the doc to keep track of the count
             // TODO: Consider a sproc for this operation
-            if (SR.R.AllResponses[matchedKey].Count == 1)
+            if (SrPiece[matchedKey].Count == 1)
             {
                 async Task upsertWithCountIncreased()
                 {
-                    var sracr = SR.R.AllResponses[matchedKey].Single();
-                    var doc = (await docClient.ReadDocumentAsync<Documents.Response>(
+                    var sracr = SrPiece[matchedKey].Single();
+                    var doc = (await docClient.ReadDocumentAsync<T>(
                         UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, sracr.Key),
                         new RequestOptions { PartitionKey = pk })).Document;
                     doc.count++;
@@ -113,7 +117,7 @@ namespace a_slack_bot.Functions
                         disableAutomaticIdGeneration: true);
                 }
                 await Task.WhenAll(new[] {
-                    messageCollector.AddAsync(new Slack.Events.Inner.message { channel = message.channel, thread_ts = message.thread_ts, text = SR.R.AllResponses[matchedKey].Single().Value }),
+                    SBReceiveEventMessageCustomReThingSend<T>(message, SrPiece[matchedKey].Single().Value, reactionCollector, messageCollector),
                     upsertWithCountIncreased()
                 });
                 return;
@@ -122,30 +126,45 @@ namespace a_slack_bot.Functions
             // Get the minimum display count
             var count = docClient.CreateDocumentQuery<int>(
                 C.CDB.DCUri,
-                $"SELECT VALUE MIN(r.{nameof(Documents.Response.count)}) FROM r",
+                $"SELECT VALUE MIN(r.{nameof(Documents.ReThings.count)}) FROM r",
                 new FeedOptions { PartitionKey = pk })
                 .AsEnumerable().FirstOrDefault();
 
             // Pick one
-            var response = docClient.CreateDocumentQuery<Documents.Response>(
+            var rething = docClient.CreateDocumentQuery<T>(
                 C.CDB.DCUri,
-                $"SELECT TOP 1 * FROM r WHERE r.{nameof(Documents.Response.count)} = {count} ORDER BY r.{nameof(Documents.Response.random)}",
+                $"SELECT TOP 1 * FROM r WHERE r.{nameof(Documents.ReThings.count)} = {count} ORDER BY r.{nameof(Documents.ReThings.random)}",
                 new FeedOptions { PartitionKey = pk })
                 .AsEnumerable().FirstOrDefault();
 
-            response.count++;
-            response.random = Guid.NewGuid();
+            rething.count++;
+            rething.random = Guid.NewGuid();
 
             // Send the message and upsert the used ids doc
             await Task.WhenAll(new[]
             {
                 docClient.UpsertDocumentAsync(
                     C.CDB.DCUri,
-                    response,
+                    rething,
                     new RequestOptions { PartitionKey = pk },
                     disableAutomaticIdGeneration: true),
-                messageCollector.AddAsync(new Slack.Events.Inner.message{channel = message.channel, thread_ts = message.thread_ts, text = response.value})
+                SBReceiveEventMessageCustomReThingSend<T>(message, rething.value, reactionCollector, messageCollector)
             });
+        }
+
+        private static Task SBReceiveEventMessageCustomReThingSend<T>(
+            Slack.Events.Inner.message message,
+            string value,
+            IAsyncCollector<Messages.ServiceBusReactionAdd> reactionCollector,
+            IAsyncCollector<Slack.Events.Inner.message> messageCollector)
+            where T : Documents.ReThings, new()
+        {
+            if (typeof(T) == typeof(Documents.Reaction))
+                return reactionCollector.AddAsync(new Messages.ServiceBusReactionAdd { name = value, channel = message.channel, timestamp = message.thread_ts });
+            else if (typeof(T) == typeof(Documents.Response))
+                return messageCollector.AddAsync(new Slack.Events.Inner.message { channel = message.channel, thread_ts = message.thread_ts, text = value });
+            else
+                return Task.CompletedTask;
         }
     }
 }

@@ -16,6 +16,7 @@
         "input-event",
         "input-slash",
         "input-thread",
+        "send-reaction",
         "send-message",
         "send-message-ephemeral"
       ]

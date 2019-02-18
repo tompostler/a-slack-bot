@@ -13,6 +13,7 @@ namespace a_slack_bot.Functions
             [ServiceBusTrigger(C.SBQ.InputEvent)]Messages.ServiceBusInputEvent eventMessage,
             [DocumentDB(ConnectionStringSetting = C.CDB.CSS)]DocumentClient docClient,
             [DocumentDB(C.CDB.DN, C.CDB.CN, ConnectionStringSetting = C.CDB.CSS)]IAsyncCollector<Documents.Event> documentCollector,
+            [ServiceBus(C.SBQ.SendReaction)]IAsyncCollector<Messages.ServiceBusReactionAdd> reactionCollector,
             [ServiceBus(C.SBQ.SendMessage)]IAsyncCollector<Slack.Events.Inner.message> messageCollector,
             [ServiceBus(C.SBQ.InputThread)]IAsyncCollector<Slack.Events.Inner.message> messageThreadCollector,
             ILogger logger)
@@ -38,7 +39,7 @@ namespace a_slack_bot.Functions
                 case Slack.Events.Inner.message message:
                     if (!string.IsNullOrWhiteSpace(message.thread_ts))
                         await messageThreadCollector.AddAsync(message);
-                    await SBReceiveEventMessage(message, docClient, messageCollector, logger);
+                    await SBReceiveEventMessage(message, docClient, reactionCollector, messageCollector, logger);
                     break;
 
                 default:

@@ -54,5 +54,10 @@ namespace Slack
         /// chat.postMessage
         /// </summary>
         public Events.Inner.message message { get; set; }
+
+        /// <summary>
+        /// emoji.list
+        /// </summary>
+        public Dictionary<string, string> emoji { get; set; }
     }
 }
