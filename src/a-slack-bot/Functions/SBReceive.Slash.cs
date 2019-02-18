@@ -321,6 +321,7 @@ remove `key` id                 Remove a single response.
 
             var instruction = slashData.text.Split(' ')[0];
             var key = slashData.text.Split('`')[1].Trim().ToLowerInvariant();
+
             Func<string, string> trimmer;
             if (typeof(T) == typeof(Documents.Reaction))
                 trimmer = (string str) => str.Trim().Trim(':');
@@ -328,11 +329,20 @@ remove `key` id                 Remove a single response.
                 trimmer = (string str) => str.Trim();
             var value = SR.MessageSlackEncode(trimmer(slashData.text.Substring(slashData.text.IndexOf('`', slashData.text.IndexOf('`') + 1) + 1)));
 
+            Func<string, bool> valid = (str) => true;
+            if (typeof(T) == typeof(Documents.Reaction))
+                valid = (string str) => SR.E.All.Contains(value);
+
             switch (instruction)
             {
                 case "add":
                     logger.LogInformation("Attempting to add new custom {0}...", typeof(T).Name);
                     value = await ReplaceImageURIs(key, value, logger);
+                    if (!valid(value))
+                    {
+                        await ephemeralMessageCollector.AddEAsync(slashData, $"Not valid: `{key}` {value}");
+                        break;
+                    }
                     var resp = new T
                     {
                         Id = Guid.NewGuid().ToString().Split('-')[0],
@@ -354,6 +364,11 @@ remove `key` id                 Remove a single response.
                     foreach (var valueb in value.Split(new string[] { "||" }, StringSplitOptions.RemoveEmptyEntries).Select(_ => trimmer(_)))
                     {
                         var valuec = await ReplaceImageURIs(key, valueb, logger);
+                        if (!valid(valuec))
+                        {
+                            await ephemeralMessageCollector.AddEAsync(slashData, $"Not valid: `{key}` {valuec}");
+                            break;
+                        }
                         resp = new T
                         {
                             Id = Guid.NewGuid().ToString().Split('-')[0],
