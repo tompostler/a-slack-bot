@@ -1,6 +1,6 @@
 ﻿namespace a_slack_bot.Messages
 {
-    public sealed class ServiceBusBlackjack
+    public sealed class Blackjack
     {
         public BlackjackMessageType type { get; set; }
         public string channel_id { get; set; }

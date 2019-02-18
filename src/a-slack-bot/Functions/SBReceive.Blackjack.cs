@@ -17,7 +17,7 @@ namespace a_slack_bot.Functions
     {
         [FunctionName(nameof(SBReceiveBlackjack))]
         public static async Task SBReceiveBlackjack(
-            [ServiceBusTrigger(C.SBQ.Blackjack)]Messages.ServiceBusBlackjack inMessage,
+            [ServiceBusTrigger(C.SBQ.Blackjack)]Messages.Blackjack inMessage,
             [ServiceBus(C.SBQ.SendMessage)]IAsyncCollector<BrokeredMessage> messageCollector,
             [ServiceBus(C.SBQ.Blackjack)]IAsyncCollector<BrokeredMessage> messageStateCollector,
             [DocumentDB(ConnectionStringSetting = C.CDB.CSS)]DocumentClient docClient,
@@ -115,7 +115,7 @@ namespace a_slack_bot.Functions
                                 gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.BalanceChange, user_id = chuckleHead, amount = -loss });
                                 gameDoc = await UpsertGameDocument(docClient, gameDoc);
                                 await messageCollector.AddAsync(inMessage, $"Betting timed out. Dropped <@{chuckleHead}> who loses ¤{loss:#,#} ({losspct:p}) as a penalty for not betting.");
-                                var chuckleMessage = new BrokeredMessage(new Messages.ServiceBusBlackjack { type = Messages.BlackjackMessageType.UpdateBalance, channel_id = inMessage.channel_id, thread_ts = inMessage.thread_ts, user_id = chuckleHead, amount = -loss })
+                                var chuckleMessage = new BrokeredMessage(new Messages.Blackjack { type = Messages.BlackjackMessageType.UpdateBalance, channel_id = inMessage.channel_id, thread_ts = inMessage.thread_ts, user_id = chuckleHead, amount = -loss })
                                 {
                                     // Schedule every 2s to give cosmos db a chance
                                     ScheduledEnqueueTimeUtc = DateTime.UtcNow.AddSeconds(2 * i)
@@ -136,7 +136,7 @@ namespace a_slack_bot.Functions
                     if (gameDoc.state == Documents.BlackjackGameState.Running && gameDoc.user_active < gameDoc.users.Count && gameDoc.users[gameDoc.user_active] == inMessage.user_id)
                     {
                         await AddAsync(messageCollector, inMessage, $"<@{inMessage.user_id}> loses ¤{gameDoc.bets[inMessage.user_id] * 2:#,#} for not completing their game in time.");
-                        await messageStateCollector.AddAsync(new BrokeredMessage(new Messages.ServiceBusBlackjack { type = Messages.BlackjackMessageType.UpdateBalance, channel_id = inMessage.channel_id, thread_ts = inMessage.thread_ts, user_id = inMessage.user_id, amount = -(gameDoc.bets[inMessage.user_id] * 2) }));
+                        await messageStateCollector.AddAsync(new BrokeredMessage(new Messages.Blackjack { type = Messages.BlackjackMessageType.UpdateBalance, channel_id = inMessage.channel_id, thread_ts = inMessage.thread_ts, user_id = inMessage.user_id, amount = -(gameDoc.bets[inMessage.user_id] * 2) }));
                         gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.BalanceChange, user_id = inMessage.user_id, amount = -(gameDoc.bets[inMessage.user_id] * 2) });
                         gameDoc.users.Remove(inMessage.user_id);
                         gameDoc.user_active--;
@@ -166,7 +166,7 @@ namespace a_slack_bot.Functions
                     await messageCollector.AddAsync(inMessage, "Collecting bets! Pays 1:1 or 3:2 on blackjack. Timing out in 1 minute.");
                     await messageStateCollector.AddAsync(
                         new BrokeredMessage(
-                            new Messages.ServiceBusBlackjack
+                            new Messages.Blackjack
                             {
                                 channel_id = inMessage.channel_id,
                                 thread_ts = inMessage.thread_ts,
@@ -226,7 +226,7 @@ namespace a_slack_bot.Functions
                         goto case Messages.BlackjackMessageType.ToFinish;
 
                     // Queue up first player
-                    await messageStateCollector.AddAsync(new BrokeredMessage(new Messages.ServiceBusBlackjack
+                    await messageStateCollector.AddAsync(new BrokeredMessage(new Messages.Blackjack
                     {
                         type = Messages.BlackjackMessageType.GameAction,
                         channel_id = inMessage.channel_id,
@@ -258,7 +258,7 @@ namespace a_slack_bot.Functions
                             sb.AppendLine("Pick: `hit` `stand` `double` `surrender`");
                             await messageStateCollector.AddAsync(
                                 new BrokeredMessage(
-                                    new Messages.ServiceBusBlackjack
+                                    new Messages.Blackjack
                                     {
                                         type = Messages.BlackjackMessageType.Timer_Running,
                                         channel_id = inMessage.channel_id,
@@ -386,7 +386,7 @@ namespace a_slack_bot.Functions
                             gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.BalanceChange, user_id = gameDoc.users[i], amount = -amount });
                             await messageStateCollector.AddAsync(
                                 new BrokeredMessage(
-                                    new Messages.ServiceBusBlackjack
+                                    new Messages.Blackjack
                                     {
                                         type = Messages.BlackjackMessageType.UpdateBalance,
                                         channel_id = inMessage.channel_id,
@@ -442,7 +442,7 @@ namespace a_slack_bot.Functions
                             gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.BalanceChange, user_id = gameDoc.users[i], amount = amount });
                             await messageStateCollector.AddAsync(
                                 new BrokeredMessage(
-                                    new Messages.ServiceBusBlackjack
+                                    new Messages.Blackjack
                                     {
                                         type = Messages.BlackjackMessageType.UpdateBalance,
                                         channel_id = inMessage.channel_id,
@@ -469,12 +469,12 @@ namespace a_slack_bot.Functions
             }
         }
 
-        private static async Task QueueNextPlayer(Messages.ServiceBusBlackjack inMessage, Documents.Blackjack gameDoc, IAsyncCollector<BrokeredMessage> messageStateCollector)
+        private static async Task QueueNextPlayer(Messages.Blackjack inMessage, Documents.Blackjack gameDoc, IAsyncCollector<BrokeredMessage> messageStateCollector)
         {
             if (++gameDoc.user_active >= gameDoc.users.Count)
                 await messageStateCollector.AddAsync(
                     new BrokeredMessage(
-                        new Messages.ServiceBusBlackjack
+                        new Messages.Blackjack
                         {
                             type = Messages.BlackjackMessageType.DealerPlay,
                             channel_id = inMessage.channel_id,
@@ -486,7 +486,7 @@ namespace a_slack_bot.Functions
             else
                 await messageStateCollector.AddAsync(
                     new BrokeredMessage(
-                        new Messages.ServiceBusBlackjack
+                        new Messages.Blackjack
                         {
                             type = Messages.BlackjackMessageType.GameAction,
                             channel_id = inMessage.channel_id,
@@ -516,7 +516,7 @@ namespace a_slack_bot.Functions
                 disableAutomaticIdGeneration: true)).Resource;
         }
 
-        private static Task ShowGameState(IAsyncCollector<BrokeredMessage> messageCollector, Messages.ServiceBusBlackjack inMessage, Documents.Blackjack gameDoc, bool showDealer = false)
+        private static Task ShowGameState(IAsyncCollector<BrokeredMessage> messageCollector, Messages.Blackjack inMessage, Documents.Blackjack gameDoc, bool showDealer = false)
         {
             var sb = new StringBuilder();
             sb.AppendLine("Dealt cards:");

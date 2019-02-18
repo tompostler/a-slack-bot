@@ -3,7 +3,7 @@
     /// <summary>
     /// https://api.slack.com/methods/reactions.add
     /// </summary>
-    public sealed class ServiceBusReactionAdd
+    public sealed class ReactionAdd
     {
         /// <summary>
         /// Reaction (emoji) name.

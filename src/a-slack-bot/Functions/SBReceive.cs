@@ -29,7 +29,7 @@ namespace a_slack_bot.Functions
             await messageCollector.FlushAsync();
         }
 
-        private static Task AddAsync(this IAsyncCollector<BrokeredMessage> messageCollector, Messages.ServiceBusBlackjack metadata, string text, bool reply_broadcast = false)
+        private static Task AddAsync(this IAsyncCollector<BrokeredMessage> messageCollector, Messages.Blackjack metadata, string text, bool reply_broadcast = false)
         {
             return messageCollector.AddAsync(
                 new Slack.Events.Inner.message

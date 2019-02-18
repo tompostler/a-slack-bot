@@ -37,7 +37,7 @@ namespace a_slack_bot.Functions
 
         [FunctionName(nameof(SBReceiveSlash))]
         public static async Task SBReceiveSlash(
-            [ServiceBusTrigger(C.SBQ.InputSlash)]Messages.ServiceBusInputSlash slashMessage,
+            [ServiceBusTrigger(C.SBQ.InputSlash)]Messages.InputSlash slashMessage,
             [DocumentDB(ConnectionStringSetting = C.CDB.CSS)]DocumentClient docClient,
             [ServiceBus(C.SBQ.Blackjack)]IAsyncCollector<BrokeredMessage> blackjackMessageCollector,
             [ServiceBus(C.SBQ.SendMessage)]IAsyncCollector<BrokeredMessage> messageCollector,
@@ -189,7 +189,7 @@ remove `key` id                 Remove a single response.
                         await messageCollector.AddAsync(new Slack.Events.Inner.message { channel = threadStart.channel, text = "Type `join` to join or `start` when ready to play. Starting in 1 minute.", thread_ts = threadStart.message.ts });
                         await blackjackMessageCollector.AddAsync(
                             new BrokeredMessage(
-                                new Messages.ServiceBusBlackjack
+                                new Messages.Blackjack
                                 {
                                     channel_id = slashData.channel_id,
                                     thread_ts = threadStart.message.ts,

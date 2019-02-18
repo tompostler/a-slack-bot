@@ -13,7 +13,7 @@ namespace a_slack_bot.Functions
         [FunctionName(nameof(SBReceiveThread))]
         public static async Task SBReceiveThread(
             [ServiceBusTrigger(C.SBQ.InputThread)]Slack.Events.Inner.message eventMessage,
-            [ServiceBus(C.SBQ.Blackjack)]IAsyncCollector<Messages.ServiceBusBlackjack> messageCollector,
+            [ServiceBus(C.SBQ.Blackjack)]IAsyncCollector<Messages.Blackjack> messageCollector,
             [DocumentDB(ConnectionStringSetting = C.CDB.CSS)]DocumentClient docClient,
             ILogger logger)
         {

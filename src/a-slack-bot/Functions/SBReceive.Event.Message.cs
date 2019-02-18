@@ -14,7 +14,7 @@ namespace a_slack_bot.Functions
         public static async Task SBReceiveEventMessage(
             Slack.Events.Inner.message message,
             DocumentClient docClient,
-            IAsyncCollector<Messages.ServiceBusReactionAdd> reactionCollector,
+            IAsyncCollector<Messages.ReactionAdd> reactionCollector,
             IAsyncCollector<Slack.Events.Inner.message> messageCollector,
             ILogger logger)
         {
@@ -74,7 +74,7 @@ namespace a_slack_bot.Functions
             string textDL,
             Dictionary<string, Dictionary<string, string>> SrPiece,
             DocumentClient docClient,
-            IAsyncCollector<Messages.ServiceBusReactionAdd> reactionCollector,
+            IAsyncCollector<Messages.ReactionAdd> reactionCollector,
             IAsyncCollector<Slack.Events.Inner.message> messageCollector,
             ILogger logger)
             where T : Documents.ReThings, new()
@@ -155,12 +155,12 @@ namespace a_slack_bot.Functions
         private static Task SBReceiveEventMessageCustomReThingSend<T>(
             Slack.Events.Inner.message message,
             string value,
-            IAsyncCollector<Messages.ServiceBusReactionAdd> reactionCollector,
+            IAsyncCollector<Messages.ReactionAdd> reactionCollector,
             IAsyncCollector<Slack.Events.Inner.message> messageCollector)
             where T : Documents.ReThings, new()
         {
             if (typeof(T) == typeof(Documents.Reaction))
-                return reactionCollector.AddAsync(new Messages.ServiceBusReactionAdd { name = value, channel = message.channel, timestamp = message.ts });
+                return reactionCollector.AddAsync(new Messages.ReactionAdd { name = value, channel = message.channel, timestamp = message.ts });
             else if (typeof(T) == typeof(Documents.Response))
                 return messageCollector.AddAsync(new Slack.Events.Inner.message { channel = message.channel, thread_ts = message.thread_ts, text = value });
             else

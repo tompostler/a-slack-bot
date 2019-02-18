@@ -42,7 +42,7 @@ namespace a_slack_bot.Functions
             if (outerEvent is Slack.Events.Outer.event_callback)
             {
                 var @event = ((Slack.Events.Outer.event_callback)outerEvent).@event;
-                var stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new ServiceBusInputEvent { @event = @event })), writable: false);
+                var stream = new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new InputEvent { @event = @event })), writable: false);
                 var msg = new BrokeredMessage(stream, ownsStream: true)
                 {
                     ContentType = "application/json",
@@ -68,7 +68,7 @@ namespace a_slack_bot.Functions
         [FunctionName(nameof(ReceiveSlash))]
         public static async Task<HttpResponseMessage> ReceiveSlash(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = "receive/slash")]HttpRequestMessage req,
-            [ServiceBus(C.SBQ.InputSlash, AccessRights.Manage)]IAsyncCollector<ServiceBusInputSlash> messageCollector,
+            [ServiceBus(C.SBQ.InputSlash, AccessRights.Manage)]IAsyncCollector<InputSlash> messageCollector,
             ILogger logger)
         {
             if (Settings.Debug)
@@ -84,7 +84,7 @@ namespace a_slack_bot.Functions
 
             // Send it off to be processed
             logger.LogInformation("Sending slash command into the queue.");
-            await messageCollector.AddAsync(new ServiceBusInputSlash
+            await messageCollector.AddAsync(new InputSlash
             {
                 slashData = slashData
             });

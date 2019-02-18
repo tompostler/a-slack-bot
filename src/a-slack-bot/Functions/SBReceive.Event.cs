@@ -10,10 +10,10 @@ namespace a_slack_bot.Functions
     {
         [FunctionName(nameof(SBReceiveEvent))]
         public static async Task SBReceiveEvent(
-            [ServiceBusTrigger(C.SBQ.InputEvent)]Messages.ServiceBusInputEvent eventMessage,
+            [ServiceBusTrigger(C.SBQ.InputEvent)]Messages.InputEvent eventMessage,
             [DocumentDB(ConnectionStringSetting = C.CDB.CSS)]DocumentClient docClient,
             [DocumentDB(C.CDB.DN, C.CDB.CN, ConnectionStringSetting = C.CDB.CSS)]IAsyncCollector<Documents.Event> documentCollector,
-            [ServiceBus(C.SBQ.SendReaction)]IAsyncCollector<Messages.ServiceBusReactionAdd> reactionCollector,
+            [ServiceBus(C.SBQ.SendReaction)]IAsyncCollector<Messages.ReactionAdd> reactionCollector,
             [ServiceBus(C.SBQ.SendMessage)]IAsyncCollector<Slack.Events.Inner.message> messageCollector,
             [ServiceBus(C.SBQ.InputThread)]IAsyncCollector<Slack.Events.Inner.message> messageThreadCollector,
             ILogger logger)

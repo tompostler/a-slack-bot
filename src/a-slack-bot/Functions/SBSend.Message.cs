@@ -21,7 +21,7 @@ namespace a_slack_bot.Functions
 
         [FunctionName(nameof(SBSendReaction))]
         public static async Task SBSendReaction(
-            [ServiceBusTrigger(C.SBQ.SendReaction)]Messages.ServiceBusReactionAdd messageData,
+            [ServiceBusTrigger(C.SBQ.SendReaction)]Messages.ReactionAdd messageData,
             [DocumentDB(ConnectionStringSetting = C.CDB.CSS)]DocumentClient docClient,
             ILogger logger)
         {
