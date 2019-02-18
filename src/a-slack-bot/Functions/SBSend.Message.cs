@@ -2,6 +2,7 @@
 using Microsoft.Azure.Documents.Client;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -24,6 +25,9 @@ namespace a_slack_bot.Functions
             [DocumentDB(ConnectionStringSetting = C.CDB.CSS)]DocumentClient docClient,
             ILogger logger)
         {
+            if (Settings.Debug)
+                logger.LogInformation(JsonConvert.SerializeObject(messageData));
+
             var response = await httpClient.PostAsJsonAsync("https://slack.com/api/reactions.add", messageData);
             logger.LogInformation("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
 
@@ -56,6 +60,9 @@ namespace a_slack_bot.Functions
             [ServiceBusTrigger(C.SBQ.SendMessage)]Slack.Events.Inner.message messageData,
             ILogger logger)
         {
+            if (Settings.Debug)
+                logger.LogInformation(JsonConvert.SerializeObject(messageData));
+
             return SendMessage(messageData, logger);
         }
 
