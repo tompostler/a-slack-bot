@@ -101,7 +101,7 @@ namespace a_slack_bot
                 });
             logger.LogInformation("Col {0}: {1}", a_slack_bot.C.CDB.CN, colResponse.StatusCode);
 
-            var sprocResponse = await docClient.UpsertStoredProcedureAsync(
+            var sprocResponse = await docClient.CreateStoredProcedureAsync(
                 colResponse.Resource.SelfLink,
                 new StoredProcedure
                 {
