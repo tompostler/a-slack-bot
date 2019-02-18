@@ -16,6 +16,14 @@ namespace a_slack_bot
             public static readonly Uri DCUri = UriFactory.CreateDocumentCollectionUri(DN, CN);
 
             public const string CSS = nameof(Settings.CosmosDBConnection);
+
+            /// <summary>
+            /// Stored Procedures
+            /// </summary>
+            public static class SP
+            {
+                public const string rething_count = nameof(rething_count);
+            }
         }
 
         /// <summary>

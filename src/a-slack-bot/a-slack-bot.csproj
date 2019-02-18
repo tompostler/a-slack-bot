@@ -20,6 +20,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="StoredProcs\rething_count.js" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="GitVersionTask" Version="4.0.0-beta0014" />
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.DocumentDB" Version="1.2.0" />
     <PackageReference Include="Microsoft.Azure.WebJobs.ServiceBus" Version="2.2.0" />

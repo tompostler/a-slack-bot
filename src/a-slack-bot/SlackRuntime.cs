@@ -5,9 +5,11 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -83,6 +85,7 @@ namespace a_slack_bot
         {
             var dbResponse = await docClient.CreateDatabaseIfNotExistsAsync(new Database { Id = a_slack_bot.C.CDB.DN }, new RequestOptions { OfferThroughput = 400 });
             logger.LogInformation("DB: {0}", dbResponse.StatusCode);
+
             var colResponse = await docClient.CreateDocumentCollectionIfNotExistsAsync(
                 dbResponse.Resource.SelfLink,
                 new DocumentCollection
@@ -97,6 +100,15 @@ namespace a_slack_bot
                     }
                 });
             logger.LogInformation("Col {0}: {1}", a_slack_bot.C.CDB.CN, colResponse.StatusCode);
+
+            var sprocResponse = await docClient.UpsertStoredProcedureAsync(
+                colResponse.Resource.SelfLink,
+                new StoredProcedure
+                {
+                    Id = a_slack_bot.C.CDB.SP.rething_count,
+                    Body = await new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($"{nameof(a_slack_bot)}.StoredProcs.{a_slack_bot.C.CDB.SP.rething_count}.js")).ReadToEndAsync()
+                });
+            logger.LogInformation("Sproc {0}: {1}", a_slack_bot.C.CDB.SP.rething_count, colResponse.StatusCode);
         }
         public static void Deit() => Initialized = false;
 
