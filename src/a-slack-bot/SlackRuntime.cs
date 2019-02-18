@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
@@ -101,14 +102,29 @@ namespace a_slack_bot
                 });
             logger.LogInformation("Col {0}: {1}", a_slack_bot.C.CDB.CN, colResponse.StatusCode);
 
-            var sprocResponse = await docClient.CreateStoredProcedureAsync(
-                colResponse.Resource.SelfLink,
-                new StoredProcedure
+            try
+            {
+                await docClient.ReadStoredProcedureAsync(UriFactory.CreateStoredProcedureUri(a_slack_bot.C.CDB.DN, a_slack_bot.C.CDB.CN, a_slack_bot.C.CDB.SP.rething_count));
+            }
+            catch (DocumentClientException dce) when (dce.StatusCode == HttpStatusCode.NotFound)
+            {
+                logger.LogInformation("Sproc {0}: {1}", a_slack_bot.C.CDB.SP.rething_count, dce);
+                try
                 {
-                    Id = a_slack_bot.C.CDB.SP.rething_count,
-                    Body = await new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($"{nameof(a_slack_bot)}.StoredProcs.{a_slack_bot.C.CDB.SP.rething_count}.js")).ReadToEndAsync()
-                });
-            logger.LogInformation("Sproc {0}: {1}", a_slack_bot.C.CDB.SP.rething_count, colResponse.StatusCode);
+                    var sprocResponse = await docClient.CreateStoredProcedureAsync(
+                        colResponse.Resource.SelfLink,
+                        new StoredProcedure
+                        {
+                            Id = a_slack_bot.C.CDB.SP.rething_count,
+                            Body = await new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($"{nameof(a_slack_bot)}.StoredProcs.{a_slack_bot.C.CDB.SP.rething_count}.js")).ReadToEndAsync()
+                        });
+                    logger.LogInformation("Sproc {0}: {1}", a_slack_bot.C.CDB.SP.rething_count, sprocResponse.StatusCode);
+                }
+                catch (DocumentClientException dce2) when (dce2.StatusCode == HttpStatusCode.Conflict)
+                {
+                    logger.LogWarning("Conflict on sproc creation: {0}", dce2);
+                }
+            }
         }
         public static void Deit() => Initialized = false;
 
