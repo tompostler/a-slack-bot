@@ -160,7 +160,7 @@ namespace a_slack_bot.Functions
             where T : Documents.ReThings, new()
         {
             if (typeof(T) == typeof(Documents.Reaction))
-                return reactionCollector.AddAsync(new Messages.ServiceBusReactionAdd { name = value, channel = message.channel, timestamp = message.thread_ts });
+                return reactionCollector.AddAsync(new Messages.ServiceBusReactionAdd { name = value, channel = message.channel, timestamp = message.ts });
             else if (typeof(T) == typeof(Documents.Response))
                 return messageCollector.AddAsync(new Slack.Events.Inner.message { channel = message.channel, thread_ts = message.thread_ts, text = value });
             else
