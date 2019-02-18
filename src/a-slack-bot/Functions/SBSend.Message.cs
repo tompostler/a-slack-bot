@@ -1,4 +1,6 @@
-﻿using Microsoft.Azure.WebJobs;
+﻿using Microsoft.Azure.Documents;
+using Microsoft.Azure.Documents.Client;
+using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Net.Http;
@@ -14,6 +16,39 @@ namespace a_slack_bot.Functions
         {
             if (!string.IsNullOrWhiteSpace(Settings.SlackOauthBotToken))
                 httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Settings.SlackOauthBotToken);
+        }
+
+        [FunctionName(nameof(SBSendReaction))]
+        public static async Task SBSendReaction(
+            [ServiceBusTrigger(C.SBQ.SendReaction)]Messages.ServiceBusReactionAdd messageData,
+            [DocumentDB(ConnectionStringSetting = C.CDB.CSS)]DocumentClient docClient,
+            ILogger logger)
+        {
+            var response = await httpClient.PostAsJsonAsync("https://slack.com/api/reactions.add", messageData);
+            logger.LogInformation("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
+
+            var responseContent = await response.Content.ReadAsAsync<Slack.WebAPIResponse>();
+            if (!responseContent.ok)
+                switch (responseContent.error)
+                {
+                    // These are fine in this scenario
+                    case "already_reacted":
+                    case "too_many_emoji":
+                    case "too_many_reactions":
+                        break;
+
+                    case "invalid_name":
+                        // TODO: Purge from cosmos
+                        logger.LogError("invalid_name: {0}", messageData.name);
+                        break;
+
+                    case "app_rate_limited":
+                        await Task.Delay(response.Headers.RetryAfter.Delta ?? TimeSpan.FromSeconds(5));
+                        throw new Exception("Retry-After; requeue with ServiceBus");
+
+                    default:
+                        throw new Exception("Slack API Error: " + responseContent.error);
+                }
         }
 
         [FunctionName(nameof(SBSendMessage))]
