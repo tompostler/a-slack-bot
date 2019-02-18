@@ -73,6 +73,22 @@ namespace a_slack_bot.Functions
 
             switch (slashData.command)
             {
+                case "/asb-reaction":
+                    if (slashData.text == "help" || string.IsNullOrWhiteSpace(slashData.text))
+                        await ephemeralMessageCollector.AddEAsync(
+                            slashData,
+                            "Add, list, or remove custom message reactions. Syntax:" + @"```
+add `key` :emoji:           Add a single reaction.
+addb `key` :emoji:||:emoji: Add reaction for a key in bulk, '||'-separated.
+list                        List all keys.
+list `key`                  List all reactions for a key.
+remove `key` id             Remove a single reaction.
+```");
+                    else
+                        await HandleAsbReThingCommand<Documents.Reaction>(slashData, docClient, ephemeralMessageCollector, logger);
+                    break;
+
+
                 case "/asb-response":
                     if (slashData.text == "help" || string.IsNullOrWhiteSpace(slashData.text))
                         await ephemeralMessageCollector.AddEAsync(
@@ -85,7 +101,7 @@ list `key`                      List all responses for a key.
 remove `key` id                 Remove a single response.
 ```");
                     else
-                        await HandleAsbResponseCommand(slashData, docClient, ephemeralMessageCollector, logger);
+                        await HandleAsbReThingCommand<Documents.Response>(slashData, docClient, ephemeralMessageCollector, logger);
                     break;
 
 
@@ -268,19 +284,20 @@ remove `key` id                 Remove a single response.
             }
         }
 
-        private static async Task HandleAsbResponseCommand(
+        private static async Task HandleAsbReThingCommand<T>(
             Slack.Slash slashData,
             DocumentClient docClient,
             IAsyncCollector<BrokeredMessage> ephemeralMessageCollector,
             ILogger logger)
+            where T : Documents.ReThings, new()
         {
-            logger.LogInformation(nameof(HandleAsbResponseCommand));
+            logger.LogInformation(nameof(HandleAsbReThingCommand));
             if (slashData.text == "list")
             {
-                logger.LogInformation("Retrieving list of all custom response keys...");
+                logger.LogInformation("Retrieving list of all custom {0} keys...", typeof(T).Name);
                 var query = docClient.CreateDocumentQuery<string>(
                     C.CDB.DCUri,
-                    $"SELECT DISTINCT VALUE r.{nameof(Documents.Response.key)} FROM r WHERE STARTSWITH(r.{nameof(Documents.Base.doctype)}, '{nameof(Documents.Response)}|')",
+                    $"SELECT DISTINCT VALUE r.{nameof(Documents.ReThings.key)} FROM r WHERE STARTSWITH(r.{nameof(Documents.Base.doctype)}, '{typeof(T).Name}|')",
                     new FeedOptions { EnableCrossPartitionQuery = true })
                     .AsDocumentQuery();
                 var results = (await query.GetAllResults(logger)).ToList();
@@ -304,14 +321,19 @@ remove `key` id                 Remove a single response.
 
             var instruction = slashData.text.Split(' ')[0];
             var key = slashData.text.Split('`')[1].Trim().ToLowerInvariant();
-            var value = SR.MessageSlackEncode(slashData.text.Substring(slashData.text.IndexOf('`', slashData.text.IndexOf('`') + 1) + 1).Trim());
+            Func<string, string> trimmer;
+            if (typeof(T) == typeof(Documents.Reaction))
+                trimmer = (string str) => str.Trim().Trim(':');
+            else
+                trimmer = (string str) => str.Trim();
+            var value = SR.MessageSlackEncode(trimmer(slashData.text.Substring(slashData.text.IndexOf('`', slashData.text.IndexOf('`') + 1) + 1)));
 
             switch (instruction)
             {
                 case "add":
-                    logger.LogInformation("Attempting to add new custom response...");
+                    logger.LogInformation("Attempting to add new custom {0}...", typeof(T).Name);
                     value = await ReplaceImageURIs(key, value, logger);
-                    var resp = new Documents.Response
+                    var resp = new T
                     {
                         Id = Guid.NewGuid().ToString().Split('-')[0],
                         key = key,
@@ -328,11 +350,11 @@ remove `key` id                 Remove a single response.
                     break;
 
                 case "addb":
-                    logger.LogInformation("Attempting to bulk add new custom responses...");
-                    foreach (var valueb in value.Split(new string[] { "||" }, StringSplitOptions.RemoveEmptyEntries).Select(_ => _.Trim()))
+                    logger.LogInformation("Attempting to bulk add new custom {0}...", typeof(T).Name);
+                    foreach (var valueb in value.Split(new string[] { "||" }, StringSplitOptions.RemoveEmptyEntries).Select(_ => trimmer(_)))
                     {
                         var valuec = await ReplaceImageURIs(key, valueb, logger);
-                        resp = new Documents.Response
+                        resp = new T
                         {
                             Id = Guid.NewGuid().ToString().Split('-')[0],
                             key = key,
@@ -350,11 +372,11 @@ remove `key` id                 Remove a single response.
                     break;
 
                 case "list":
-                    logger.LogInformation("Retrieving list of all custom responses for specified key...");
-                    var query = docClient.CreateDocumentQuery<Documents.Response>(
+                    logger.LogInformation("Retrieving list of all custom {0} for specified key...", typeof(T).Name);
+                    var query = docClient.CreateDocumentQuery<T>(
                         C.CDB.DCUri,
                         "SELECT * FROM r",
-                        new FeedOptions { PartitionKey = new PartitionKey($"{nameof(Documents.Response)}|{key}") })
+                        new FeedOptions { PartitionKey = new PartitionKey($"{typeof(T).Name}|{key}") })
                         .AsDocumentQuery();
                     var results = (await query.GetAllResults(logger)).ToList();
                     results.Sort((r1, r2) => r1.Id.CompareTo(r2.Id));
@@ -365,7 +387,7 @@ remove `key` id                 Remove a single response.
                     try
                     {
                         logger.LogInformation("Attempting to remove existing record...");
-                        await docClient.DeleteDocumentAsync(UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, value), new RequestOptions { PartitionKey = new PartitionKey($"{nameof(Documents.Response)}|{key}") });
+                        await docClient.DeleteDocumentAsync(UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, value), new RequestOptions { PartitionKey = new PartitionKey($"{typeof(T).Name}|{key}") });
                         await ephemeralMessageCollector.AddEAsync(slashData, $"Removed `{key}`: {value}");
                         SR.Deit();
                     }
