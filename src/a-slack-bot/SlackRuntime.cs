@@ -230,7 +230,7 @@ namespace a_slack_bot
                     throw new Exception($"Bad {nameof(SlackEmojis)}.{nameof(Init)}");
                 }
 
-                this.All = new HashSet<string>(emojiResponse.emoji.Keys.Union(a_slack_bot.C.Slack.SpaceSeparatedDefaultEmoji.Split(' ')));
+                this.All = new HashSet<string>(emojiResponse.emoji.Keys.Union(a_slack_bot.C.Slack.SpaceSeparatedDefaultEmoji.Split(' ')).Union(a_slack_bot.C.Slack.SpaceSeparatedAdditionalEmoji.Split(' ')));
                 logger.LogInformation("Populated {0} emojis, {1} of which are custom.", this.All.Count, emojiResponse.emoji.Count);
             }
         }
