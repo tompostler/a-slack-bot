@@ -104,21 +104,21 @@ namespace a_slack_bot
 
             try
             {
-                await docClient.ReadStoredProcedureAsync(UriFactory.CreateStoredProcedureUri(a_slack_bot.C.CDB.DN, a_slack_bot.C.CDB.CN, a_slack_bot.C.CDB.SP.rething_count));
+                await docClient.ReadStoredProcedureAsync(UriFactory.CreateStoredProcedureUri(a_slack_bot.C.CDB.DN, a_slack_bot.C.CDB.CN, a_slack_bot.C.CDB.SP.rething_count2));
             }
             catch (DocumentClientException dce) when (dce.StatusCode == HttpStatusCode.NotFound)
             {
-                logger.LogInformation("Sproc {0}: {1}", a_slack_bot.C.CDB.SP.rething_count, dce);
+                logger.LogInformation("Sproc {0}: {1}", a_slack_bot.C.CDB.SP.rething_count2, dce);
                 try
                 {
                     var sprocResponse = await docClient.CreateStoredProcedureAsync(
                         colResponse.Resource.SelfLink,
                         new StoredProcedure
                         {
-                            Id = a_slack_bot.C.CDB.SP.rething_count,
-                            Body = await new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($"{nameof(a_slack_bot)}.StoredProcs.{a_slack_bot.C.CDB.SP.rething_count}.js")).ReadToEndAsync()
+                            Id = a_slack_bot.C.CDB.SP.rething_count2,
+                            Body = await new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($"{nameof(a_slack_bot)}.StoredProcs.{a_slack_bot.C.CDB.SP.rething_count2}.js")).ReadToEndAsync()
                         });
-                    logger.LogInformation("Sproc {0}: {1}", a_slack_bot.C.CDB.SP.rething_count, sprocResponse.StatusCode);
+                    logger.LogInformation("Sproc {0}: {1}", a_slack_bot.C.CDB.SP.rething_count2, sprocResponse.StatusCode);
                 }
                 catch (DocumentClientException dce2) when (dce2.StatusCode == HttpStatusCode.Conflict)
                 {

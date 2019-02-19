@@ -20,7 +20,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="StoredProcs\rething_count.js" />
+    <EmbeddedResource Include="StoredProcs\rething_count2.js" />
   </ItemGroup>
 
   <ItemGroup>

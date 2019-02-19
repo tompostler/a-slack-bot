@@ -22,7 +22,7 @@ namespace a_slack_bot
             /// </summary>
             public static class SP
             {
-                public const string rething_count = nameof(rething_count);
+                public const string rething_count2 = nameof(rething_count2);
             }
         }
 

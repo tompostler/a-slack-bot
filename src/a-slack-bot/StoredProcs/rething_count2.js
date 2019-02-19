@@ -1,9 +1,8 @@
 ﻿function rething_count(id) {
-    var collection = getContext().getCollection();
 
     // Get the document whose count must be increased
-    var queryAcc = collection.queryDocuments(
-        collection.getSelfLink(),
+    var queryAcc = __.queryDocuments(
+        __.getSelfLink(),
         "SELECT * FROM r WHERE r.id = '" + id + "'",
         {},
         function (err, docs) {
@@ -14,12 +13,12 @@
             // Update count
             doc.count++;
 
-            var repAcc = collection.replaceDocument(
+            var repAcc = __.replaceDocument(
                 doc._self,
                 doc,
                 function (err, docReplaced) {
                     if (err) throw err;
-                    context.getResponse().setBody(JSON.stringify(docReplaced));
+                    getContext().getResponse().setBody(JSON.stringify(docReplaced));
                 });
             if (!repAcc) throw 'Could not replace document.';
         });

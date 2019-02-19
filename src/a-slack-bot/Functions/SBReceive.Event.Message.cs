@@ -106,7 +106,7 @@ namespace a_slack_bot.Functions
                 await Task.WhenAll(new[] {
                     SBReceiveEventMessageCustomReThingSend<T>(message, SrPiece[matchedKey].Single().Value, reactionCollector, messageCollector),
                     docClient.ExecuteStoredProcedureAsync<T>(
-                        UriFactory.CreateStoredProcedureUri(C.CDB.DN, C.CDB.CN, C.CDB.SP.rething_count),
+                        UriFactory.CreateStoredProcedureUri(C.CDB.DN, C.CDB.CN, C.CDB.SP.rething_count2),
                         new RequestOptions { PartitionKey = pk },
                         SrPiece[matchedKey].Single().Key)
                 });
