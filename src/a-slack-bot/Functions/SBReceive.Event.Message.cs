@@ -103,22 +103,11 @@ namespace a_slack_bot.Functions
             // TODO: Consider a sproc for this operation
             if (SrPiece[matchedKey].Count == 1)
             {
-                async Task upsertWithCountIncreased()
-                {
-                    var sracr = SrPiece[matchedKey].Single();
-                    var doc = (await docClient.ReadDocumentAsync<T>(
-                        UriFactory.CreateDocumentUri(C.CDB.DN, C.CDB.CN, sracr.Key),
-                        new RequestOptions { PartitionKey = pk })).Document;
-                    doc.count++;
-                    await docClient.UpsertDocumentAsync(
-                        C.CDB.DCUri,
-                        doc,
-                        new RequestOptions { PartitionKey = pk },
-                        disableAutomaticIdGeneration: true);
-                }
                 await Task.WhenAll(new[] {
                     SBReceiveEventMessageCustomReThingSend<T>(message, SrPiece[matchedKey].Single().Value, reactionCollector, messageCollector),
-                    upsertWithCountIncreased()
+                    docClient.ExecuteStoredProcedureAsync<T>(
+                        UriFactory.CreateStoredProcedureUri(C.CDB.DN, C.CDB.CN, C.CDB.SP.rething_count),
+                        SrPiece[matchedKey].Single().Key)
                 });
                 return;
             }
