@@ -107,6 +107,7 @@ namespace a_slack_bot.Functions
                     SBReceiveEventMessageCustomReThingSend<T>(message, SrPiece[matchedKey].Single().Value, reactionCollector, messageCollector),
                     docClient.ExecuteStoredProcedureAsync<T>(
                         UriFactory.CreateStoredProcedureUri(C.CDB.DN, C.CDB.CN, C.CDB.SP.rething_count),
+                        new RequestOptions { PartitionKey = pk },
                         SrPiece[matchedKey].Single().Key)
                 });
                 return;
