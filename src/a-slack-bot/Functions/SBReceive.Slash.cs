@@ -339,7 +339,7 @@ remove `key` id                 Remove a single response.
             // And determine what the starting count should be
             var countQuery = docClient.CreateDocumentQuery<int>(
                 C.CDB.DCUri,
-                $"SELECT VALUE MIN(r.{nameof(Documents.ReThings.count)}) FROM r WHERE r.{nameof(Documents.Base.doctype)} = '{pk}'",
+                $"SELECT VALUE MIN(r.{nameof(Documents.ReThings.count)}) FROM r",
                 new FeedOptions { PartitionKey = pk })
                 .AsDocumentQuery();
             var countQueryResults = await countQuery.GetAllResults(logger);
