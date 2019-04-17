@@ -11,6 +11,7 @@ namespace a_slack_bot.Documents
         public string user_id { get; set; }
 
         public int count { get; set; }
+        public int count_offset { get; set; }
         public Guid random { get; set; }
     }
 

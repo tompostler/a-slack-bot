@@ -321,7 +321,9 @@ remove `key` id                 Remove a single response.
 
             var instruction = slashData.text.Split(' ')[0];
             var key = slashData.text.Split('`')[1].Trim().ToLowerInvariant();
+            var pk = new T { key = key }.PK;
 
+            // Figure out what kind of trimming we need to do on the values
             Func<string, string> trimmer;
             if (typeof(T) == typeof(Documents.Reaction))
                 trimmer = (string str) => str.Trim().Trim(':');
@@ -329,9 +331,18 @@ remove `key` id                 Remove a single response.
                 trimmer = (string str) => str.Trim();
             var value = SR.MessageSlackEncode(trimmer(slashData.text.Substring(slashData.text.IndexOf('`', slashData.text.IndexOf('`') + 1) + 1)));
 
+            // And how to figure out if they're valid
             Func<string, bool> valid = (str) => true;
             if (typeof(T) == typeof(Documents.Reaction))
                 valid = (string str) => SR.E.All.Contains(value);
+
+            // And determine what the starting count should be
+            var countQuery = docClient.CreateDocumentQuery<int>(
+                C.CDB.DCUri,
+                $"SELECT VALUE MIN(r.{nameof(Documents.ReThings.count)}) FROM r WHERE r.{nameof(Documents.Base.doctype)} = '{pk}'",
+                new FeedOptions { PartitionKey = pk })
+                .AsDocumentQuery();
+            var minCount = (await countQuery.GetAllResults(logger)).SingleOrDefault();
 
             switch (instruction)
             {
@@ -348,7 +359,9 @@ remove `key` id                 Remove a single response.
                         Id = Guid.NewGuid().ToString().Split('-')[0],
                         key = key,
                         value = value,
-                        user_id = slashData.user_id
+                        user_id = slashData.user_id,
+                        count = minCount + 1,
+                        count_offset = minCount
                     };
                     var doc = await docClient.CreateDocumentAsync(
                         C.CDB.DCUri,
@@ -374,7 +387,9 @@ remove `key` id                 Remove a single response.
                             Id = Guid.NewGuid().ToString().Split('-')[0],
                             key = key,
                             value = valuec,
-                            user_id = slashData.user_id
+                            user_id = slashData.user_id,
+                            count = minCount,
+                            count_offset = minCount
                         };
                         doc = await docClient.CreateDocumentAsync(
                             C.CDB.DCUri,
@@ -394,8 +409,8 @@ remove `key` id                 Remove a single response.
                         new FeedOptions { PartitionKey = new PartitionKey($"{typeof(T).Name}|{key}") })
                         .AsDocumentQuery();
                     var results = (await query.GetAllResults(logger)).ToList();
-                    results.Sort((r1, r2) => r1.Id.CompareTo(r2.Id));
-                    await ephemeralMessageCollector.AddEAsync(slashData, $"Key: `{key}` Values:\n{string.Join("\n\n", results.Select(r => $"`{r.Id}` {r.value}"))}");
+                    results.Sort((r1, r2) => (r2.count - r2.count_offset).CompareTo(r1.count - r1.count_offset));
+                    await ephemeralMessageCollector.AddEAsync(slashData, $"Key: `{key}` Values:\n{string.Join("\n\n", results.Select(r => $"`{r.Id} ({r.count - r.count_offset})` {r.value}"))}");
                     break;
 
                 case "remove":

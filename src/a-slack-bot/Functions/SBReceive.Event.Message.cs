@@ -99,8 +99,7 @@ namespace a_slack_bot.Functions
             logger.LogInformation("Found a custom {0} match with key '{1}'", typeof(T).Name, matchedKey);
             var pk = new PartitionKey($"{typeof(T).Name}|{matchedKey}");
 
-            // Check for optimized case of only one re*, but still get and upsert the doc to keep track of the count
-            // TODO: Consider a sproc for this operation
+            // Check for optimized case of only one re*, but increase the count
             if (SrPiece[matchedKey].Count == 1)
             {
                 await Task.WhenAll(new[] {
