@@ -409,8 +409,15 @@ remove `key` id                 Remove a single response.
                         new FeedOptions { PartitionKey = new PartitionKey($"{typeof(T).Name}|{key}") })
                         .AsDocumentQuery();
                     var results = (await query.GetAllResults(logger)).ToList();
-                    results.Sort((r1, r2) => (r2.count - r2.count_offset).CompareTo(r1.count - r1.count_offset));
-                    await ephemeralMessageCollector.AddEAsync(slashData, $"Key: `{key}` Values:\n{string.Join("\n\n", results.Select(r => $"`{r.Id} ({r.count - r.count_offset})` {r.value}"))}");
+                    results.Sort(
+                        (r1, r2) =>
+                        {
+                            var countCompare = (r2.count - r2.count_offset).CompareTo(r1.count - r1.count_offset);
+                            if (countCompare == 0)
+                                return r1.Id.CompareTo(r2.Id);
+                            return countCompare;
+                        });
+                    await ephemeralMessageCollector.AddEAsync(slashData, $"Key: `{key}` Values:\n\n{string.Join("\n", results.Select(r => $"`{r.Id} ({r.count - r.count_offset:#,#})` {r.value}"))}");
                     break;
 
                 case "remove":
