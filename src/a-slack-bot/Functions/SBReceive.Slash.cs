@@ -342,7 +342,9 @@ remove `key` id                 Remove a single response.
                 $"SELECT VALUE MIN(r.{nameof(Documents.ReThings.count)}) FROM r WHERE r.{nameof(Documents.Base.doctype)} = '{pk}'",
                 new FeedOptions { PartitionKey = pk })
                 .AsDocumentQuery();
-            var minCount = (await countQuery.GetAllResults(logger)).SingleOrDefault();
+            var countQueryResults = await countQuery.GetAllResults(logger);
+            logger.LogInformation("{0}: {1}", nameof(countQueryResults), JsonConvert.SerializeObject(countQueryResults));
+            var minCount = countQueryResults.SingleOrDefault();
 
             switch (instruction)
             {
