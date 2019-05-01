@@ -380,7 +380,7 @@ namespace a_slack_bot.Functions
                             else
                             {
                                 amount = gameDoc.bets[gameDoc.users[i]];
-                                sb.AppendFormat("{0} loses ¤{1:#,#}", SR.U.IdToName[gameDoc.users[i]], amount);
+                                sb.AppendFormat("{0} didn't have a chance! (- ¤{1:#,#})", SR.U.IdToName[gameDoc.users[i]], amount);
                                 sb.AppendLine();
                             }
                             gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.BalanceChange, user_id = gameDoc.users[i], amount = -amount });
