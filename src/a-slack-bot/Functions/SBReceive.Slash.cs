@@ -417,7 +417,7 @@ remove `key` id                 Remove a single response.
                                 return r1.Id.CompareTo(r2.Id);
                             return countCompare;
                         });
-                    await ephemeralMessageCollector.AddEAsync(slashData, $"Key: `{key}` Values:\n\n{string.Join("\n", results.Select(r => $"`{r.Id} ({r.count - r.count_offset:#,#})` {r.value}"))}");
+                    await ephemeralMessageCollector.AddEAsync(slashData, $"Key: `{key}` Values (where count is: real, adjusted):\n\n{string.Join("\n", results.Select(r => $"`{r.Id} ({r.count - r.count_offset:#,#}, {r.count:#,#})` {r.value}"))}");
                     break;
 
                 case "remove":
