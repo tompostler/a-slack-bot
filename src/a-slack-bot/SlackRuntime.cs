@@ -392,7 +392,7 @@ namespace a_slack_bot
         public static string MessageSlackEncode(string messageText)
         {
             // Put back the escaped chars
-            messageText = messageText.Replace("<", "&lt;").Replace(">", "&gt;").Replace("&", "&amp;");
+            messageText = messageText.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
 
             var matches = Conversation.Matches(messageText);
             for (int i = 0; i < matches.Count; i++)
