@@ -369,7 +369,6 @@ remove `key` id                 Remove a single response.
                         resp,
                         new RequestOptions { PartitionKey = resp.PK },
                         disableAutomaticIdGeneration: true);
-                    logger.LogInformation("Doc: {0}", JsonConvert.SerializeObject(doc));
                     await ephemeralMessageCollector.AddEAsync(slashData, $"Added: `{key}` (`{doc.Resource.Id}`) {value}");
                     SR.Deit();
                     break;
@@ -398,7 +397,6 @@ remove `key` id                 Remove a single response.
                             resp,
                             new RequestOptions { PartitionKey = resp.PK },
                             disableAutomaticIdGeneration: true);
-                        logger.LogInformation("Doc: {0}", JsonConvert.SerializeObject(doc));
                         await ephemeralMessageCollector.AddEAsync(slashData, $"Added: `{key}` (`{doc.Resource.Id}`) {valuec}");
                     }
                     SR.Deit();
