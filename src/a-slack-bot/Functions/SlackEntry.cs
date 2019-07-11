@@ -81,13 +81,15 @@ namespace a_slack_bot.Functions
 
             // Get stuff from the message
             var slashData = await req.Content.ReadAsFormDataAsync<Slack.Slash>();
+            logger.LogInformation("SlashData: {0}", JsonConvert.SerializeObject(slashData));
 
             // Send it off to be processed
             logger.LogInformation("Sending slash command into the queue.");
-            await messageCollector.AddAsync(new InputSlash
-            {
-                slashData = slashData
-            });
+            await messageCollector.AddAsync(
+                new InputSlash
+                {
+                    slashData = slashData
+                });
 
             // Return all is well
             if (EchoableCommands.Contains(slashData.command))
