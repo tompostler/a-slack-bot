@@ -205,16 +205,15 @@ namespace a_slack_bot
                 if (yea > int.MaxValue || mon > int.MaxValue)
                     return false;
 
-                if (R.InPast.IsMatch(toParse))
-                    result = DateTime.UtcNow
+                result = R.InPast.IsMatch(toParse)
+                    ? DateTime.UtcNow
                         .AddYears(-(int)yea)
                         .AddMonths(-(int)mon)
                         .AddDays(-wee * 7 - day - spe)
                         .AddHours(-hou)
                         .AddMinutes(-min)
-                        .AddSeconds(-sec);
-                else
-                    result = DateTime.UtcNow
+                        .AddSeconds(-sec)
+                    : DateTime.UtcNow
                         .AddYears((int)yea)
                         .AddMonths((int)mon)
                         .AddDays(wee * 7 + day + spe)

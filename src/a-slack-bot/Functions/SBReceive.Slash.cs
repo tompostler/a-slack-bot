@@ -219,7 +219,7 @@ remove `key` id                 Remove a single response.
                     else if (slashData.text == "help")
                         await messageCollector.AddAsync(slashData, "Guess a number in the interval `(0, balance]` (see `/balance`). Rewards guesses close to the number I'm thinking of, but be more than 100 away and you start losing!");
                     else
-                        await HandleGuessCommand(slashData, standings, docClient, messageCollector, ephemeralMessageCollector, logger);
+                        await HandleGuessCommand(slashData, standings, docClient, messageCollector, logger);
                     break;
 
 
@@ -414,9 +414,7 @@ remove `key` id                 Remove a single response.
                         (r1, r2) =>
                         {
                             var countCompare = (r2.count - r2.count_offset).CompareTo(r1.count - r1.count_offset);
-                            if (countCompare == 0)
-                                return r1.Id.CompareTo(r2.Id);
-                            return countCompare;
+                            return countCompare == 0 ? r1.Id.CompareTo(r2.Id) : countCompare;
                         });
                     await ephemeralMessageCollector.AddEAsync(slashData, $"Key: `{key}` Values (where count is: real, adjusted):\n\n{string.Join("\n", results.Select(r => $"`{r.Id} ({r.count - r.count_offset:#,#}, {r.count:#,#})` {r.value}"))}");
                     break;
@@ -437,7 +435,7 @@ remove `key` id                 Remove a single response.
             }
         }
 
-        private static Regex ShortURI = new Regex(@"((https?|ftp):)?\/\/[^\s\/$.?#].[^\s]*", RegexOptions.Compiled);
+        private static readonly Regex ShortURI = new Regex(@"((https?|ftp):)?\/\/[^\s\/$.?#].[^\s]*", RegexOptions.Compiled);
         private static async Task<string> ReplaceImageURIs(string key, string text, ILogger logger)
         {
             var client = CloudStorageAccount.Parse(Settings.AzureWebJobsStorage).CreateCloudBlobClient();
@@ -547,7 +545,6 @@ remove `key` id                 Remove a single response.
             Documents.Standings standings,
             DocumentClient docClient,
             IAsyncCollector<BrokeredMessage> messageCollector,
-            IAsyncCollector<BrokeredMessage> ephemeralMessageCollector,
             ILogger logger)
         {
             if (!long.TryParse(slashData.text, out long guess) || guess <= 0)

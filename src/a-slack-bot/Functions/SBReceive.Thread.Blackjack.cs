@@ -41,7 +41,7 @@ namespace a_slack_bot.Functions
                 case Documents.BlackjackGameState.Running:
                     if (gameDoc.user_active < gameDoc.users.Count && gameDoc.users[gameDoc.user_active] == message.user)
                     {
-                        Documents.BlackjackActionType action = Documents.BlackjackActionType.Invalid;
+                        Documents.BlackjackActionType action;
                         switch (message.text.Trim().ToLowerInvariant())
                         {
                             case "hit":

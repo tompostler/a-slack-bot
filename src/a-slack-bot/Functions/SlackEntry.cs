@@ -92,10 +92,9 @@ namespace a_slack_bot.Functions
                 });
 
             // Return all is well
-            if (EchoableCommands.Contains(slashData.command))
-                return req.CreateResponse(HttpStatusCode.OK, new { response_type = "in_channel" });
-            else
-                return req.CreateResponse(HttpStatusCode.OK);
+            return EchoableCommands.Contains(slashData.command)
+                ? req.CreateResponse(HttpStatusCode.OK, new { response_type = "in_channel" })
+                : req.CreateResponse(HttpStatusCode.OK);
         }
 
         [FunctionName(nameof(Ping))]

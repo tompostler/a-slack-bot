@@ -23,8 +23,8 @@ namespace a_slack_bot
     /// </summary>
     public static class SR
     {
-        private static HttpClient appHttpClient = new HttpClient();
-        private static HttpClient botHttpClient = new HttpClient();
+        private static readonly HttpClient appHttpClient = new HttpClient();
+        private static readonly HttpClient botHttpClient = new HttpClient();
         static SR()
         {
             if (!string.IsNullOrWhiteSpace(Settings.SlackOauthToken))
@@ -37,7 +37,7 @@ namespace a_slack_bot
             Newtonsoft.Json.JsonConvert.DefaultSettings = () => new Newtonsoft.Json.JsonSerializerSettings { NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore };
         }
 
-        private static SemaphoreSlim Lock = new SemaphoreSlim(1);
+        private static readonly SemaphoreSlim Lock = new SemaphoreSlim(1);
         private static bool Initialized = false;
         private static bool OneTimeInitialized = false;
         private static Stopwatch InitializedDuration;
@@ -63,21 +63,23 @@ namespace a_slack_bot
             T = new SlackTokens();
             U = new SlackUsers();
             W = new SlackWhitelist();
-            var docClient = new DocumentClient(Settings.CosmosDBEndpoint, Settings.CosmosDBKey);
-            if (!OneTimeInitialized)
+            using (var docClient = new DocumentClient(Settings.CosmosDBEndpoint, Settings.CosmosDBKey))
             {
-                await InnerOneTimeInit(logger, docClient);
-                OneTimeInitialized = true;
+                if (!OneTimeInitialized)
+                {
+                    await InnerOneTimeInit(logger, docClient);
+                    OneTimeInitialized = true;
+                }
+                await Task.WhenAll(new[] {
+                    C.Init(logger, docClient),
+                    E.Init(logger),
+                    Ra.Init(logger, docClient),
+                    Re.Init(logger, docClient),
+                    T.Init(logger, docClient),
+                    U.Init(logger, docClient),
+                    W.Init(logger, docClient),
+                });
             }
-            await Task.WhenAll(new[] {
-                C.Init(logger, docClient),
-                E.Init(logger),
-                Ra.Init(logger, docClient),
-                Re.Init(logger, docClient),
-                T.Init(logger, docClient),
-                U.Init(logger, docClient),
-                W.Init(logger, docClient),
-            });
 
             InitializedDuration = Stopwatch.StartNew();
             Initialized = true;
@@ -367,8 +369,8 @@ namespace a_slack_bot
             }
         }
 
-        private static Regex ConversationId = new Regex(@"<#(?<id>\w+)(?>\|[a-z0-9_-]+)?>", RegexOptions.Compiled);
-        private static Regex UserId = new Regex(@"<@(?<id>\w+)(?>\|[\w_-]+)?>", RegexOptions.Compiled);
+        private static readonly Regex ConversationId = new Regex(@"<#(?<id>\w+)(?>\|[a-z0-9_-]+)?>", RegexOptions.Compiled);
+        private static readonly Regex UserId = new Regex(@"<@(?<id>\w+)(?>\|[\w_-]+)?>", RegexOptions.Compiled);
         public static string MessageToPlainText(string messageText)
         {
             var matches = ConversationId.Matches(messageText);
@@ -387,8 +389,8 @@ namespace a_slack_bot
             return messageText;
         }
 
-        private static Regex Conversation = new Regex(@"#(?<id>[a-z0-9_-]+)\b", RegexOptions.Compiled);
-        private static Regex User = new Regex(@"@(?<id>\w+)\b", RegexOptions.Compiled);
+        private static readonly Regex Conversation = new Regex(@"#(?<id>[a-z0-9_-]+)\b", RegexOptions.Compiled);
+        private static readonly Regex User = new Regex(@"@(?<id>\w+)\b", RegexOptions.Compiled);
         public static string MessageSlackEncode(string messageText)
         {
             // Put back the escaped chars

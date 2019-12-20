@@ -10,62 +10,62 @@ namespace Cards
     {
         private static string GetUnicodeRepresentation(this Cards card)
         {
-            switch (card)
+            return card switch
             {
-                case Cards.C2: return "🃒";
-                case Cards.C3: return "🃓";
-                case Cards.C4: return "🃔";
-                case Cards.C5: return "🃕";
-                case Cards.C6: return "🃖";
-                case Cards.C7: return "🃗";
-                case Cards.C8: return "🃘";
-                case Cards.C9: return "🃙";
-                case Cards.CT: return "🃚";
-                case Cards.CJ: return "🃛";
-                case Cards.CQ: return "🃝";
-                case Cards.CK: return "🃞";
-                case Cards.CA: return "🃑";
-                case Cards.D2: return "🃂";
-                case Cards.D3: return "🃃";
-                case Cards.D4: return "🃄";
-                case Cards.D5: return "🃅";
-                case Cards.D6: return "🃆";
-                case Cards.D7: return "🃇";
-                case Cards.D8: return "🃈";
-                case Cards.D9: return "🃉";
-                case Cards.DT: return "🃊";
-                case Cards.DJ: return "🃋";
-                case Cards.DQ: return "🃍";
-                case Cards.DK: return "🃎";
-                case Cards.DA: return "🃁";
-                case Cards.H2: return "🂲";
-                case Cards.H3: return "🂳";
-                case Cards.H4: return "🂴";
-                case Cards.H5: return "🂵";
-                case Cards.H6: return "🂶";
-                case Cards.H7: return "🂷";
-                case Cards.H8: return "🂸";
-                case Cards.H9: return "🂹";
-                case Cards.HT: return "🂺";
-                case Cards.HJ: return "🂻";
-                case Cards.HQ: return "🂽";
-                case Cards.HK: return "🂾";
-                case Cards.HA: return "🂱";
-                case Cards.S2: return "🂢";
-                case Cards.S3: return "🂣";
-                case Cards.S4: return "🂤";
-                case Cards.S5: return "🂥";
-                case Cards.S6: return "🂦";
-                case Cards.S7: return "🂧";
-                case Cards.S8: return "🂨";
-                case Cards.S9: return "🂩";
-                case Cards.ST: return "🂪";
-                case Cards.SJ: return "🂫";
-                case Cards.SQ: return "🂭";
-                case Cards.SK: return "🂮";
-                case Cards.SA: return "🂡";
-                default: return "🂠";
-            }
+                Cards.C2 => "🃒",
+                Cards.C3 => "🃓",
+                Cards.C4 => "🃔",
+                Cards.C5 => "🃕",
+                Cards.C6 => "🃖",
+                Cards.C7 => "🃗",
+                Cards.C8 => "🃘",
+                Cards.C9 => "🃙",
+                Cards.CT => "🃚",
+                Cards.CJ => "🃛",
+                Cards.CQ => "🃝",
+                Cards.CK => "🃞",
+                Cards.CA => "🃑",
+                Cards.D2 => "🃂",
+                Cards.D3 => "🃃",
+                Cards.D4 => "🃄",
+                Cards.D5 => "🃅",
+                Cards.D6 => "🃆",
+                Cards.D7 => "🃇",
+                Cards.D8 => "🃈",
+                Cards.D9 => "🃉",
+                Cards.DT => "🃊",
+                Cards.DJ => "🃋",
+                Cards.DQ => "🃍",
+                Cards.DK => "🃎",
+                Cards.DA => "🃁",
+                Cards.H2 => "🂲",
+                Cards.H3 => "🂳",
+                Cards.H4 => "🂴",
+                Cards.H5 => "🂵",
+                Cards.H6 => "🂶",
+                Cards.H7 => "🂷",
+                Cards.H8 => "🂸",
+                Cards.H9 => "🂹",
+                Cards.HT => "🂺",
+                Cards.HJ => "🂻",
+                Cards.HQ => "🂽",
+                Cards.HK => "🂾",
+                Cards.HA => "🂱",
+                Cards.S2 => "🂢",
+                Cards.S3 => "🂣",
+                Cards.S4 => "🂤",
+                Cards.S5 => "🂥",
+                Cards.S6 => "🂦",
+                Cards.S7 => "🂧",
+                Cards.S8 => "🂨",
+                Cards.S9 => "🂩",
+                Cards.ST => "🂪",
+                Cards.SJ => "🂫",
+                Cards.SQ => "🂭",
+                Cards.SK => "🂮",
+                Cards.SA => "🂡",
+                _ => "🂠",
+            };
         }
 
         /// <summary>

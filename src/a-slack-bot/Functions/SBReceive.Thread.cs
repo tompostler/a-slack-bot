@@ -28,7 +28,7 @@ namespace a_slack_bot.Functions
             }
 
             // First, see if there's any matching documents
-            Documents.Blackjack gameDoc = null;
+            Documents.Blackjack gameDoc;
             try
             {
                 gameDoc = await docClient.ReadDocumentAsync<Documents.Blackjack>(

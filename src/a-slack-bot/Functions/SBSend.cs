@@ -1,6 +1,4 @@
-﻿using Microsoft.Azure.Documents;
-using Microsoft.Azure.Documents.Client;
-using Microsoft.Azure.WebJobs;
+﻿using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
@@ -22,7 +20,6 @@ namespace a_slack_bot.Functions
         [FunctionName(nameof(SBSendReaction))]
         public static async Task SBSendReaction(
             [ServiceBusTrigger(C.SBQ.SendReaction)]Messages.ReactionAdd messageData,
-            [DocumentDB(ConnectionStringSetting = C.CDB.CSS)]DocumentClient docClient,
             ILogger logger)
         {
             if (Settings.Debug)
@@ -69,7 +66,7 @@ namespace a_slack_bot.Functions
         // This is pulled into a separate message to ease message threading scenarios.
         public static async Task<Slack.WebAPIResponse> SendMessage(Slack.Events.Inner.message message, ILogger logger)
         {
-            HttpResponseMessage response = null;
+            HttpResponseMessage response;
             if (string.IsNullOrWhiteSpace(message.ts))
                 response = await httpClient.PostAsJsonAsync("https://slack.com/api/chat.postMessage", message);
             else

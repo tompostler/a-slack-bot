@@ -19,7 +19,7 @@ namespace a_slack_bot.Functions
             ILogger logger)
         {
             await SR.Init(logger);
-            if (String.IsNullOrEmpty(message.text))
+            if (string.IsNullOrEmpty(message.text))
             {
                 logger.LogInformation("Empty message text. Exiting from {0}.", nameof(SBReceiveEventMessage));
                 return;
@@ -35,7 +35,7 @@ namespace a_slack_bot.Functions
                 await Task.WhenAll(new[] {
                     SBReceiveEventMessageCustomReThing<Documents.Reaction>(message, textDL, SR.Ra.AllReactions, docClient, reactionCollector, messageCollector, logger),
                     SBReceiveEventMessageCustomReThing<Documents.Response>(message, textDL, SR.Re.AllResponses, docClient, reactionCollector, messageCollector, logger),
-                    SBReceiveEventMessageRelativeDateTime(message, textDL, messageCollector, logger)
+                    SBReceiveEventMessageRelativeDateTime(message, textDL, messageCollector)
                 });
             }
             catch (Exception ex)
@@ -47,8 +47,7 @@ namespace a_slack_bot.Functions
         private static async Task SBReceiveEventMessageRelativeDateTime(
             Slack.Events.Inner.message message,
             string textDL,
-            IAsyncCollector<Slack.Events.Inner.message> messageCollector,
-            ILogger logger)
+            IAsyncCollector<Slack.Events.Inner.message> messageCollector)
         {
             // Check for brackets, possibly implying a datetime to parse
             int bis = textDL.IndexOf('[');

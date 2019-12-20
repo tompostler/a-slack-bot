@@ -7,7 +7,7 @@ namespace Cards
     /// </summary>
     /// <remarks>
     /// Yes, it's using the "bad" <see cref="Random"/> class.
-    /// Yes, more than <see cref="Int32.MaxValue"/> cards will cause massive problems.
+    /// Yes, more than <see cref="int.MaxValue"/> cards will cause massive problems.
     /// Yes, it's not the most efficient thing out there.
     /// </remarks>
     public sealed class Deck

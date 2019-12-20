@@ -29,7 +29,7 @@ namespace a_slack_bot.Documents
                         const long Max3DigitBase33 = 35937;
                         var chunk = ts % Max3DigitBase33;
                         friendly = '.' + chunk.ToBase33String().PadLeft(3, '0') + friendly;
-                        ts = ts / Max3DigitBase33;
+                        ts /= Max3DigitBase33;
                     }
                     while (ts > 0);
                     this._friendly_name = friendly.TrimStart('.', '0');

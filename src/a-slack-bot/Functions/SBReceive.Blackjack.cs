@@ -203,7 +203,7 @@ namespace a_slack_bot.Functions
                     logger.LogInformation("Updated game state to running.");
 
                     // Deal first two cards to everybody
-                    Cards.Deck deck = new Cards.Deck(numDecks: 8);
+                    var deck = new Cards.Deck(numDecks: 8);
                     foreach (var hand in gameDoc.hands)
                     {
                         gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.Deal, user_id = hand.Key, card = deck.Deal() });
@@ -357,10 +357,9 @@ namespace a_slack_bot.Functions
                 case Messages.BlackjackMessageType.ToFinish:
                     gameDoc.actions.Add(new Documents.BlackjackAction { type = Documents.BlackjackActionType.StateChange, to_state = Documents.BlackjackGameState.Finished });
                     gameDoc.state = Documents.BlackjackGameState.Finished;
-                    if (gameDoc.hands.ContainsKey("dealer"))
-                        dealerScore = Cards.CardHelpers.GetBlackjackScore(gameDoc.hands["dealer"]);
-                    else
-                        dealerScore = new Cards.CardHelpers.BlackjackScore();
+                    dealerScore = gameDoc.hands.ContainsKey("dealer")
+                        ? Cards.CardHelpers.GetBlackjackScore(gameDoc.hands["dealer"])
+                        : new Cards.CardHelpers.BlackjackScore();
                     sb = new StringBuilder();
                     var finalScores = gameDoc.hands.ToDictionary(kvp => kvp.Key, kvp => Cards.CardHelpers.GetBlackjackScore(kvp.Value));
                     await ShowGameState(messageCollector, inMessage, gameDoc, showDealer: true);
