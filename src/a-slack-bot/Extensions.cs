@@ -33,7 +33,7 @@ namespace a_slack_bot
         {
             var formData = await @this.ReadAsFormDataAsync();
 
-            T t = default;
+            var t = new T();
             foreach (var property in typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
                 // If the form data doesn't have the property, then skip it
@@ -50,9 +50,7 @@ namespace a_slack_bot
                 if (mget == null || mset == null)
                     continue;
 
-                // Initialize (if necessary) and set the property
-                if (t == default)
-                    t = new T();
+                // Set the property
                 property.SetValue(t, formData[property.Name]);
             }
 
