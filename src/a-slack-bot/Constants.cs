@@ -1,5 +1,8 @@
 ﻿using Microsoft.Azure.Documents.Client;
 using System;
+using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
 
 namespace a_slack_bot
 {
@@ -58,6 +61,7 @@ namespace a_slack_bot
             public const string SpaceSeparatedAdditionalEmoji = "cheese_wedge";
         }
 
-        public static string VersionStr => $"{typeof(C).Assembly.ManifestModule.Name} v{GitVersionInformation.SemVer}+{GitVersionInformation.Sha.Substring(0, 6)}";
+        private static readonly Assembly assembly = typeof(C).Assembly;
+        public static string VersionStr => $"{assembly.ManifestModule.Name} v{assembly.GetName().Version.ToString(3)}+{FileVersionInfo.GetVersionInfo(assembly.Location).ProductVersion.Split('.').Last().Substring(0,6)}";
     }
 }
