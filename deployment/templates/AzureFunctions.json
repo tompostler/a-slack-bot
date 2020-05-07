@@ -121,7 +121,7 @@
       },
       "sku": {
         "name": "[parameters('storageAccountType')]",
-        "tier":  "Standard"
+        "tier": "Standard"
       },
       "resources": [
         {
@@ -135,6 +135,46 @@
             "[variables('storageAcctName')]"
           ]
         }
+      ]
+    },
+    {
+      "apiVersion": "2019-04-15",
+      "type": "Microsoft.Cdn/profiles",
+      "location": "global",
+      "sku": {
+        "name": "Standard_Microsoft"
+      },
+      "name": "[resourceGroup().name]",
+      "resources": [
+        {
+          "apiVersion": "2019-04-15",
+          "type": "endpoints",
+          "name": "[concat(variables('storageAcctName'), '-blobs')]",
+          "location": "[parameters('storageAccounts')[copyIndex()].cdnLocation]",
+          "properties": {
+            "originHostHeader": "[concat(variables('storageAcctName'), '.blob.core.windows.net')]",
+            "originPath": "/blobs",
+            "isHttpAllowed": false,
+            "isHttpsAllowed": true,
+            "queryStringCachingBehavior": "UseQueryString",
+            "origins": [
+              {
+                "name": "[replace(concat(variables('storageAcctName'), '.blob.core.windows.net'), '.', '-')]",
+                "properties": {
+                  "hostName": "[concat(variables('storageAcctName'), '.blob.core.windows.net')]",
+                  "httpPort": 80,
+                  "httpsPort": 443
+                }
+              }
+            ]
+          },
+          "dependsOn": [
+            "[concat('Microsoft.Cdn/profiles/', resourceGroup().name)]"
+          ]
+        }
+      ],
+      "dependsOn": [
+        "[concat('Microsoft.Storage/storageAccounts/', variables('storageAcctName'))]"
       ]
     },
     {
