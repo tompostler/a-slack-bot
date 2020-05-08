@@ -219,6 +219,21 @@
       ]
     },
     {
+      "type": "Microsoft.Network/dnszones/CNAME",
+      "apiVersion": "2018-05-01",
+      "name": "[concat(parameters('dnsZone').name, '/blobs')]",
+      "properties": {
+        "TTL": 300,
+        "CNAMERecord": {
+            "cname": "[reference(resourceId('Microsoft.Cdn/profiles/endpoints', resourceGroup().name, concat(variables('storageAcctName'), '-blobs'))).hostName]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/dnszones', parameters('dnsZone').name)]",
+        "[resourceId('Microsoft.Cdn/profiles/endpoints', resourceGroup().name, concat(variables('storageAcctName'), '-blobs'))]"
+      ]
+    },
+    {
       "type": "Microsoft.Web/serverfarms",
       "apiVersion": "2016-09-01",
       "name": "[variables('hostingPlanName')]",
