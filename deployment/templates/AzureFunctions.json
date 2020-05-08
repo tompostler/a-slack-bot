@@ -237,7 +237,7 @@
     {
       "apiVersion": "2019-04-15",
       "type": "Microsoft.Cdn/profiles/endpoints/customDomains",
-      "name": "[concat(resourceGroup().name, '/', variables('cdnEndpointName'), '/', parameters('dnsZone').name)]",
+      "name": "[concat(resourceGroup().name, '/', variables('cdnEndpointName'), '/', replace(parameters('dnsZone').name, '.', '-'))]",
       "properties": {
         "hostName": "[concat(resourceGroup().name, '/', variables('cdnEndpointName'), '/', parameters('dnsZone').name)]"
       },
