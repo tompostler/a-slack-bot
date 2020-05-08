@@ -1,21 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Populate version variables based on GitVersion if available. This will usually be run in the build definition. -->
-  <PropertyGroup Condition=" '$(GitVersion_FullSemVer)' != '' ">
-    <Version Condition=" '$(Version)' == '' ">$(GitVersion_FullSemVer)</Version>
-    <VersionPrefix Condition=" '$(VersionPrefix)' == '' ">$(GitVersion_MajorMinorPatch)</VersionPrefix>
-    <VersionSuffix Condition=" '$(VersionSuffix)' == '' ">$(GitVersion_NuGetPreReleaseTag)</VersionSuffix>
-    <PackageVersion Condition=" '$(PackageVersion)' == '' ">$(GitVersion_NuGetVersion)</PackageVersion>
-    <InformationalVersion Condition=" '$(InformationalVersion)' == '' ">$(GitVersion_InformationalVersion)</InformationalVersion>
-    <AssemblyVersion Condition=" '$(AssemblyVersion)' == '' ">$(GitVersion_AssemblySemVer)</AssemblyVersion>
-    <FileVersion Condition=" '$(FileVersion)' == '' ">$(GitVersion_MajorMinorPatch).$(GitVersion_CommitsSinceVersionSource)</FileVersion>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <TargetFramework>net47</TargetFramework>
-    <LangVersion>latest</LangVersion>
-  </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
   </ItemGroup>
