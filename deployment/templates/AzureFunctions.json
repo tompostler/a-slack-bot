@@ -52,6 +52,13 @@
       "metadata": {
         "description": "Storage Account type"
       }
+    },
+    "dnsZone": {
+      "type": "object",
+      "defaultValue": {
+        "name": "aslackbot.icu",
+        "nsNumber": "04"
+      }
     }
   },
   "variables": {
@@ -135,6 +142,40 @@
             "[variables('storageAcctName')]"
           ]
         }
+      ]
+    },
+    {
+      "type": "Microsoft.Network/dnszones",
+      "apiVersion": "2018-05-01",
+      "name": "[parameters('dnsZone').name]",
+      "location": "global",
+      "properties": {
+        "zoneType": "Public"
+      }
+    },
+    {
+      "type": "Microsoft.Network/dnszones/NS",
+      "apiVersion": "2018-05-01",
+      "name": "[concat(parameters('dnsZone').name, '/@')]",
+      "properties": {
+        "TTL": 172800,
+        "NSRecords": [
+          {
+            "nsdname": "[concat('ns1-', parameters('dnsZone').nsNumber,'.azure-dns.com.')]"
+          },
+          {
+            "nsdname": "[concat('ns2-', parameters('dnsZone').nsNumber,'.azure-dns.net.')]"
+          },
+          {
+            "nsdname": "[concat('ns3-', parameters('dnsZone').nsNumber,'.azure-dns.org.')]"
+          },
+          {
+            "nsdname": "[concat('ns4-', parameters('dnsZone').nsNumber,'.azure-dns.info.')]"
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/dnszones', parameters('dnsZone').name)]"
       ]
     },
     {
