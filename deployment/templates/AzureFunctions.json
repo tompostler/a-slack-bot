@@ -239,7 +239,7 @@
       "type": "Microsoft.Cdn/profiles/endpoints/customDomains",
       "name": "[concat(resourceGroup().name, '/', variables('cdnEndpointName'), '/', replace(parameters('dnsZone').name, '.', '-'))]",
       "properties": {
-        "hostName": "[concat(resourceGroup().name, '/', variables('cdnEndpointName'), '/', parameters('dnsZone').name)]"
+        "hostName": "[parameters('dnsZone').name)]"
       },
       "dependsOn": [
         "[resourceId('Microsoft.Network/dnszones/CNAME', parameters('dnsZone').name, 'blobs')]",
