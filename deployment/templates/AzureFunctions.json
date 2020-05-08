@@ -191,11 +191,11 @@
         {
           "apiVersion": "2019-04-15",
           "type": "endpoints",
-          "name": "[concat(variables('storageAcctName'), '-blobs')]",
+          "name": "[concat(variables('storageAcctName'), '-', variables('blobContainerName'))]",
           "location": "global",
           "properties": {
             "originHostHeader": "[concat(variables('storageAcctName'), '.blob.core.windows.net')]",
-            "originPath": "/blobs",
+            "originPath": "[concat('/', variables('blobContainerName'))]",
             "isHttpAllowed": false,
             "isHttpsAllowed": true,
             "queryStringCachingBehavior": "UseQueryString",
@@ -222,7 +222,7 @@
     {
       "type": "Microsoft.Network/dnszones/CNAME",
       "apiVersion": "2018-05-01",
-      "name": "[concat(parameters('dnsZone').name, '/blobs')]",
+      "name": "[concat(parameters('dnsZone').name, '/', variables('blobContainerName'))]",
       "properties": {
         "TTL": 300,
         "CNAMERecord": {
@@ -239,10 +239,10 @@
       "type": "Microsoft.Cdn/profiles/endpoints/customDomains",
       "name": "[concat(resourceGroup().name, '/', variables('cdnEndpointName'), '/', replace(parameters('dnsZone').name, '.', '-'))]",
       "properties": {
-        "hostName": "[parameters('dnsZone').name]"
+        "hostName": "[concat(variables('blobContainerName'), '.', parameters('dnsZone').name)]"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/dnszones/CNAME', parameters('dnsZone').name, 'blobs')]",
+        "[resourceId('Microsoft.Network/dnszones/CNAME', parameters('dnsZone').name, variables('blobContainerName'))]",
         "[resourceId('Microsoft.Cdn/profiles/endpoints', resourceGroup().name, variables('cdnEndpointName'))]"
       ]
     },
