@@ -69,7 +69,8 @@
     "serviceBusRootAccessKey": "[resourceId(resourceGroup().name, 'Microsoft.ServiceBus/namespaces/authorizationRules', variables('serviceBusName'), 'RootManageSharedAccessKey')]",
     "storageAcctName": "[replace(parameters('appName'), '-', '')]",
     "storageAccountId": "[concat(resourceGroup().id,'/providers/','Microsoft.Storage/storageAccounts/', variables('storageAcctName'))]",
-    "blobContainerName": "blobs"
+    "blobContainerName": "blobs",
+    "cdnEndpointName": "[concat(variables('storageAcctName'), '-', variables('blobContainerName'))]"
   },
   "resources": [
     {
@@ -225,12 +226,24 @@
       "properties": {
         "TTL": 300,
         "CNAMERecord": {
-            "cname": "[reference(resourceId('Microsoft.Cdn/profiles/endpoints', resourceGroup().name, concat(variables('storageAcctName'), '-blobs'))).hostName]"
+          "cname": "[reference(resourceId('Microsoft.Cdn/profiles/endpoints', resourceGroup().name, variables('cdnEndpointName'))).hostName]"
         }
       },
       "dependsOn": [
         "[resourceId('Microsoft.Network/dnszones', parameters('dnsZone').name)]",
-        "[resourceId('Microsoft.Cdn/profiles/endpoints', resourceGroup().name, concat(variables('storageAcctName'), '-blobs'))]"
+        "[resourceId('Microsoft.Cdn/profiles/endpoints', resourceGroup().name, variables('cdnEndpointName'))]"
+      ]
+    },
+    {
+      "apiVersion": "2019-04-15",
+      "type": "Microsoft.Cdn/profiles/endpoints/customDomains",
+      "name": "[concat(resourceGroup().name, '/', variables('cdnEndpointName'), '/', parameters('dnsZone').name)]",
+      "properties": {
+        "hostName": "[concat(resourceGroup().name, '/', variables('cdnEndpointName'), '/', parameters('dnsZone').name)]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/dnszones/CNAME', parameters('dnsZone').name, 'blobs')]",
+        "[resourceId('Microsoft.Cdn/profiles/endpoints', resourceGroup().name, variables('cdnEndpointName'))]"
       ]
     },
     {
