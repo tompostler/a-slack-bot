@@ -13,7 +13,7 @@ namespace a_slack_bot
         /// </summary>
         public static class CDB
         {
-            public const string DN = "aslackbot";
+            public const string DN = "shared";
             public const string CN = "aslackbot";
 
             public static readonly Uri DCUri = UriFactory.CreateDocumentCollectionUri(DN, CN);

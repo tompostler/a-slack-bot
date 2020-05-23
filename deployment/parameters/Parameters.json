@@ -10,6 +10,12 @@
     "appName": {
       "value": "aslackbot"
     },
+    "cosmosDb": {
+      "value": {
+        "resourceGroupName": "tompostler",
+        "name": "tompostler-free"
+      }
+    },
     "serviceBusQueueNames": {
       "value": [
         "blackjack",
