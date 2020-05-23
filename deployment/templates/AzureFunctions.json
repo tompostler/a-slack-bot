@@ -269,7 +269,6 @@
       "location": "[resourceGroup().location]",
       "kind": "functionapp",
       "dependsOn": [
-        "[variables('cosmosDbId')]",
         "[concat('Microsoft.ServiceBus/namespaces/', variables('serviceBusName'))]",
         "[concat('Microsoft.Storage/storageAccounts/', variables('storageAcctName'))]",
         "[concat('Microsoft.Web/serverfarms/', variables('hostingPlanName'))]",
