@@ -68,7 +68,7 @@
     }
   },
   "variables": {
-    "cosmosDbId":"[resourceId(parameters('cosmosDb').resourceGroupName, 'Microsoft.DocumentDB/databaseAccounts/', parameters('cosmosDb').name)]",
+    "cosmosDbId": "[resourceId(parameters('cosmosDb').resourceGroupName, 'Microsoft.DocumentDB/databaseAccounts/', parameters('cosmosDb').name)]",
     "appInsightsName": "[parameters('appName')]",
     "hostingPlanName": "[parameters('appName')]",
     "serviceBusName": "[parameters('appName')]",
@@ -379,6 +379,17 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.Network/dnszones', parameters('dnsZone').name)]",
+        "[resourceId('Microsoft.Web/sites', parameters('appName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/sites/hostnameBindings",
+      "name": "[concat(parameters('appName'), '/', concat('api.', parameters('dnsZone').name))]",
+      "apiVersion": "2019-08-01",
+      "location": "[resourceGroup().location]",
+      "properties": {},
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/dnszones/CNAME', parameters('dnsZone').name, 'api')]",
         "[resourceId('Microsoft.Web/sites', parameters('appName'))]"
       ]
     }
