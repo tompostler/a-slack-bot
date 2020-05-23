@@ -1,0 +1,52 @@
+{
+  "$schema": "http://schemas.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "accountName": {
+      "type": "string",
+      "defaultValue": "[concat(resourceGroup().name, '-free')]"
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "centralus"
+    },
+    "databaseName": {
+      "type": "string",
+      "defaultValue": "shared"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts",
+      "apiVersion": "2020-03-01",
+      "name": "[parameters('accountName')]",
+      "kind": "GlobalDocumentDB",
+      "location": "[parameters('location')]",
+      "properties": {
+        "enableFreeTier": true,
+        "databaseAccountOfferType": "Standard",
+        "consistencyPolicy": {
+          "defaultConsistencyLevel": "Strong"
+        }
+      },
+      "resources": [
+        {
+          "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases",
+          "apiVersion": "2020-03-01",
+          "name": "[concat(parameters('accountName'), '/', parameters('databaseName'))]",
+          "properties": {
+            "resource": {
+              "id": "[parameters('databaseName')]"
+            },
+            "options": {
+              "throughput": 400
+            }
+          },
+          "dependsOn": [
+            "[resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('accountName'))]"
+          ]
+        }
+      ]
+    }
+  ]
+}
