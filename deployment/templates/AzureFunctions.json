@@ -68,6 +68,7 @@
     }
   },
   "variables": {
+    "cosmosDbId":"[resourceId(parameters('cosmosDb').resourceGroupName, 'Microsoft.DocumentDB/databaseAccounts/', parameters('cosmosDb').name)]",
     "appInsightsName": "[parameters('appName')]",
     "hostingPlanName": "[parameters('appName')]",
     "serviceBusName": "[parameters('appName')]",
@@ -268,7 +269,7 @@
       "location": "[resourceGroup().location]",
       "kind": "functionapp",
       "dependsOn": [
-        "[resourceId(parameters('cosmosDb').resourceGroupName, 'Microsoft.DocumentDB/databaseAccounts/', parameters('cosmosDb').name)]",
+        "[variables('cosmosDbId')]",
         "[concat('Microsoft.ServiceBus/namespaces/', variables('serviceBusName'))]",
         "[concat('Microsoft.Storage/storageAccounts/', variables('storageAcctName'))]",
         "[concat('Microsoft.Web/serverfarms/', variables('hostingPlanName'))]",
@@ -300,7 +301,7 @@
             },
             {
               "name": "CosmosDBConnection",
-              "value": "[concat('AccountEndpoint=https://', parameters('cosmosDb').name, '.documents.azure.com:443/;AccountKey=', listKeys(resourceId(parameters('cosmosDb').resourceGroupName, 'Microsoft.DocumentDB/databaseAccounts', parameters('cosmosDb').name), providers('Microsoft.DocumentDB','databaseAccounts').apiVersions[0]).primaryMasterKey, ';')]"
+              "value": "[concat('AccountEndpoint=https://', parameters('cosmosDb').name, '.documents.azure.com:443/;AccountKey=', listKeys(variables('cosmosDbId'), providers('Microsoft.DocumentDB','databaseAccounts').apiVersions[0]).primaryMasterKey, ';')]"
             },
             {
               "name": "CosmosDBEndpoint",
@@ -308,7 +309,7 @@
             },
             {
               "name": "CosmosDBKey",
-              "value": "[listKeys(resourceId(parameters('cosmosDb').resourceGroupName, 'Microsoft.DocumentDB/databaseAccounts', parameters('cosmosDb').name), providers('Microsoft.DocumentDB','databaseAccounts').apiVersions[0]).primaryMasterKey]"
+              "value": "[listKeys(variables('cosmosDbId'), providers('Microsoft.DocumentDB','databaseAccounts').apiVersions[0]).primaryMasterKey]"
             },
             {
               "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
