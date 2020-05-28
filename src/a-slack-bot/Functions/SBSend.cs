@@ -101,20 +101,23 @@ namespace a_slack_bot.Functions
 
         [FunctionName(nameof(SBSendMessageEphemeral))]
         public static async Task SBSendMessageEphemeral(
-            [ServiceBusTrigger(C.SBQ.SendMessageEphemeral)]Slack.Events.Inner.message messageData,
+            [ServiceBusTrigger(C.SBQ.SendMessageEphemeral)]Slack.Events.Inner.message message,
             [ServiceBus(C.SBQ.SendMessage)]IAsyncCollector<Slack.Events.Inner.message> messageCollector,
             ILogger logger)
         {
             await SR.Init(logger);
-            if (SR.C.IdToConversation.ContainsKey(messageData.channel) && (SR.C.IdToConversation[messageData.channel].is_mpim || SR.C.IdToConversation[messageData.channel].is_im))
+            if (SR.C.IdToConversation.ContainsKey(message.channel) && (SR.C.IdToConversation[message.channel].is_mpim || SR.C.IdToConversation[message.channel].is_im))
             {
                 logger.LogInformation("Message is in a private channel. Posting as regular message instead.");
-                messageData.user = null;
-                await messageCollector.AddAsync(messageData);
+                message.user = null;
+                await messageCollector.AddAsync(message);
                 return;
             }
 
-            var response = await httpClient.PostAsJsonAsync("https://slack.com/api/chat.postEphemeral", messageData);
+            // Rewrite anything point to blob storage to use the cdn instead
+            message.text = message.text?.Replace(Settings.BlobsSourceHostname, Settings.BlobsTargetHostname);
+
+            var response = await httpClient.PostAsJsonAsync("https://slack.com/api/chat.postEphemeral", message);
             logger.LogInformation("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
 
             var responseContent = await response.Content.ReadAsAsync<Slack.WebAPIResponse>();
