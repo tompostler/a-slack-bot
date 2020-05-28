@@ -14,6 +14,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -37,11 +38,11 @@ namespace a_slack_bot.Functions
 
         [FunctionName(nameof(SBReceiveSlash))]
         public static async Task SBReceiveSlash(
-            [ServiceBusTrigger(C.SBQ.InputSlash)]Messages.InputSlash slashMessage,
-            [DocumentDB(ConnectionStringSetting = C.CDB.CSS)]DocumentClient docClient,
-            [ServiceBus(C.SBQ.Blackjack)]IAsyncCollector<BrokeredMessage> blackjackMessageCollector,
-            [ServiceBus(C.SBQ.SendMessage)]IAsyncCollector<BrokeredMessage> messageCollector,
-            [ServiceBus(C.SBQ.SendMessageEphemeral)]IAsyncCollector<BrokeredMessage> ephemeralMessageCollector,
+            [ServiceBusTrigger(C.SBQ.InputSlash)] Messages.InputSlash slashMessage,
+            [DocumentDB(ConnectionStringSetting = C.CDB.CSS)] DocumentClient docClient,
+            [ServiceBus(C.SBQ.Blackjack)] IAsyncCollector<BrokeredMessage> blackjackMessageCollector,
+            [ServiceBus(C.SBQ.SendMessage)] IAsyncCollector<BrokeredMessage> messageCollector,
+            [ServiceBus(C.SBQ.SendMessageEphemeral)] IAsyncCollector<BrokeredMessage> ephemeralMessageCollector,
             ILogger logger)
         {
             await SR.Init(logger);
@@ -453,12 +454,21 @@ remove `key` id                 Remove a single response.
                     stream.Seek(0, System.IO.SeekOrigin.Begin);
                     logger.LogInformation("Was valid. Replacing...");
 
+                    // Figure out the image extension
                     var imageExt = string.Empty;
                     var urlImageName = matchUri.Substring(matchUri.LastIndexOf('/'));
                     if (urlImageName.Contains(".")) imageExt = urlImageName.Substring(urlImageName.LastIndexOf('.'));
 
-                    var imageName = matchUri.Substring(matchUri.LastIndexOf('/'));
-                    var blob = blobContainer.GetBlockBlobReference($"{key.Replace(' ', '-')}/{Guid.NewGuid().ToString().Split('-')[4]}{imageExt}");
+                    // Compute the hash of the image for the filename
+                    string imageName;
+                    using (var md5 = MD5.Create())
+                    {
+                        imageName = BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", string.Empty).ToLower();
+                        stream.Seek(0, System.IO.SeekOrigin.Begin);
+                    }
+
+                    // Upload and replace the blob
+                    var blob = blobContainer.GetBlockBlobReference($"{key.Replace(' ', '-')}/{imageName}{imageExt}");
                     await blob.UploadFromStreamAsync(stream);
                     text = text.Replace(matchUri, blob.Uri.AbsoluteUri);
                     logger.LogInformation("Replaced with {0}", blob.Uri.AbsoluteUri);
