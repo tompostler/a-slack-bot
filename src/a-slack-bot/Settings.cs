@@ -10,6 +10,8 @@ namespace a_slack_bot
 
         public static string AzureWebJobsStorage => ConfigurationManager.AppSettings.Get(nameof(AzureWebJobsStorage));
         public static string BlobContainerName => ConfigurationManager.AppSettings.Get(nameof(BlobContainerName));
+        public static string BlobsSourceHostname => ConfigurationManager.AppSettings.Get(nameof(BlobsSourceHostname));
+        public static string BlobsTargetHostname => ConfigurationManager.AppSettings.Get(nameof(BlobsTargetHostname));
 
         public static string CosmosDBConnection => ConfigurationManager.AppSettings.Get(nameof(CosmosDBConnection));
 

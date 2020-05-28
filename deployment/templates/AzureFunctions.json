@@ -74,6 +74,7 @@
     "serviceBusName": "[parameters('appName')]",
     "serviceBusRootAccessKey": "[resourceId(resourceGroup().name, 'Microsoft.ServiceBus/namespaces/authorizationRules', variables('serviceBusName'), 'RootManageSharedAccessKey')]",
     "storageAcctName": "[replace(parameters('appName'), '-', '')]",
+    "storageAcctBlobUri": "[concat(variables('storageAcctName'), '.blob.core.windows.net')]",
     "storageAccountId": "[concat(resourceGroup().id,'/providers/','Microsoft.Storage/storageAccounts/', variables('storageAcctName'))]",
     "blobContainerName": "blobs",
     "cdnEndpointName": "[concat(variables('storageAcctName'), '-', variables('blobContainerName'))]"
@@ -185,16 +186,16 @@
           "name": "[concat(variables('storageAcctName'), '-', variables('blobContainerName'))]",
           "location": "global",
           "properties": {
-            "originHostHeader": "[concat(variables('storageAcctName'), '.blob.core.windows.net')]",
+            "originHostHeader": "[variables('storageAcctBlobUri')]",
             "originPath": "[concat('/', variables('blobContainerName'))]",
             "isHttpAllowed": false,
             "isHttpsAllowed": true,
             "queryStringCachingBehavior": "UseQueryString",
             "origins": [
               {
-                "name": "[replace(concat(variables('storageAcctName'), '.blob.core.windows.net'), '.', '-')]",
+                "name": "[replace(variables('storageAcctBlobUri'), '.', '-')]",
                 "properties": {
-                  "hostName": "[concat(variables('storageAcctName'), '.blob.core.windows.net')]",
+                  "hostName": "[variables('storageAcctBlobUri')]",
                   "httpPort": 80,
                   "httpsPort": 443
                 }
@@ -272,7 +273,8 @@
         "[concat('Microsoft.ServiceBus/namespaces/', variables('serviceBusName'))]",
         "[concat('Microsoft.Storage/storageAccounts/', variables('storageAcctName'))]",
         "[concat('Microsoft.Web/serverfarms/', variables('hostingPlanName'))]",
-        "[resourceId('microsoft.insights/components/', variables('appInsightsName'))]"
+        "[resourceId('microsoft.insights/components/', variables('appInsightsName'))]",
+        "[resourceId('Microsoft.Cdn/profiles/endpoints', resourceGroup().name, variables('cdnEndpointName'))]"
       ],
       "properties": {
         "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
@@ -329,6 +331,14 @@
             {
               "name": "BlobContainerName",
               "value": "[variables('blobContainerName')]"
+            },
+            {
+              "name": "BlobsSourceHostname",
+              "value": "[concat(variables('storageAcctBlobUri'), '/', variables('blobContainerName'))]"
+            },
+            {
+              "name": "BlobsTargetHostname",
+              "value": "[reference(resourceId('Microsoft.Cdn/profiles/endpoints', resourceGroup().name, variables('cdnEndpointName'))).hostName]"
             },
             {
               "name": "FUNCTION_APP_EDIT_MODE",
