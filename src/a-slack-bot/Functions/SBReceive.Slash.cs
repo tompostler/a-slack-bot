@@ -453,8 +453,12 @@ remove `key` id                 Remove a single response.
                     stream.Seek(0, System.IO.SeekOrigin.Begin);
                     logger.LogInformation("Was valid. Replacing...");
 
+                    var imageExt = string.Empty;
+                    var urlImageName = matchUri.Substring(matchUri.LastIndexOf('/'));
+                    if (urlImageName.Contains(".")) imageExt = urlImageName.Substring(urlImageName.LastIndexOf('.'));
+
                     var imageName = matchUri.Substring(matchUri.LastIndexOf('/'));
-                    var blob = blobContainer.GetBlockBlobReference(key.Replace(' ', '-') + imageName);
+                    var blob = blobContainer.GetBlockBlobReference($"{key.Replace(' ', '-')}/{Guid.NewGuid().ToString().Split('-')[4]}{imageExt}");
                     await blob.UploadFromStreamAsync(stream);
                     text = text.Replace(matchUri, blob.Uri.AbsoluteUri);
                     logger.LogInformation("Replaced with {0}", blob.Uri.AbsoluteUri);
