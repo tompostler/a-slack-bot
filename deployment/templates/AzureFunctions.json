@@ -117,6 +117,7 @@
       "location": "[resourceGroup().location]",
       "kind": "StorageV2",
       "properties": {
+        "accessTier": "Cool",
         "supportsHttpsTrafficOnly": true
       },
       "sku": {
