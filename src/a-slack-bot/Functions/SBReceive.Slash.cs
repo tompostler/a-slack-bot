@@ -50,11 +50,6 @@ namespace a_slack_bot.Functions
             var slashData = slashMessage.slashData;
             logger.LogInformation("SlashData: {0}", JsonConvert.SerializeObject(slashData));
 
-            // We need to decide if we should post as the user or as ourselves
-            string userToken = null;
-            if (SR.T.ChatWriteUser.ContainsKey(slashData.user_id))
-                userToken = SR.T.ChatWriteUser[slashData.user_id];
-
             // Grab the standings doc upfront when necessary
             Documents.Standings standings = null;
             if (StandingsCommands.Contains(slashData.command))
@@ -205,12 +200,12 @@ remove `key` id                 Remove a single response.
 
 
                 case "/disapprove":
-                    await SendUserResponse(slashData, "ಠ_ಠ", userToken, ephemeralMessageCollector, logger);
+                    await SendUserResponse(slashData, "ಠ_ಠ", messageCollector, ephemeralMessageCollector, logger);
                     break;
 
 
                 case "/flip":
-                    await SendUserResponse(slashData, slashData.text + " (╯°□°)╯︵ ┻━┻", userToken, ephemeralMessageCollector, logger);
+                    await SendUserResponse(slashData, slashData.text + " (╯°□°)╯︵ ┻━┻", messageCollector, ephemeralMessageCollector, logger);
                     break;
 
 
@@ -245,7 +240,7 @@ remove `key` id                 Remove a single response.
                     var enumerator = StringInfo.GetTextElementEnumerator(text);
                     while (enumerator.MoveNext())
                         sb.Append(enumerator.GetTextElement()).Append(' ');
-                    await SendUserResponse(slashData, sb.ToString(), userToken, ephemeralMessageCollector, logger);
+                    await SendUserResponse(slashData, sb.ToString(), messageCollector, ephemeralMessageCollector, logger);
                     break;
 
 
@@ -255,33 +250,62 @@ remove `key` id                 Remove a single response.
             }
         }
 
-        private static async Task SendUserResponse(Slack.Slash slashData, string text, string userToken, IAsyncCollector<BrokeredMessage> ephemeralMessageCollector, ILogger logger)
+        private static async Task SendUserResponse(Slack.Slash slashData, string text, IAsyncCollector<BrokeredMessage> messageCollector, IAsyncCollector<BrokeredMessage> ephemeralMessageCollector, ILogger logger)
         {
             logger.LogInformation("{0}: {1} {2} {3}", slashData.response_url, text, slashData.user_id, slashData.command);
 
-            var msg = new HttpRequestMessage(HttpMethod.Post, "https://slack.com/api/chat.postMessage")
+            // We need to decide if we should post as the user or as ourselves
+            string userToken = default;
+            if (SR.T.ChatWriteUser.ContainsKey(slashData.user_id))
+                userToken = SR.T.ChatWriteUser[slashData.user_id];
+
+            if (userToken == default)
             {
-                Content = new StringContent(JsonConvert.SerializeObject(new Slack.Events.Inner.message
-                {
-                    as_user = true,
-                    channel = slashData.channel_id,
-                    text = text
-                }), Encoding.UTF8, "application/json")
-            };
-            msg.Headers.Authorization = new AuthenticationHeaderValue("Bearer", userToken);
-            var response = await httpClient.SendAsync(msg);
-            var responseObj = await response.Content.ReadAsAsync<Slack.WebAPIResponse>();
-            if (!responseObj.ok)
+                // Post as ourselves, but also "blame" the user
+                await messageCollector.AddAsync(
+                    new Slack.Events.Inner.message
+                    {
+                        channel = slashData.channel_id,
+                        text = text,
+                        attachments = new List<Slack.Events.Inner.message_parts.attachment>
+                        {
+                            new Slack.Events.Inner.message_parts.attachment
+                            {
+                                text = string.Empty,
+                                footer = $"<@{slashData.user_id}>, {slashData.command}"
+                            }
+                        }
+                    });
+            }
+            else
             {
-                if (responseObj.error == "invalid_auth" || responseObj.error == "token_revoked")
+                // Try to post as the user
+                var msg = new HttpRequestMessage(HttpMethod.Post, "https://slack.com/api/chat.postMessage")
                 {
-                    await ephemeralMessageCollector.AddEAsync(slashData, "Your user token is invalid.");
-                    logger.LogWarning("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
-                }
-                else
+                    Content = new StringContent(JsonConvert.SerializeObject(new Slack.Events.Inner.message
+                    {
+                        as_user = true,
+                        channel = slashData.channel_id,
+                        text = text
+                    }), Encoding.UTF8, "application/json")
+                };
+                msg.Headers.Authorization = new AuthenticationHeaderValue("Bearer", userToken);
+                var response = await httpClient.SendAsync(msg);
+                var responseObj = await response.Content.ReadAsAsync<Slack.WebAPIResponse>();
+
+                // But if it didn't work then tell them why
+                if (!responseObj.ok)
                 {
-                    await ephemeralMessageCollector.AddEAsync(slashData, $"Something went wrong: `{responseObj.error}`");
-                    logger.LogError("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
+                    if (responseObj.error == "invalid_auth" || responseObj.error == "token_revoked")
+                    {
+                        await ephemeralMessageCollector.AddEAsync(slashData, $"Your user token is {responseObj.error}.");
+                        logger.LogWarning("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
+                    }
+                    else
+                    {
+                        await ephemeralMessageCollector.AddEAsync(slashData, $"Something went wrong: `{responseObj.error}`");
+                        logger.LogError("{0}: {1}", response.StatusCode, await response.Content.ReadAsStringAsync());
+                    }
                 }
             }
         }
