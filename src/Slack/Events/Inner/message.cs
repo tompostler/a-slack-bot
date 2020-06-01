@@ -105,6 +105,14 @@ namespace Slack.Events.Inner
         /// </summary>
         public List<message_parts.reaction> reactions { get; set; }
 
+        /// <summary>
+        /// Blocks are a series of components that can be combined to create visually rich and compellingly interactive messages.
+        /// </summary>
+        /// <remarks>
+        /// https://api.slack.com/reference/block-kit/blocks on 2020-06-01
+        /// </remarks>
+        public List<message_parts.block> blocks { get; set; }
+
         // The following are optional properties set when using a specific message subtype
 
         /// <summary>
