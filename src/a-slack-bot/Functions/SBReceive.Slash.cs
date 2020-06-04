@@ -387,7 +387,8 @@ remove `key` id                 Remove a single response.
                         value = value,
                         user_id = slashData.user_id,
                         count = minCount + 1,
-                        count_offset = minCount
+                        count_offset = minCount,
+                        random = Guid.NewGuid()
                     };
                     var doc = await docClient.CreateDocumentAsync(
                         C.CDB.DCUri,
@@ -415,7 +416,8 @@ remove `key` id                 Remove a single response.
                             value = valuec,
                             user_id = slashData.user_id,
                             count = minCount,
-                            count_offset = minCount
+                            count_offset = minCount,
+                            random = Guid.NewGuid()
                         };
                         doc = await docClient.CreateDocumentAsync(
                             C.CDB.DCUri,
