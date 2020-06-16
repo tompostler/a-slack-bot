@@ -339,7 +339,7 @@
             },
             {
               "name": "BlobsTargetHostname",
-              "value": "[reference(resourceId('Microsoft.Cdn/profiles/endpoints', resourceGroup().name, variables('cdnEndpointName'))).hostName]"
+              "value": "[parameters('dnsZone').name]"
             },
             {
               "name": "FUNCTION_APP_EDIT_MODE",
