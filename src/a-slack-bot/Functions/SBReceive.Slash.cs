@@ -495,6 +495,7 @@ remove `key` id                 Remove a single response.
 
                     // Upload and replace the blob
                     var blob = blobContainer.GetBlockBlobReference($"{key.Replace(' ', '-')}/{imageName}{imageExt}");
+                    blob.Properties.ContentType = response.Content.Headers.ContentType.MediaType;
                     await blob.UploadFromStreamAsync(stream);
                     text = text.Replace(matchUri, blob.Uri.AbsoluteUri);
                     logger.LogInformation("Replaced with {0}", blob.Uri.AbsoluteUri);
