@@ -339,7 +339,7 @@
             },
             {
               "name": "BlobsTargetHostname",
-              "value": "[concat(variables('blobContainerName'), '.', parameters('dnsZone').name)]"
+              "value": "[concat(variables('blobContainerName'), '.', parameters('dnsZone').name]"
             },
             {
               "name": "FUNCTION_APP_EDIT_MODE",
