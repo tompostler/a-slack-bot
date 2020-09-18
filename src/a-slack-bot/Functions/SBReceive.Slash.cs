@@ -217,12 +217,7 @@ remove `key` id                 Remove a single response.
                                 new Slack.Events.Inner.message_parts.attachment
                                 {
                                     text = string.Empty,
-                                    footer = $"<@{slashData.user_id}>, {slashData.command}"
-                                },
-                                new Slack.Events.Inner.message_parts.attachment
-                                {
-                                    text = string.Empty,
-                                    footer = $"<{wikiResult.query.pages.FirstOrDefault().Value?.fullurl}|{wikiResult.query.pages.FirstOrDefault().Value?.title}>, last modified {wikiResult.query.pages.FirstOrDefault().Value?.touched}"
+                                    footer = $"{slashData.command} from <@{slashData.user_id}>. <{wikiResult.query.pages.FirstOrDefault().Value?.fullurl}|{wikiResult.query.pages.FirstOrDefault().Value?.title}>, last modified {wikiResult.query.pages.FirstOrDefault().Value?.touched:yyyy-MM-dd}"
                                 }
                             }
                         });
