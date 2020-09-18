@@ -23,8 +23,8 @@ namespace a_slack_bot.Functions
             if (!await req.IsAuthed(logger))
                 return req.CreateErrorResponse(HttpStatusCode.Unauthorized, "Did not match hash.");
 
-            // Return the version
-            return req.CreateResponse(HttpStatusCode.OK, new { response_type = "in_channel", text = $"`{Guid.NewGuid().ToString()}`" });
+            // Return a guid
+            return req.CreateResponse(HttpStatusCode.OK, new { response_type = "in_channel", text = $"`{Guid.NewGuid()}`" });
         }
     }
 }

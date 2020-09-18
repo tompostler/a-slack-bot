@@ -204,6 +204,31 @@ remove `key` id                 Remove a single response.
                     break;
 
 
+                case "/fact":
+                    var wikiResponse = await httpClient.GetAsync("https://en.wikipedia.org/w/api.php?action=query&format=json&prop=extracts%7Cinfo&generator=random&utf8=1&exintro=1&explaintext=1&inprop=url&grnnamespace=0");
+                    var wikiResult = await wikiResponse.Content.ReadAsAsync<WikiResponse>();
+                    await messageCollector.AddAsync(
+                        new Slack.Events.Inner.message
+                        {
+                            channel = slashData.channel_id,
+                            text = wikiResult.query.pages.FirstOrDefault().Value?.extract?.Split('\n')?.FirstOrDefault(),
+                            attachments = new List<Slack.Events.Inner.message_parts.attachment>
+                            {
+                                new Slack.Events.Inner.message_parts.attachment
+                                {
+                                    text = string.Empty,
+                                    footer = $"<@{slashData.user_id}>, {slashData.command}"
+                                },
+                                new Slack.Events.Inner.message_parts.attachment
+                                {
+                                    text = string.Empty,
+                                    footer = $"<{wikiResult.query.pages.FirstOrDefault().Value?.fullurl}|{wikiResult.query.pages.FirstOrDefault().Value?.title}>, last modified {wikiResult.query.pages.FirstOrDefault().Value?.touched}"
+                                }
+                            }
+                        });
+                    break;
+
+
                 case "/flip":
                     await SendUserResponse(slashData, slashData.text + " (╯°□°)╯︵ ┻━┻", messageCollector, ephemeralMessageCollector, logger);
                     break;
@@ -634,6 +659,24 @@ remove `key` id                 Remove a single response.
                 standings,
                 new RequestOptions { PartitionKey = standings.PK },
                 disableAutomaticIdGeneration: true);
+        }
+
+        private class WikiResponse
+        {
+            public WikiQuery query { get; set; }
+
+            public class WikiQuery
+            {
+                public Dictionary<string, WikiQueryPage> pages { get; set; }
+
+                public class WikiQueryPage
+                {
+                    public string title { get; set; }
+                    public string extract { get; set; }
+                    public DateTime touched { get; set; }
+                    public string fullurl { get; set; }
+                }
+            }
         }
     }
 }
