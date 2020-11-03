@@ -217,7 +217,7 @@
       "apiVersion": "2018-05-01",
       "name": "[concat(parameters('dnsZone').name, '/', variables('blobContainerName'))]",
       "properties": {
-        "TTL": 300,
+        "TTL": 1800,
         "CNAMERecord": {
           "cname": "[reference(resourceId('Microsoft.Cdn/profiles/endpoints', resourceGroup().name, variables('cdnEndpointName'))).hostName]"
         }
@@ -383,7 +383,7 @@
       "apiVersion": "2018-05-01",
       "name": "[concat(parameters('dnsZone').name, '/', 'api')]",
       "properties": {
-        "TTL": 300,
+        "TTL": 1800,
         "CNAMERecord": {
           "cname": "[reference(resourceId('Microsoft.Web/sites', parameters('appName')), '2019-08-01').defaultHostName]"
         }
