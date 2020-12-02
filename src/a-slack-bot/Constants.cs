@@ -67,6 +67,6 @@ namespace a_slack_bot
         private static readonly DateTimeOffset initTime = DateTimeOffset.UtcNow;
         public static TimeSpan UpTime => DateTimeOffset.UtcNow.Subtract(initTime);
 
-        public static readonly string InstanceId = Environment.GetEnvironmentVariable("WEBSITE_INSTANCE_ID");
+        public static readonly string InstanceId = Environment.GetEnvironmentVariable("WEBSITE_INSTANCE_ID") ?? Environment.MachineName;
     }
 }
