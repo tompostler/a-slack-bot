@@ -62,6 +62,11 @@ namespace a_slack_bot
         }
 
         private static readonly Assembly assembly = typeof(C).Assembly;
-        public static string VersionStr => $"{assembly.ManifestModule.Name} v{assembly.GetName().Version.ToString(3)}+{FileVersionInfo.GetVersionInfo(assembly.Location).ProductVersion.Split('.').Last().Substring(0,6)}";
+        public static readonly string VersionStr = $"{assembly.ManifestModule.Name} v{assembly.GetName().Version.ToString(3)}+{FileVersionInfo.GetVersionInfo(assembly.Location).ProductVersion.Split('.').Last().Substring(0,6)}";
+
+        private static readonly DateTimeOffset initTime = DateTimeOffset.UtcNow;
+        public static TimeSpan UpTime => DateTimeOffset.UtcNow.Subtract(initTime);
+
+        public static readonly string InstanceId = Environment.GetEnvironmentVariable("WEBSITE_INSTANCE_ID");
     }
 }
