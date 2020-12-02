@@ -1,6 +1,7 @@
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -23,7 +24,7 @@ namespace a_slack_bot.Functions
                 return req.CreateErrorResponse(HttpStatusCode.Unauthorized, "Did not match hash.");
 
             // Return the version
-            return req.CreateResponse(HttpStatusCode.OK, new { response_type = "in_channel", text = $"```{C.UpTime:ddd\\.hh\\:mm\\:ss} ({C.InstanceId})```" });
+            return req.CreateResponse(HttpStatusCode.OK, new { response_type = "in_channel", text = $"```{C.UpTime:ddd\\.hh\\:mm\\:ss} ({C.InstanceId.Substring(0, Math.Min(C.InstanceId.Length, 8))})```" });
         }
     }
 }
