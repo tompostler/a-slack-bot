@@ -23,7 +23,7 @@ namespace a_slack_bot.Functions
             if (!await req.IsAuthed(logger))
                 return req.CreateErrorResponse(HttpStatusCode.Unauthorized, "Did not match hash.");
 
-            // Return the version
+            // Return the uptime
             return req.CreateResponse(HttpStatusCode.OK, new { response_type = "in_channel", text = $"```{C.UpTime:ddd\\.hh\\:mm\\:ss} ({C.InstanceId.Substring(0, Math.Min(C.InstanceId.Length, 8))})```" });
         }
     }

@@ -11,7 +11,7 @@ namespace a_slack_bot.Functions
             [TimerTrigger("0 */3 8-18 * * 1-5")]TimerInfo myTimer,
             ILogger logger)
         {
-            logger.LogInformation("IT'S {0} AND ALL IS WELL.", DateTimeOffset.Now.ToString("o"));
+            logger.LogInformation($"IT'S {DateTimeOffset.UtcNow:o} AND ALL IS WELL FOR {C.VersionStr}.");
         }
     }
 }
