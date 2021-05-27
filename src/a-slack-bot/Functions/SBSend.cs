@@ -141,7 +141,8 @@ namespace a_slack_bot.Functions
                 // Rewrite anything point to blob storage to use the cdn instead
                 text = message.text?.Replace(Settings.BlobsSourceHostname, Settings.BlobsTargetHostname),
                 message.thread_ts,
-                message.ts
+                message.ts,
+                message.user
             };
 
             if (SR.C.IdToConversation.ContainsKey(sendableMessage.channel) && (SR.C.IdToConversation[sendableMessage.channel].is_mpim || SR.C.IdToConversation[sendableMessage.channel].is_im))
