@@ -39,7 +39,6 @@
               "id": "[parameters('databaseName')]"
             },
             "options": {
-              "throughput": 100,
               "autoscaleSettings": {
                 "maxThroughput": 1000
               }
