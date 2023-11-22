@@ -86,7 +86,7 @@
       "type": "Microsoft.ServiceBus/namespaces",
       "location": "[resourceGroup().location]",
       "sku": {
-        "name": "Standard"
+        "name": "Basic"
       },
       "properties": {}
     },
@@ -101,8 +101,7 @@
         "lockDuration": "PT5M",
         "defaultMessageTimeToLive": "PT4H",
         "deadLetteringOnMessageExpiration": true,
-        "requiresDuplicateDetection": true,
-        "duplicateDetectionHistoryTimeWindow": "PT5M",
+        "requiresDuplicateDetection": false,
         "maxDeliveryCount": 3
       },
       "copy": {
