@@ -336,7 +336,7 @@ namespace a_slack_bot
 
                 var idToNameDict = this.users.Values.ToDictionary(u => u.id, u => string.IsNullOrEmpty(u.profile.display_name) ? u.profile.real_name : u.profile.display_name);
                 this.IdToName = idToNameDict;
-                this.LowerNameToId = this.IdToName.ToDictionary(u => u.Value.ToLower(), u => u.Key);
+                this.LowerNameToId = this.IdToName.Where(u => u.Value != "deactivateduser").ToDictionary(u => u.Value.ToLower(), u => u.Key);
                 this.MaxNameLength = this.IdToName.Values.Max(un => un.Length);
 
                 var userMapDoc = new Documents.IdMapping
